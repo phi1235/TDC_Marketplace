@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Build outputs
+/frontend/dist/
+/backend/public/build/
+/backend/public/hot
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Laravel specific
+/backend/storage/*.key
+/backend/storage/app/public/*
+/backend/storage/framework/cache/data/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/testing/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+/backend/bootstrap/cache/*
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Package manager lock files (keep one, remove others if needed)
+package-lock.json
+yarn.lock
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Testing
+coverage/
+.phpunit.result.cache
+
+# Misc
+*.log
