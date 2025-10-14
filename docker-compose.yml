@@ -89,6 +89,23 @@ services:
     networks:
       - tdc-network
 
+  # phpMyAdmin UI for MySQL
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: tdc-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: laravel
+      PMA_PASSWORD: password
+    depends_on:
+      - mysql
+    networks:
+      - tdc-network
+
 volumes:
   mysql_data:
   redis_data:
