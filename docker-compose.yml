@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: tdc-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: tdc_marketplace
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - tdc-network
+
+  # Laravel Backend
+  laravel:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tdc-laravel
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+      - ./backend/storage/app/public:/var/www/storage/app/public
+    ports:
+      - "8001:8000"
+    depends_on:
+      - mysql
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: tdc_marketplace
+      DB_USERNAME: laravel
+      DB_PASSWORD: password
+    networks:
+      - tdc-network
+
+  # Vue.js Frontend
+  vue:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tdc-vue
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    networks:
+      - tdc-network
+
+  # Redis for caching and queues
+  redis:
+    image: redis:7.0-alpine
+    container_name: tdc-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tdc-network
+
+  # Meilisearch for full-text search
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: tdc-meilisearch
+    restart: unless-stopped
+    ports:
+      - "7701:7700"
+    environment:
+      MEILI_MASTER_KEY: masterKey123
+      MEILI_ENV: development
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - tdc-network
+
+volumes:
+  mysql_data:
+  redis_data:
+  meilisearch_data:
+
+networks:
+  tdc-network:
+    driver: bridge
