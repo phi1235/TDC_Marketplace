@@ -32,6 +32,7 @@ services:
       - ./backend/storage/app/public:/var/www/storage/app/public
     ports:
       - "8001:8000"
+    command: sh -lc "php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
     environment:
