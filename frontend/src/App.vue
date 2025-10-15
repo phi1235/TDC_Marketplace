@@ -25,6 +25,9 @@
               <router-link to="/register" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
                 Đăng ký
               </router-link>
+              <router-link to="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                Dashboard Page
+              </router-link>
             </nav>
           </div>
         </div>

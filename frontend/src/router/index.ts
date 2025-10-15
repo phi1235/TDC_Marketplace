@@ -54,18 +54,18 @@ const router = createRouter({
 })
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+// router.beforeEach((to, from, next) => {
+//   const authStore = useAuthStore()
   
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/dashboard')
-  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    next('/dashboard')
-  } else {
-    next()
-  }
-})
+//   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+//     next('/login')
+//   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+//     next('/dashboard')
+//   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+//     next('/dashboard')
+//   } else {
+//     next()
+//   }
+// })
 
 export default router
