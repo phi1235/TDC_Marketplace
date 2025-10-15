@@ -45,6 +45,14 @@ class AuthController extends Controller
         //     ]);
         // }
 
+        
+
+        // Tạm thời bỏ qua email verification để test
+        // if (!$user->email_verified_at) {
+        //     throw ValidationException::withMessages([
+        //         'email' => ['Vui lòng xác thực email trước khi đăng nhập.'],
+        //     ]);
+        // }
         if (!Auth::attempt($request->only('email', 'password'))) {
             // RateLimiter::hit($key, 600); // 10 phút
             throw ValidationException::withMessages([
@@ -59,14 +67,6 @@ class AuthController extends Controller
                 'email' => ['Tài khoản đã bị khóa, liên hệ quản trị viên.'],
             ]);
         }
-
-        // Tạm thời bỏ qua email verification để test
-        // if (!$user->email_verified_at) {
-        //     throw ValidationException::withMessages([
-        //         'email' => ['Vui lòng xác thực email trước khi đăng nhập.'],
-        //     ]);
-        // }
-
         // RateLimiter::clear($key);
         
         $user->update([
