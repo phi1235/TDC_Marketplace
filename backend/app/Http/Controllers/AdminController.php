@@ -163,7 +163,19 @@ class AdminController extends Controller
 
                 case 'delete':
                     // Only allow deletion of pending or rejected listings
-                    $listings->whereIn('status', ['pending', 'rejected'])->delete();
+                    $toDelete = $listings->whereIn('status', ['pending', 'rejected'])->get();
+                    foreach ($toDelete as $item) {
+                        // Avoid triggering Scout indexing if configured
+                        Listing::withoutSyncingToSearch(function () use ($item) {
+                            // delete relations first to avoid FK constraints
+                            try { $item->images()->delete(); } catch (\Throwable $e) {}
+                            try { $item->offers()->delete(); } catch (\Throwable $e) {}
+                            try { $item->views()->delete(); } catch (\Throwable $e) {}
+                            try { $item->wishlists()->delete(); } catch (\Throwable $e) {}
+                            try { $item->reviews()->delete(); } catch (\Throwable $e) {}
+                            $item->delete();
+                        });
+                    }
                     break;
             }
 

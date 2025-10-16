@@ -145,7 +145,6 @@ async function deleteOne(id: number) {
             <td style="padding:12px; text-align:center;">{{ (r.created_at || '').slice(0,10) }}</td>
             <td style="padding:12px; text-align:center; display:flex; gap:8px; justify-content:center;">
               <router-link :to="`/listings/${r.id}`" style="padding:6px 10px; border-radius:8px; background:#3b82f6; color:#fff;">Xem</router-link>
-              <button :disabled="loading" @click="deleteOne(r.id)" style="padding:6px 10px; border-radius:8px; background:#ef4444; color:#fff;">Xóa</button>
             </td>
           </tr>
           <tr v-if="!rows.length">
