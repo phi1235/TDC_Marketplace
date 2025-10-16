@@ -16,22 +16,24 @@ class Listing extends Model
         'seller_id',
         'category_id',
         'title',
-        'slug',
         'description',
-        'condition_grade',
+        'condition',
         'price',
-        'original_price',
-        'currency',
         'status',
-        'featured_until',
-        'view_count',
-        'favorite_count',
+        'location',
+        'views_count',
+        'admin_notes',
+        'rejection_reason',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'original_price' => 'decimal:2',
-        'featured_until' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function seller(): BelongsTo
@@ -72,6 +74,21 @@ class Listing extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'auditable_id')->where('auditable_type', self::class);
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 
     public function toSearchableArray(): array
