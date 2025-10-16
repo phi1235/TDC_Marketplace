@@ -90,3 +90,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 //rbac api user
 Route::get('/user/current', [UserController::class, 'currentUser']);
+Route::get('/users', [UserController::class, 'allUsers']);

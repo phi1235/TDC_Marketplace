@@ -18,6 +18,18 @@ class UserController extends Controller
         // ]);
         $user = User::with('roles')->get();
         return response()->json($user->load('roles'));
+    }
 
+    public function allUsers()
+    {
+        try {
+            $users = User::with('roles')->get(); // load tất cả user cùng roles
+            return response()->json($users);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch users',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
