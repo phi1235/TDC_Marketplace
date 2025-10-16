@@ -72,4 +72,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
+    // routes/api.php
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [UserController::class, 'profile']);
+    Route::post('/profile/update', [UserController::class, 'update']);
+});
+
 });
