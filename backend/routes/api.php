@@ -86,16 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
 
-    //rbac api user
-    // Route::get('/user', [UserController::class, 'currentUser']);
-
-    Route::get('/user', function (Request $request) {
-    return response()->json([
-        'id' => 1,
-        'name' => 'Truong Tuan Dung',
-        'email' => 'dung@example.com',
-        'role' => 'admin'
-    ]);
-    });
-
+    
 });
+//rbac api user
+Route::get('/user/current', [UserController::class, 'currentUser']);

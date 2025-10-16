@@ -36,12 +36,10 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
-      meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/panel',
-      name: 'dashboard',
+      name: 'panel',
       component: () => import('@/views/dashboard/ContentPanel.vue'),
       meta: { requiresAuth: true },
     },
