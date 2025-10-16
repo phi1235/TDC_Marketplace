@@ -8,6 +8,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+// rbac user api
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,4 +74,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
+
+    //rbac api user
+    // Route::get('/user', [UserController::class, 'currentUser']);
+
+    Route::get('/user', function (Request $request) {
+    return response()->json([
+        'id' => 1,
+        'name' => 'Truong Tuan Dung',
+        'email' => 'dung@example.com',
+        'role' => 'admin'
+    ]);
+    });
+
 });
