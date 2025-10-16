@@ -48,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/listings/{listing}', [ListingController::class, 'update']);
     Route::delete('/listings/{listing}', [ListingController::class, 'destroy']);
     Route::get('/my-listings', [ListingController::class, 'myListings']);
+    Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
+    Route::post('/listings/{listing}/toggle-status', [ListingController::class, 'toggleStatus']);
     
     // Wishlist routes
     Route::get('/wishlists', [WishlistController::class, 'index']);
@@ -64,11 +66,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        
+        // Listings management
+        Route::get('/listings', [AdminController::class, 'allListings']);
         Route::get('/listings/pending', [AdminController::class, 'pendingListings']);
+        Route::get('/listings/stats', [AdminController::class, 'listingStats']);
+        Route::post('/listings/bulk-action', [AdminController::class, 'bulkAction']);
         Route::post('/listings/{listing}/approve', [AdminController::class, 'approveListing']);
         Route::post('/listings/{listing}/reject', [AdminController::class, 'rejectListing']);
+        
+        // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+        
+        // Users management
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
