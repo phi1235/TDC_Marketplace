@@ -43,6 +43,13 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ContentPanel.vue'),
       meta: { requiresAuth: true },
     },
+    ,
+    {
+      path: '/userpanel',
+      name: 'user_panel',
+      component: () => import('@/views/dashboard/UserPanel.vue'),
+      meta: { requiresAuth: true },
+    },
     {
       path: '/profile',
       name: 'profile',

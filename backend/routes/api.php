@@ -91,3 +91,14 @@ Route::middleware('auth:sanctum')->group(function () {
 //rbac api user
 Route::get('/user/current', [UserController::class, 'currentUser']);
 Route::get('/users', [UserController::class, 'allUsers']);
+
+// create api test role user_error
+Route::get('/auth/current-role', function (Request $request) {
+    // Giả lập user hiện tại
+    return response()->json([
+        'id' => 2,
+        'name' => 'Nguyễn Văn A',
+        'email' => 'nguyenvana@tdc.edu.vn',
+        'role' => 'user',
+    ]);
+});

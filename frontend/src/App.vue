@@ -31,6 +31,9 @@
               <router-link to="/panel" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                 Panel Page
               </router-link>
+              <router-link to="/userpanel" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                User Page
+              </router-link>
             </nav>
           </div>
         </div>
