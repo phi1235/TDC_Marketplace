@@ -23,8 +23,10 @@
             type="email"
             required
             placeholder="Nhập email"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            :disabled="loading"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
+          <p v-if="fieldErrors.email" class="text-xs text-red-500 mt-1">{{ fieldErrors.email }}</p>
         </div>
 
         <div>
@@ -36,8 +38,10 @@
             type="password"
             required
             placeholder="Nhập mật khẩu"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            :disabled="loading"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
+          <p v-if="fieldErrors.password" class="text-xs text-red-500 mt-1">{{ fieldErrors.password }}</p>
         </div>
 
         <div v-if="errorMessage" class="text-red-500 text-sm text-center">
@@ -45,10 +49,15 @@
         </div>
 
         <button
+          :disabled="loading"
           type="submit"
-          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition-colors"
+          class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
         >
-          Đăng nhập
+          <svg v-if="loading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>Đăng nhập</span>
         </button>
       </form>
 
@@ -77,25 +86,29 @@ import { showToast } from "@/utils/toast";
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
+const fieldErrors = ref<{ [k: string]: string }>({});
+const loading = ref(false);
 const router = useRouter();
 const auth = useAuthStore();
 
 const handleLogin = () => {
+  fieldErrors.value = {};
   // Kiểm tra định dạng email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email.value)) {
-    errorMessage.value = "Email không hợp lệ!";
+    fieldErrors.value.email = "Email không hợp lệ";
     return;
   }
 
   // Kiểm tra mật khẩu
   if (password.value.length < 6) {
-    errorMessage.value = "Mật khẩu phải có ít nhất 6 ký tự!";
+    fieldErrors.value.password = "Mật khẩu phải có ít nhất 6 ký tự";
     return;
   }
 
   // Nếu hợp lệ, gọi API đăng nhập thật
   errorMessage.value = "";
+  loading.value = true;
   auth
     .login({ email: email.value, password: password.value })
     .then((res) => {
@@ -110,6 +123,9 @@ const handleLogin = () => {
     .catch(() => {
       errorMessage.value = "Đăng nhập thất bại";
       showToast(errorMessage.value, "error");
+    })
+    .finally(() => {
+      loading.value = false;
     });
 };
 </script>
