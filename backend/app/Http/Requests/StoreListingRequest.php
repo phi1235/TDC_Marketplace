@@ -17,12 +17,11 @@ class StoreListingRequest extends FormRequest
             'category_id' => ['required', 'exists:categories,id'],
             'title' => ['required', 'string', 'max:200'],
             'description' => ['required', 'string', 'max:2000'],
-            'condition_grade' => ['required', 'in:A,B,C,D'],
+            'condition' => ['required', 'string', 'in:excellent,good,fair,poor'],
             'price' => ['required', 'numeric', 'min:0'],
-            'original_price' => ['nullable', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'in:VND,USD'],
-            'images' => ['required', 'array', 'min:1', 'max:5'],
-            'images.*' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // 5MB
+            'location' => ['nullable', 'string', 'max:255'],
+            'images' => ['sometimes', 'array', 'max:5'],
+            'images.*' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // 5MB
         ];
     }
 
@@ -35,15 +34,12 @@ class StoreListingRequest extends FormRequest
             'title.max' => 'Tiêu đề không được vượt quá 200 ký tự.',
             'description.required' => 'Vui lòng nhập mô tả chi tiết cho sản phẩm.',
             'description.max' => 'Mô tả không được vượt quá 2000 ký tự.',
-            'condition_grade.required' => 'Vui lòng chọn tình trạng sản phẩm.',
-            'condition_grade.in' => 'Tình trạng sản phẩm không hợp lệ.',
+            'condition.required' => 'Vui lòng chọn tình trạng sản phẩm.',
+            'condition.in' => 'Tình trạng sản phẩm không hợp lệ.',
             'price.required' => 'Vui lòng nhập giá sản phẩm.',
             'price.numeric' => 'Giá phải là số.',
             'price.min' => 'Giá phải lớn hơn 0.',
-            'original_price.numeric' => 'Giá gốc phải là số.',
-            'original_price.min' => 'Giá gốc phải lớn hơn 0.',
-            'currency.required' => 'Vui lòng chọn loại tiền tệ.',
-            'currency.in' => 'Loại tiền tệ không hợp lệ.',
+            'location.max' => 'Địa điểm không được vượt quá 255 ký tự.',
             'images.required' => 'Vui lòng chọn ít nhất một ảnh.',
             'images.array' => 'Ảnh phải là mảng.',
             'images.min' => 'Vui lòng chọn ít nhất một ảnh.',
