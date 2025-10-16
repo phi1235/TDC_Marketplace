@@ -209,12 +209,15 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            $listing->update([
-                'status' => 'approved',
-                'admin_notes' => $request->admin_notes,
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-            ]);
+            // Avoid triggering Scout indexing if not configured
+            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
+                $listing->update([
+                    'status' => 'approved',
+                    'admin_notes' => $request->admin_notes,
+                    'approved_at' => now(),
+                    'approved_by' => Auth::id(),
+                ]);
+            });
 
             // Log admin activity
             $listing->auditLogs()->create([
@@ -262,13 +265,16 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            $listing->update([
-                'status' => 'rejected',
-                'admin_notes' => $request->admin_notes,
-                'rejection_reason' => $request->rejection_reason,
-                'rejected_at' => now(),
-                'rejected_by' => Auth::id(),
-            ]);
+            // Avoid triggering Scout indexing if not configured
+            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
+                $listing->update([
+                    'status' => 'rejected',
+                    'admin_notes' => $request->admin_notes,
+                    'rejection_reason' => $request->rejection_reason,
+                    'rejected_at' => now(),
+                    'rejected_by' => Auth::id(),
+                ]);
+            });
 
             // Log admin activity
             $listing->auditLogs()->create([
