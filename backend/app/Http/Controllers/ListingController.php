@@ -23,7 +23,7 @@ class ListingController extends Controller
 
         // Filter by condition
         if ($request->has('condition')) {
-            $query->where('condition_grade', $request->condition);
+            $query->where('condition', $request->condition);
         }
 
         // Filter by price range
@@ -58,7 +58,7 @@ class ListingController extends Controller
         $listing->load(['seller.sellerProfile', 'category', 'images', 'offers']);
         
         // Increment view count
-        $listing->increment('view_count');
+        $listing->increment('views_count');
         
         // Log view activity
         $listing->views()->create([
@@ -72,48 +72,265 @@ class ListingController extends Controller
 
     public function store(StoreListingRequest $request): JsonResponse
     {
-        $listing = Auth::user()->listings()->create($request->validated());
+        try {
+            $data = $request->validated();
+            
+            $data['status'] = 'pending'; // Default status for new listings
+            
+            $listing = Auth::user()->listings()->create($data);
+            
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('listings', 'public');
+                    $listing->images()->create([
+                        'image_path' => $path,
+                        'is_primary' => $listing->images()->count() === 0, // First image is primary
+                    ]);
+                }
+            }
 
-        return response()->json([
-            'message' => 'Tin rao đã được tạo thành công',
-            'listing' => $listing->load(['category', 'images']),
-        ], 201);
+            // Log activity
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'created',
+                'old_values' => null,
+                'new_values' => $listing->toArray(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return response()->json([
+                'message' => 'Tin rao đã được tạo thành công và đang chờ duyệt',
+                'listing' => $listing->load(['category', 'images']),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi tạo tin rao',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function update(UpdateListingRequest $request, Listing $listing): JsonResponse
     {
-        // Check ownership
-        if ($listing->seller_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền chỉnh sửa tin này'], 403);
+        try {
+            // Check ownership
+            if ($listing->seller_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền chỉnh sửa tin này'], 403);
+            }
+
+            // Check if listing can be edited (not approved yet or is draft)
+            if ($listing->status === 'approved') {
+                return response()->json(['message' => 'Tin rao đã được duyệt, không thể chỉnh sửa'], 400);
+            }
+
+            $oldValues = $listing->toArray();
+            $data = $request->validated();
+            
+            // No slug handling needed for current database structure
+            
+            // Reset status to pending if content changed
+            if ($listing->status === 'rejected') {
+                $data['status'] = 'pending';
+            }
+
+            $listing->update($data);
+
+            // Handle new image uploads
+            if ($request->hasFile('images')) {
+                // Delete old images
+                foreach ($listing->images as $image) {
+                    \Storage::disk('public')->delete($image->image_path);
+                    $image->delete();
+                }
+                
+                // Upload new images
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('listings', 'public');
+                    $listing->images()->create([
+                        'image_path' => $path,
+                        'is_primary' => $listing->images()->count() === 0,
+                    ]);
+                }
+            }
+
+            // Log activity
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'updated',
+                'old_values' => $oldValues,
+                'new_values' => $listing->toArray(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return response()->json([
+                'message' => 'Tin rao đã được cập nhật thành công',
+                'listing' => $listing->load(['category', 'images']),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi cập nhật tin rao',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $listing->update($request->validated());
-
-        return response()->json([
-            'message' => 'Tin rao đã được cập nhật thành công',
-            'listing' => $listing->load(['category', 'images']),
-        ]);
     }
 
     public function destroy(Listing $listing): JsonResponse
     {
-        // Check ownership
-        if ($listing->seller_id !== Auth::id()) {
-            return response()->json(['message' => 'Bạn không có quyền xóa tin này'], 403);
+        try {
+            // Check ownership
+            if ($listing->seller_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền xóa tin này'], 403);
+            }
+
+            // Check if listing can be deleted (not approved or has no orders)
+            if ($listing->status === 'approved' && $listing->orders()->exists()) {
+                return response()->json(['message' => 'Không thể xóa tin rao đã có đơn hàng'], 400);
+            }
+
+            $oldValues = $listing->toArray();
+
+            // Delete associated images
+            foreach ($listing->images as $image) {
+                \Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+            }
+
+            // Log activity before deletion
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'deleted',
+                'old_values' => $oldValues,
+                'new_values' => null,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            $listing->delete();
+
+            return response()->json(['message' => 'Tin rao đã được xóa thành công']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi xóa tin rao',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $listing->delete();
-
-        return response()->json(['message' => 'Tin rao đã được xóa thành công']);
     }
 
     public function myListings(Request $request): JsonResponse
     {
-        $listings = Auth::user()->listings()
-            ->with(['category', 'images'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Auth::user()->listings()->with(['category', 'images']);
+
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by category
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Search in title/description
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json($listings);
+    }
+
+    public function duplicate(Listing $listing): JsonResponse
+    {
+        try {
+            // Check ownership
+            if ($listing->seller_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền sao chép tin này'], 403);
+            }
+
+            $newListing = $listing->replicate();
+            $newListing->title = $listing->title . ' (Bản sao)';
+            $newListing->status = 'pending';
+            $newListing->views_count = 0;
+            $newListing->save();
+
+            // Copy images
+            foreach ($listing->images as $image) {
+                $newPath = 'listings/' . \Str::random(40) . '.' . pathinfo($image->image_path, PATHINFO_EXTENSION);
+                \Storage::disk('public')->copy($image->image_path, $newPath);
+                
+                $newListing->images()->create([
+                    'image_path' => $newPath,
+                    'is_primary' => $image->is_primary,
+                ]);
+            }
+
+            // Log activity
+            $newListing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'duplicated',
+                'old_values' => null,
+                'new_values' => $newListing->toArray(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return response()->json([
+                'message' => 'Tin rao đã được sao chép thành công',
+                'listing' => $newListing->load(['category', 'images']),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi sao chép tin rao',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function toggleStatus(Listing $listing): JsonResponse
+    {
+        try {
+            // Check ownership
+            if ($listing->seller_id !== Auth::id()) {
+                return response()->json(['message' => 'Bạn không có quyền thay đổi trạng thái tin này'], 403);
+            }
+
+            $oldStatus = $listing->status;
+            $newStatus = $listing->status === 'active' ? 'inactive' : 'active';
+            
+            // Only allow status change for approved listings
+            if ($listing->status !== 'approved') {
+                return response()->json(['message' => 'Chỉ có thể thay đổi trạng thái tin đã được duyệt'], 400);
+            }
+
+            $listing->update(['status' => $newStatus]);
+
+            // Log activity
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'status_changed',
+                'old_values' => ['status' => $oldStatus],
+                'new_values' => ['status' => $newStatus],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return response()->json([
+                'message' => 'Trạng thái tin rao đã được cập nhật',
+                'listing' => $listing,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi thay đổi trạng thái',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
