@@ -36,13 +36,15 @@
       <!-- Main Content -->
       <main>
         <router-view />
+        <!-- Toast container -->
+        <div id="toast-root" class="fixed top-4 right-4 z-50 space-y-3"></div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// No imports needed for now
+// No script for App-level toast container
 </script>
 
 <style>

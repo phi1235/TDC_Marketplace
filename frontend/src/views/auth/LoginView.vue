@@ -70,10 +70,15 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { showToast } from "@/utils/toast";
 
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
+const router = useRouter();
+const auth = useAuthStore();
 
 const handleLogin = () => {
   // Kiểm tra định dạng email
@@ -89,10 +94,22 @@ const handleLogin = () => {
     return;
   }
 
-  // Nếu hợp lệ, thực hiện đăng nhập
+  // Nếu hợp lệ, gọi API đăng nhập thật
   errorMessage.value = "";
-  console.log("Email:", email.value);
-  console.log("Mật khẩu:", password.value);
-  alert("Đăng nhập thành công (demo)");
+  auth
+    .login({ email: email.value, password: password.value })
+    .then((res) => {
+      if (res.success) {
+        showToast("Đăng nhập thành công", "success");
+        router.push("/dashboard");
+      } else {
+        errorMessage.value = res.error || "Đăng nhập thất bại";
+        showToast(errorMessage.value, "error");
+      }
+    })
+    .catch(() => {
+      errorMessage.value = "Đăng nhập thất bại";
+      showToast(errorMessage.value, "error");
+    });
 };
 </script>

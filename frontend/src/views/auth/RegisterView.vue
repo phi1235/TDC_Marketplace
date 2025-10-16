@@ -45,6 +45,7 @@
                 placeholder="Nhập họ và tên"
                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p v-if="fieldErrors.name" class="text-xs text-red-500 mt-1">{{ fieldErrors.name }}</p>
             </div>
 
             <!-- Email -->
@@ -57,6 +58,7 @@
                 placeholder="Nhập email"
                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p v-if="fieldErrors.email" class="text-xs text-red-500 mt-1">{{ fieldErrors.email }}</p>
             </div>
 
             <!-- Mật khẩu -->
@@ -70,6 +72,7 @@
                 placeholder="Nhập mật khẩu"
                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p v-if="fieldErrors.password" class="text-xs text-red-500 mt-1">{{ fieldErrors.password }}</p>
             </div>
 
             <!-- Xác nhận mật khẩu -->
@@ -82,6 +85,7 @@
                 placeholder="Nhập lại mật khẩu"
                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p v-if="fieldErrors.password_confirmation" class="text-xs text-red-500 mt-1">{{ fieldErrors.password_confirmation }}</p>
             </div>
 
             <!-- Thông báo lỗi -->
@@ -91,8 +95,9 @@
 
             <!-- Nút đăng ký -->
             <button
+              :disabled="loading"
               type="submit"
-              class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition-colors"
+              class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2 rounded-lg transition-colors"
             >
               Đăng ký
             </button>
@@ -116,7 +121,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "axios";
+import api from "@/services/api";
+import { showToast } from "@/utils/toast";
 
 const router = useRouter();
 
@@ -127,6 +133,7 @@ const confirmPassword = ref("");
 const errorMessage = ref("");
 const loading = ref(false);
 const darkMode = ref(false);
+const fieldErrors = ref<{ [k: string]: string }>({});
 
 const toggleDarkMode = () => {
   darkMode.value = !darkMode.value;
@@ -135,20 +142,20 @@ const toggleDarkMode = () => {
 
 const handleSubmit = async () => {
   errorMessage.value = "";
+  fieldErrors.value = {};
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // FE validation tối thiểu để UX tốt, chuẩn hóa thông báo theo-field
   if (!emailRegex.test(email.value)) {
-    errorMessage.value = "Email không hợp lệ!";
+    fieldErrors.value.email = "Email không hợp lệ";
     return;
   }
-
   if (password.value.length < 6) {
-    errorMessage.value = "Mật khẩu phải có ít nhất 6 ký tự!";
+    fieldErrors.value.password = "Mật khẩu phải có ít nhất 6 ký tự";
     return;
   }
-
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = "Mật khẩu xác nhận không khớp!";
+    fieldErrors.value.password_confirmation = "Mật khẩu xác nhận không khớp";
     return;
   }
 
@@ -156,25 +163,33 @@ const handleSubmit = async () => {
     loading.value = true;
     await new Promise((resolve) => setTimeout(resolve, 1200)); // hiệu ứng loading
 
-    const response = await axios.post("http://localhost:8000/api/register", {
+    const response = await api.post("/auth/register", {
       name: name.value,
       email: email.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
     });
-
-    alert("Đăng ký thành công! Vui lòng đăng nhập.");
+    showToast("Đăng ký thành công! Vui lòng đăng nhập.", "success");
     router.push("/login");
   } catch (error: any) {
     if (error.response) {
-      if (error.response.status === 422 && error.response.data.errors?.email) {
-        errorMessage.value = "Email này đã tồn tại.";
+      if (error.response.status === 422 && error.response.data?.errors) {
+        const errs = error.response.data.errors
+        // Map từng trường của BE về UI
+        fieldErrors.value = {
+          name: errs.name?.[0],
+          email: errs.email?.[0],
+          password: errs.password?.[0],
+          password_confirmation: errs.password_confirmation?.[0],
+        }
+        errorMessage.value = "Vui lòng kiểm tra lại các trường nhập";
       } else {
-        errorMessage.value = "Đăng ký thất bại. Vui lòng thử lại.";
+        errorMessage.value = error.response.data?.message || "Đăng ký thất bại";
       }
     } else {
       errorMessage.value = "Không thể kết nối máy chủ.";
     }
+    showToast(errorMessage.value, "error");
   } finally {
     loading.value = false;
   }
