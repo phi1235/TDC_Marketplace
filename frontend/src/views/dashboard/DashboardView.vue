@@ -1,4 +1,7 @@
 <script>
+export default {
+  name: 'DashboardView',
+};
 </script>
 <template>
   <div class="dashboard">
