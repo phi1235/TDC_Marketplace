@@ -48,7 +48,8 @@ class ListingController extends Controller
         $sortOrder = $request->get('order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $listings = $query->paginate(20);
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->paginate($perPage);
 
         return response()->json($listings);
     }
@@ -91,14 +92,14 @@ class ListingController extends Controller
             }
 
             // Log activity
-            $listing->auditLogs()->create([
-                'user_id' => Auth::id(),
-                'action' => 'created',
-                'old_values' => null,
-                'new_values' => $listing->toArray(),
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
+            // $listing->auditLogs()->create([
+            //     'user_id' => Auth::id(),
+            //     'action' => 'created',
+            //     'old_values' => null,
+            //     'new_values' => $listing->toArray(),
+            //     'ip_address' => request()->ip(),
+            //     'user_agent' => request()->userAgent(),
+            // ]);
 
             return response()->json([
                 'message' => 'Tin rao đã được tạo thành công và đang chờ duyệt',
@@ -242,7 +243,8 @@ class ListingController extends Controller
             });
         }
 
-        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json($listings);
     }

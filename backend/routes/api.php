@@ -6,6 +6,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ElasticSearchController;
@@ -34,6 +35,10 @@ Route::get('/search-es', [ElasticSearchController::class, 'index']);
 // Listings routes (public)
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+
+// Categories routes (public)
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

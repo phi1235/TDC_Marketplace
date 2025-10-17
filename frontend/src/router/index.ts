@@ -33,6 +33,18 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/create-listing',
+      name: 'create-listing',
+      component: () => import('@/views/listings/CreateListingView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-listings',
+      name: 'my-listings',
+      component: () => import('@/views/listings/MyListingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
