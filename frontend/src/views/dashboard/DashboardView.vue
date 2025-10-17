@@ -1,7 +1,27 @@
-<script>
-export default {
-  name: 'DashboardView',
-};
+<script setup lang="ts">
+import {ref, onMounted} from 'vue'
+import { getAllUsers} from '@/services/user';
+//
+const users = ref<User[]>([]);
+
+const fetchUsers = async() => {
+  try{
+    users.value = await getAllUsers();
+    for(let i = 0; i < users.value.length; i++){
+      console.log(users.value[i]);
+    }
+  }catch(error){
+    console.error('Error fetching users:', error)
+  }
+}
+onMounted(() => {
+  fetchUsers();
+})
+// export default {
+//   name: 'DashboardView',
+// };
+
+
 </script>
 <template>
   <div class="dashboard">
@@ -23,11 +43,16 @@ export default {
     <!-- CONTENT -->
     <main class="content">
       <div class="func">
-        <div class="total">Tổng số: <b>999</b></div>
+        <div class="total">Tổng số: <b>{{ users.length }}</b></div>
 
         <div class="search">
           <input type="search" placeholder="Tìm kiếm..." />
-          <button>Tìm</button>
+              <!-- Button -->
+          <button id="btn_search"
+            @click="search"
+            class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
+            Tìm
+          </button>
         </div>
 
         <div class="filter">
@@ -59,7 +84,7 @@ export default {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <!-- <tr>
               <td>1</td>
               <td>#001</td>
               <td>Trương Tuấn Dũng</td>
@@ -70,6 +95,18 @@ export default {
               <td>✅</td>
               <td>2025-10-15</td>
               <td>24</td>
+            </tr> -->
+            <tr v-for="(user, index) in users" :key="index">
+              <td>{{ index + 1}}</td>
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>{{ user.phone }}</td>
+              <td>{{ user.avatar }}</td>
+              <td>{{ user.is_active }}</td>
+              <td>{{ user.last_login_at }}</td>
+              <td>{{ user.login_count }}</td>
             </tr>
           </tbody>
         </table>
@@ -241,5 +278,9 @@ th, td {
 .page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+#btn_search{
+  padding: 1px 10px;
 }
 </style>
