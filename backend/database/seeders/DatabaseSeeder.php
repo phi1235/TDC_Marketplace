@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             CampusPickupSeeder::class,
             UserSeeder::class,
+            ListingSeeder::class,
         ]);
     }
 }
