@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Wishlist extends Model
 {
     use HasFactory;
-
+    protected $table = 'wishlists';
     protected $fillable = [
+        'id',
         'user_id',
         'listing_id',
+        'created_at',
+        'updated_at'
     ];
 
     public function user(): BelongsTo

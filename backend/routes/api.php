@@ -102,3 +102,7 @@ Route::get('/auth/current-role', function (Request $request) {
         'role' => 'user',
     ]);
 });
+
+//list_wish
+Route::get('/wishes', [WishlistController::class, 'index']);
+

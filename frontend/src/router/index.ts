@@ -51,6 +51,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/listingcard',
+      name: 'listingcard',
+      component: () => import('@/views/dashboard/ListingCardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/listwish',
+      name: 'listwish',
+      component: () => import('@/views/dashboard/ListWishView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
