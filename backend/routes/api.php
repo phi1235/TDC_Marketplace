@@ -6,6 +6,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\UploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ElasticSearchController;
@@ -53,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-listings', [ListingController::class, 'myListings']);
     Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
     Route::post('/listings/{listing}/toggle-status', [ListingController::class, 'toggleStatus']);
+
+    // Media upload
+    Route::post('/media/upload', [UploadController::class, 'upload']);
     
     // Wishlist routes
     Route::get('/wishlists', [WishlistController::class, 'index']);
