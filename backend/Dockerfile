@@ -42,5 +42,12 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/bootstrap/cache
 
 # Expose port 9000 and start php-fpm server
-EXPOSE 9000
-CMD ["php-fpm"]
+
+# EXPOSE 9000
+
+# 🔹 Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# 🔹 Use entrypoint script as startup
+CMD ["/usr/local/bin/entrypoint.sh"]
