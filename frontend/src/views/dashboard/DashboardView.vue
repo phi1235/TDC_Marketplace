@@ -1,4 +1,5 @@
-<script>
+<script setup lang="ts">
+// Dashboard khung tổng quan. Danh sách tin rao đã tách sang route /admin/listings
 </script>
 <template>
   <div class="dashboard">
@@ -10,79 +11,34 @@
     <nav class="navbar">
       <h2 class="title">DASHBOARD</h2>
       <ul class="list-items">
-        <li class="item active"><a href="#">USERS</a></li>
-        <li class="item"><a href="#">LISTINGS</a></li>
-        <li class="item"><a href="#">PENDING</a></li>
+        <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
+        <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
+        <li class="item"><a href="#">USERS</a></li>
         <li class="item"><a href="#">REPORTS</a></li>
       </ul>
     </nav>
 
     <!-- CONTENT -->
     <main class="content">
-      <div class="func">
-        <div class="total">Tổng số: <b>999</b></div>
-
-        <div class="search">
-          <input type="search" placeholder="Tìm kiếm..." />
-          <button>Tìm</button>
-        </div>
-
-        <div class="filter">
-          <label for="role">Bộ lọc:</label>
-          <select id="role" name="role">
-            <option value="all">Tất cả</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="active">Active</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="inf">
-        <h2>Danh sách người dùng</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>STT</th>
-              <th>ID</th>
-              <th>Tên</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Avatar</th>
-              <th>Active</th>
-              <th>Last Login</th>
-              <th>Login Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>#001</td>
-              <td>Trương Tuấn Dũng</td>
-              <td>dung@example.com</td>
-              <td>Admin</td>
-              <td>0909123456</td>
-              <td><img src="https://via.placeholder.com/40" /></td>
-              <td>✅</td>
-              <td>2025-10-15</td>
-              <td>24</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Pagination -->
-        <div class="pagination">
-          <button class="page-btn prev" disabled>« Trước</button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-          <button class="page-btn next">Sau »</button>
-        </div>
-      </div>
+      <!-- Router outlet cho vùng bên phải -->
+      <router-view />
     </main>
   </div>
 </template>
+
+<style scoped>
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.badge.pending { background-color: #f59e0b; }
+.badge.approved { background-color: #10b981; }
+.badge.rejected { background-color: #ef4444; }
+</style>
 
 <style scoped>
 /* RESET */
@@ -239,4 +195,5 @@ th, td {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.btn-primary { background:#2563eb; color:#fff; padding:10px 14px; border-radius:8px; }
 </style>
