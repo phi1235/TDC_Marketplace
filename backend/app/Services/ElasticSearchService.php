@@ -6,24 +6,36 @@ use Illuminate\Support\Facades\Http;
 
 class ElasticSearchService
 {
-    public function search(string $index, string $keyword = '')
+    protected $baseUrl;
+
+    public function __construct()
     {
-        $url = "http://elasticsearch:9200/{$index}/_search";
+        // ⚠️ Trong Docker: dùng 'elasticsearch', không phải 'localhost'
+        $this->baseUrl = env('ELASTICSEARCH_URL', 'http://elasticsearch:9200');
+    }
 
-        $body = [
-            "query" => [
-                "multi_match" => [
-                    "query" => $keyword,
-                    "fields" => ["name", "description"]
-                ]
-            ]
-        ];
+    /**
+     * Index (hoặc cập nhật) một document vào Elasticsearch.
+     */
+    public function indexDocument(string $index, $id, array $data): bool
+    {
+        $response = Http::put("{$this->baseUrl}/{$index}/_doc/{$id}", $data);
+        return $response->successful();
+    }
 
-        $response = Http::post($url, $body);
-
-        if ($response->failed()) {
-            return ['error' => 'Elasticsearch request failed'];
-        }
+    /**
+     * Tìm kiếm trong index Elasticsearch.
+     */
+    public function search(string $index, string $query): array
+    {
+        $response = Http::post("{$this->baseUrl}/{$index}/_search", [
+            'query' => [
+                'multi_match' => [
+                    'query' => $query,
+                    'fields' => ['name', 'description'],
+                ],
+            ],
+        ]);
 
         return $response->json();
     }
