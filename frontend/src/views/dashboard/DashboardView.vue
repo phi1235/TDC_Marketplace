@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted} from 'vue'
+import {ref, onMounted, computed } from 'vue'
 import { getAllUsers, searchUsers} from '@/services/user';
 //
 const users = ref<User[]>([]);
@@ -26,13 +26,24 @@ const search = async () => {
     console.error('Error searching users:', error)
   }
 }
-//
+//onMounted: gọi hàm lên, hay dùng gọi api
 onMounted(() => {
   fetchUsers();
 })
-// export default {
-//   name: 'DashboardView',
-// };
+
+// Computed filtered theo dropdown
+const selectedRole = ref('all');
+const filteredUsers = computed(() => {
+  // all user
+  if (selectedRole.value === 'all') return users.value
+  //user is_active
+  if (selectedRole.value === 'active') {
+    return users.value.filter(user => user.is_active)
+  }
+  //filter() lọc dữ liệu mảng, trả về dữ liệu mới
+  //role 1 là admin 2 là user, user.role trả về 2 cái
+  return users.value.filter(user => user.role === selectedRole.value)
+})
 
 
 </script>
@@ -70,7 +81,7 @@ onMounted(() => {
 
         <div class="filter">
           <label for="role">Bộ lọc:</label>
-          <select id="role" name="role">
+          <select id="role" v-model="selectedRole" name="role">
             <option value="all">Tất cả</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -109,18 +120,20 @@ onMounted(() => {
               <td>2025-10-15</td>
               <td>24</td>
             </tr> -->
-            <tr v-for="(user, index) in users" :key="index">
-              <td>{{ index + 1}}</td>
-              <td>{{ user.id }}</td>
-              <td>{{ user.name }}</td>
-              <td>{{ user.email }}</td>
-              <td>{{ user.role }}</td>
-              <td>{{ user.phone }}</td>
-              <td>{{ user.avatar }}</td>
-              <td>{{ user.is_active }}</td>
-              <td>{{ user.last_login_at }}</td>
-              <td>{{ user.login_count }}</td>
-            </tr>
+            <tr v-for="(user, index) in filteredUsers" :key="user.id">
+          <td class="px-2 py-1 border">{{ index + 1 }}</td>
+          <td class="px-2 py-1 border">{{ user.id }}</td>
+          <td class="px-2 py-1 border">{{ user.name }}</td>
+          <td class="px-2 py-1 border">{{ user.email }}</td>
+          <td class="px-2 py-1 border">{{ user.role }}</td>
+          <td class="px-2 py-1 border">{{ user.phone }}</td>
+          <td class="px-2 py-1 border">
+            <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
+          </td>
+          <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+          <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
+          <td class="px-2 py-1 border">{{ user.login_count }}</td>
+        </tr>
           </tbody>
         </table>
 
