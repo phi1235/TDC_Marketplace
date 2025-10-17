@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue'
-import { getAllUsers} from '@/services/user';
+import { getAllUsers, searchUsers} from '@/services/user';
 //
 const users = ref<User[]>([]);
 
+//get api all user
 const fetchUsers = async() => {
   try{
     users.value = await getAllUsers();
@@ -14,6 +15,18 @@ const fetchUsers = async() => {
     console.error('Error fetching users:', error)
   }
 }
+
+//getapi search
+const keyword = ref('');
+
+const search = async () => {
+  try {
+    users.value = await searchUsers(keyword.value)
+  } catch (error) {
+    console.error('Error searching users:', error)
+  }
+}
+//
 onMounted(() => {
   fetchUsers();
 })
@@ -46,7 +59,7 @@ onMounted(() => {
         <div class="total">Tổng số: <b>{{ users.length }}</b></div>
 
         <div class="search">
-          <input type="search" placeholder="Tìm kiếm..." />
+          <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
               <!-- Button -->
           <button id="btn_search"
             @click="search"
