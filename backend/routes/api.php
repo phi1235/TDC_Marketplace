@@ -91,6 +91,9 @@ Route::middleware('auth:sanctum')->group(function () {
 //rbac api user
 Route::get('/user/current', [UserController::class, 'currentUser']);
 Route::get('/users', [UserController::class, 'allUsers']);
+//search dashboard
+Route::get('/users/search', [UserController::class, 'search']);
+
 
 // create api test role user_error
 Route::get('/auth/current-role', function (Request $request) {
@@ -105,4 +108,3 @@ Route::get('/auth/current-role', function (Request $request) {
 
 //list_wish
 Route::get('/wishes', [WishlistController::class, 'index']);
-
