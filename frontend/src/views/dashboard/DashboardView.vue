@@ -58,14 +58,15 @@ const filteredUsers = computed(() => {
       <h2 class="title">DASHBOARD</h2>
       <ul class="list-items">
         <li class="item active"><a href="#">USERS</a></li>
-        <li class="item"><a href="#">LISTINGS</a></li>
-        <li class="item"><a href="#">PENDING</a></li>
+        <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
+        <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
         <li class="item"><a href="#">REPORTS</a></li>
       </ul>
     </nav>
 
     <!-- CONTENT -->
     <main class="content">
+
       <div class="func">
         <div class="total">Tổng số: <b>{{ users.length }}</b></div>
 
@@ -146,9 +147,27 @@ const filteredUsers = computed(() => {
           <button class="page-btn next">Sau »</button>
         </div>
       </div>
+
+      <!-- Router outlet cho vùng bên phải -->
+      <router-view />
+
     </main>
   </div>
 </template>
+
+<style scoped>
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.badge.pending { background-color: #f59e0b; }
+.badge.approved { background-color: #10b981; }
+.badge.rejected { background-color: #ef4444; }
+</style>
 
 <style scoped>
 /* RESET */
@@ -306,7 +325,11 @@ th, td {
   cursor: not-allowed;
 }
 
+
 #btn_search{
   padding: 1px 10px;
 }
+=======
+.btn-primary { background:#2563eb; color:#fff; padding:10px 14px; border-radius:8px; }
+
 </style>
