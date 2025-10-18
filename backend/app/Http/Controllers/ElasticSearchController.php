@@ -18,6 +18,16 @@ class ElasticSearchController extends Controller
     {
         $keyword = $request->get('q', '');
         $result = $this->search->search('listings', $keyword);
+        
+        // Kiểm tra nếu có lỗi hoặc không có kết quả
+        if (!isset($result['hits']) || !isset($result['hits']['hits'])) {
+            return response()->json([
+                'count' => 0,
+                'data' => [],
+                'error' => 'Search service unavailable'
+            ]);
+        }
+        
         return response()->json([
             'count' => count($result['hits']['hits']),
             'data' => $result['hits']['hits'],
