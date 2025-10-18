@@ -4,8 +4,7 @@
 echo "🚀 Bắt đầu khởi động Laravel..."
 
 # ⏳ Chờ MySQL và Elasticsearch sẵn sàng (10–15 giây)
-sleep 12
-
+sleep 3
 # 🔧 Dọn cache cũ
 php artisan config:clear
 php artisan cache:clear
