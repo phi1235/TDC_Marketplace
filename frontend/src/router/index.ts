@@ -37,6 +37,20 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
       meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'listings',
+          name: 'dashboard-listings',
+          component: () => import('@/views/listings/AdminListingsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'pending',
+          name: 'dashboard-pending',
+          component: () => import('@/views/listings/PendingAdminView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+      ],
     },
     {
       path: '/profile',

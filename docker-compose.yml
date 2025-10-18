@@ -32,7 +32,6 @@ services:
       - ./backend/storage/app/public:/var/www/storage/app/public
     ports:
       - "8001:8000"
-    command: sh -lc "php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
     environment:
@@ -58,7 +57,6 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:8000/api
       - CHOKIDAR_USEPOLLING=true
     networks:
       - tdc-network
@@ -89,6 +87,21 @@ services:
       - meilisearch_data:/meili_data
     networks:
       - tdc-network
+  # Elasticsearch for advanced search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+    container_name: tdc-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - tdc-network
 
   # phpMyAdmin UI for MySQL
   phpmyadmin:
@@ -111,6 +124,7 @@ volumes:
   mysql_data:
   redis_data:
   meilisearch_data:
+  es_data:
 
 networks:
   tdc-network:
