@@ -14,3 +14,10 @@ export const getAllUsers = async (): Promise<User[]> => {
 export const toggleUserStatus = async (id: number): Promise<void> => {
   await api.post(`/admin/users/${id}/toggle-status`)
 }
+
+export const searchUsers = async (keyword: string): Promise<User[]> => {
+  const { data } = await api.get('/users/search', {
+    params: { q: keyword }
+  });
+  return data;
+}
