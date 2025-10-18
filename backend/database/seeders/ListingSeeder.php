@@ -70,7 +70,6 @@ class ListingSeeder extends Seeder
 }
 
 
-=======
         // Tạm tắt kiểm tra khóa ngoại
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
@@ -148,4 +147,3 @@ class ListingSeeder extends Seeder
         ]);
     }
 }
->>>>>>> Nguyen_Chau_Phi
