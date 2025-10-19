@@ -18,18 +18,32 @@
       </button>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="text-gray-500 italic">Đang tải dữ liệu...</div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div
+        v-for="n in 6"
+        :key="n"
+        class="border rounded-lg shadow-sm p-4 animate-pulse"
+      >
+        <div class="bg-gray-300 h-40 w-full rounded-lg mb-3"></div>
+        <div class="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+        <div class="h-5 bg-gray-400 rounded w-1/3"></div>
+      </div>
+    </div>
 
     <!-- Kết quả -->
-    <div v-if="results.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div
+      v-else-if="results.length"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 transition-all duration-300"
+    >
       <div
         v-for="item in results"
         :key="item._id"
         class="border rounded-lg shadow-sm hover:shadow-md transition p-4"
       >
         <img
-          src="https://picsum.photos/300/200"
+          :src="item._source.image || 'https://picsum.photos/300/200'"
           alt="Ảnh sản phẩm"
           class="w-full h-40 object-cover rounded-lg mb-3"
         />
@@ -40,12 +54,11 @@
     </div>
 
     <!-- Không có kết quả -->
-    <div v-else-if="!loading && !results.length" class="text-gray-500 mt-4">
+    <div v-else class="text-gray-500 mt-4 text-center">
       Không tìm thấy sản phẩm nào.
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
@@ -56,6 +69,9 @@ const loading = ref(false)
 
 const searchProducts = async () => {
   if (!keyword.value.trim()) return
+
+  // 🧹 Xóa kết quả cũ ngay khi bắt đầu tìm
+  results.value = []
   loading.value = true
 
   try {
