@@ -44,7 +44,7 @@ class ElasticSearchService
                 'query' => [
                     'multi_match' => [
                         'query' => $query,
-                        'fields' => ['name^3', 'description'],
+                        'fields' => ['title^3'],
                     ],
                 ],
             ]);
@@ -85,56 +85,61 @@ class ElasticSearchService
     /**
      * 🏗️ Tạo lại index với cấu hình analyzer hỗ trợ tiếng Việt
      */
-    public function recreateIndex(string $index): bool
-    {
-        $this->deleteIndex($index);
+   public function recreateIndex(string $index): bool
+{
+    // Xóa index cũ nếu có
+    $this->deleteIndex($index);
+    sleep(2); // đợi 2 giây để ES xóa hoàn tất
 
-        $settings = [
-            'settings' => [
-                'analysis' => [
-                    'tokenizer' => [
-                        'my_ngram_tokenizer' => [
-                            'type' => 'ngram',
-                            'min_gram' => 1,
-                            'max_gram' => 15,
-                            'token_chars' => ['letter', 'digit']
-                        ]
+    $settings = [
+        'settings' => [
+            'analysis' => [
+                'analyzer' => [
+                    'vn_analyzer' => [
+                        'tokenizer' => 'standard',
+                        'filter' => ['lowercase', 'asciifolding']
                     ],
-                    'filter' => [
-                        'vn_normalizer' => [
-                            'type' => 'asciifolding',
-                            'preserve_original' => true
-                        ]
-                    ],
-                    'analyzer' => [
-                        'vn_analyzer' => [
-                            'tokenizer' => 'my_ngram_tokenizer',
-                            'filter' => ['lowercase', 'vn_normalizer']
-                        ],
-                        'vn_search' => [
-                            'tokenizer' => 'standard',
-                            'filter' => ['lowercase', 'vn_normalizer']
-                        ]
+                    'vn_search' => [
+                        'tokenizer' => 'standard',
+                        'filter' => ['lowercase', 'asciifolding']
                     ]
                 ]
-            ],
-            'mappings' => [
-                'properties' => [
-                    'name' => [
-                        'type' => 'text',
-                        'analyzer' => 'vn_analyzer',
-                        'search_analyzer' => 'vn_search'
-                    ],
-                    'price' => ['type' => 'float'],
-                    'category' => ['type' => 'integer']
-                ]
             ]
-        ];
+        ],
+        'mappings' => [
+            'properties' => [
+                'title' => [
+                    'type' => 'text',
+                    'analyzer' => 'vn_analyzer',
+                    'search_analyzer' => 'vn_search'
+                ],
+                'title_suggest' => [
+                    'type' => 'completion',
+                    'analyzer' => 'simple',
+                    'preserve_separators' => true,
+                    'preserve_position_increments' => true,
+                    'max_input_length' => 50
+                ],
+                'description' => [
+                    'type' => 'text',
+                    'analyzer' => 'vn_analyzer',
+                    'search_analyzer' => 'vn_search'
+                ],
+                'price' => ['type' => 'float'],
+                'category_id' => ['type' => 'integer']
+            ]
+        ]
+    ];
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json'
-        ])->put("{$this->baseUrl}/{$index}", $settings);
+    $response = Http::withHeaders([
+        'Content-Type' => 'application/json'
+    ])->put("{$this->baseUrl}/{$index}", $settings);
 
-        return $response->successful();
-    }
+    Log::info('Elastic recreateIndex response:', [
+        'status' => $response->status(),
+        'body' => $response->body()
+    ]);
+
+    return $response->ok() || $response->status() === 400;
+}
 }

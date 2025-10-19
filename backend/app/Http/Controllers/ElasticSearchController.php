@@ -14,36 +14,82 @@ class ElasticSearchController extends Controller
         $this->search = $search;
     }
 
- public function index(Request $request)
-{
-    $keyword = $request->get('q', '');
+    /**
+     * 🔍 Tìm kiếm chính (nhấn Enter)
+     */
+    public function index(Request $request)
+    {
+        $keyword = trim($request->get('q', ''));
 
-    if (empty($keyword)) {
+        if (empty($keyword)) {
+            return response()->json([
+                'count' => 0,
+                'data' => [],
+                'message' => 'No keyword provided'
+            ]);
+        }
+
+        // ✅ Query chính xác hơn (tất cả từ khóa phải có mặt)
+        $query = [
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        [
+                            'multi_match' => [
+                                'query' => $keyword,
+                                'fields' => ['title^3'],
+                                'operator' => 'and', // 🔒 bắt buộc có đủ từ
+                                'fuzziness' => 'AUTO', // cho phép sai chính tả nhẹ
+                                'minimum_should_match' => '80%' // cho phép lệch 20%
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'size' => 30
+        ];
+
+        $result = $this->search->customSearch('listings', $query);
+
         return response()->json([
-            'count' => 0,
-            'data' => [],
-            'message' => 'No keyword provided'
+            'count' => count($result['hits']['hits'] ?? []),
+            'data' => $result['hits']['hits'] ?? [],
         ]);
     }
 
-    // ✅ Query nâng cao: tìm 1 ký tự, tiếng Việt, không phân biệt hoa/thường
-    $query = [
-        'query' => [
-            'multi_match' => [
-                'query' => $keyword,
-            'fields' => ['name^3'], // ❗ chỉ tìm theo tên
-                'type' => 'bool_prefix' // cho phép tìm 1 ký tự, ví dụ "a" -> "áo"
-            ]
-        ],
-        'size' => 30
-    ];
+    /**
+     * 💡 Gợi ý realtime (dropdown như Google)
+     */
+    public function suggestions(Request $request)
+    {
+        $keyword = trim($request->get('q', ''));
+        if (empty($keyword)) {
+            return response()->json(['suggestions' => []]);
+        }
 
-    // ✅ Gọi hàm customSearch() trong service
-    $result = $this->search->customSearch('listings', $query);
+        // ✅ Query nhanh, tìm 1 phần đầu, fuzzy nhẹ
+        $query = [
+            'query' => [
+                'multi_match' => [
+                    'query' => $keyword,
+                    'fields' => ['title^3'],
+                    'type' => 'phrase_prefix'
+                ]
+            ],
+            '_source' => ['title'], // chỉ cần title cho nhanh
+            'size' => 10
+        ];
 
-    return response()->json([
-        'count' => count($result['hits']['hits'] ?? []),
-        'data' => $result['hits']['hits'] ?? [],
-    ]);
-}
+        $result = $this->search->customSearch('listings', $query);
+
+        $suggestions = collect($result['hits']['hits'] ?? [])
+            ->pluck('_source.title')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return response()->json([
+            'suggestions' => $suggestions
+        ]);
+    }
 }
