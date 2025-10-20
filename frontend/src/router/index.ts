@@ -51,6 +51,32 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/listingcard',
+      name: 'listingcard',
+      component: () => import('@/views/dashboard/ListingCardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/listwish',
+      name: 'listwish',
+      component: () => import('@/views/dashboard/ListWishView.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'listings',
+          name: 'dashboard-listings',
+          component: () => import('@/views/listings/AdminListingsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'pending',
+          name: 'dashboard-pending',
+          component: () => import('@/views/listings/PendingAdminView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+      ],
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),

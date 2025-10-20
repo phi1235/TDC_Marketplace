@@ -19,7 +19,7 @@ class UserController extends Controller
         $user = User::with('roles')->get();
         return response()->json($user->load('roles'));
     }
-
+    //get all user
     public function allUsers()
     {
         try {
@@ -31,5 +31,22 @@ class UserController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    //search user by id, name, email, role
+    public function search(Request $request)
+    {
+        $keyword = $request->query('q'); // query param ?q=...
+        
+        $users = User::query()
+            ->when($keyword, function($query, $keyword) {
+                $query->where('id', 'like', "%{$keyword}%")
+                      ->orWhere('name', 'like', "%{$keyword}%")
+                      ->orWhere('email', 'like', "%{$keyword}%")
+                      ->orWhere('phone', 'like', "%{$keyword}%");
+            })
+            ->get();
+
+        return response()->json($users);
     }
 }

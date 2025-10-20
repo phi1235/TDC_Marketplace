@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import api from '@/services/api'
 
 interface User {
   id: number
@@ -25,27 +25,27 @@ interface RegisterData {
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const token = ref<string | null>(localStorage.getItem('token'))
+  const token = ref<string | null>(localStorage.getItem('auth_token'))
   const loading = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
-  // Set axios default authorization header
+  // Set api default authorization header for current session (interceptor also handles this)
   if (token.value) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+    ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
   }
 
   async function login(credentials: LoginCredentials) {
     try {
       loading.value = true
-      const response = await axios.post('/api/auth/login', credentials)
+      const response = await api.post('/auth/login', credentials)
       
       token.value = response.data.token
       user.value = response.data.user
       
-      localStorage.setItem('token', token.value)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+      localStorage.setItem('auth_token', token.value)
+      ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
     } catch (error: any) {
@@ -61,19 +61,20 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(data: RegisterData) {
     try {
       loading.value = true
-      const response = await axios.post('/api/auth/register', data)
+      const response = await api.post('/auth/register', data)
       
       token.value = response.data.token
       user.value = response.data.user
       
-      localStorage.setItem('token', token.value)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+      localStorage.setItem('auth_token', token.value)
+      ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
     } catch (error: any) {
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+        error: error.response?.data?.message || 'Registration failed',
+        errors: error.response?.data?.errors
       }
     } finally {
       loading.value = false
@@ -82,22 +83,22 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await axios.post('/api/auth/logout')
+      await api.post('/auth/logout')
     } catch (error) {
       // Continue with logout even if API call fails
     }
     
     user.value = null
     token.value = null
-    localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
+    localStorage.removeItem('auth_token')
+    delete (api.defaults.headers as any).Authorization
   }
 
   async function fetchUser() {
     if (!token.value) return
 
     try {
-      const response = await axios.get('/api/auth/user')
+      const response = await api.get('/auth/me')
       user.value = response.data
     } catch (error) {
       // Token might be invalid, logout
@@ -117,3 +118,5 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser,
   }
 })
+
+//wish list

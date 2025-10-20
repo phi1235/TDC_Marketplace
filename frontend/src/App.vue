@@ -34,6 +34,12 @@
               <router-link to="/userpanel" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                 User Page
               </router-link>
+              <router-link to="/listwish" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                List wish page
+              </router-link>
+              <router-link to="/listingcard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                Listing Card page
+              </router-link>
             </nav>
           </div>
         </div>
@@ -42,13 +48,15 @@
       <!-- Main Content -->
       <main>
         <router-view />
+        <!-- Toast container -->
+        <div id="toast-root" class="fixed top-4 right-4 z-50 space-y-3"></div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// No imports needed for now
+// No script for App-level toast container
 </script>
 
 <style>
