@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Route;
 // rbac user api
 use App\Http\Controllers\UserController;
 
+use App\Http\Controllers\ElasticSearchController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -22,6 +24,7 @@ use App\Http\Controllers\UserController;
 |
 */
 
+ 
 // Public routes
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -29,6 +32,9 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
+Route::get('/search-es', [ElasticSearchController::class, 'index']);
+Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
+
 
 // Listings routes (public)
 Route::get('/listings', [ListingController::class, 'index']);
