@@ -45,9 +45,9 @@ RUN chown -R www-data:www-data /var/www \
 
 # EXPOSE 9000
 
-# 🔹 Copy entrypoint script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 🔹 Use entrypoint script as startup
-CMD ["/usr/local/bin/entrypoint.sh"]
+# 🔹 Expose port 8000
+EXPOSE 8000
+
+# 🔹 Start Laravel server directly
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
