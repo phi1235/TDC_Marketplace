@@ -13,18 +13,26 @@ class IndexListingsToES extends Command
 
     public function handle(ElasticSearchService $es)
     {
-        $this->info('Indexing listings into Elasticsearch...');
+        $this->info('🚀 Indexing listings into Elasticsearch...');
+
         $listings = Listing::all();
+        $count = 0;
 
         foreach ($listings as $listing) {
-            $es->indexDocument('listings', $listing->id, [
-                'name' => $listing->title,
+            $success = $es->indexDocument('listings', $listing->id, [
+                'title' => $listing->title,
+                'title_suggest' => [
+                    'input' => explode(' ', $listing->title), // tách từ khóa ra để suggest tốt hơn
+                    'weight' => 1
+                ],
                 'description' => $listing->description,
-                'price' => $listing->price,
-                'category' => $listing->category_id,
+                'price' => (float) $listing->price,
+                'category_id' => (int) $listing->category_id,
             ]);
+
+            if ($success) $count++;
         }
 
-        $this->info('✅ Done indexing listings!');
+        $this->info("✅ Done indexing $count listings into Elasticsearch!");
     }
 }
