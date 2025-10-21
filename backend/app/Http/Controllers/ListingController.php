@@ -8,6 +8,8 @@ use App\Models\Listing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ListingController extends Controller
 {
@@ -79,13 +81,33 @@ class ListingController extends Controller
             
             $listing = Auth::user()->listings()->create($data);
             
-            // Handle image uploads
+            // Handle image uploads with optimization
             if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('listings', 'public');
+                foreach ($request->file('images') as $file) {
+                    if (!$file) { continue; }
+
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $safeBase = preg_replace('/[^a-zA-Z0-9-_]/', '-', $base);
+                    $ts = now()->format('YmdHis');
+                    $dir = 'listings/'.date('Y/m/d');
+
+                    $img = Image::read($file->getPathname())->orientate();
+                    $img->scaleDown(1600);
+                    $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
+                    $filename = $safeBase.'-'.$ts.'.'.$ext;
+                    $path = $dir.'/'.$filename;
+                    $binary = $img->encodeByExtension($ext, quality: $quality);
+                    Storage::disk('public')->put($path, $binary);
+
                     $listing->images()->create([
                         'image_path' => $path,
-                        'is_primary' => $listing->images()->count() === 0, // First image is primary
+                        'original_name' => $file->getClientOriginalName(),
+                        'file_size' => strlen($binary),
+                        'mime_type' => $file->getMimeType(),
+                        'width' => $img->width(),
+                        'height' => $img->height(),
+                        'is_primary' => $listing->images()->count() === 0,
                     ]);
                 }
             }
@@ -137,19 +159,36 @@ class ListingController extends Controller
 
             $listing->update($data);
 
-            // Handle new image uploads
+            // Handle new image uploads with optimization
             if ($request->hasFile('images')) {
-                // Delete old images
                 foreach ($listing->images as $image) {
-                    \Storage::disk('public')->delete($image->image_path);
+                    Storage::disk('public')->delete($image->image_path);
                     $image->delete();
                 }
-                
-                // Upload new images
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('listings', 'public');
+
+                foreach ($request->file('images') as $file) {
+                    if (!$file) { continue; }
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $safeBase = preg_replace('/[^a-zA-Z0-9-_]/', '-', $base);
+                    $ts = now()->format('YmdHis');
+                    $dir = 'listings/'.date('Y/m/d');
+
+                    $img = Image::read($file->getPathname())->orientate();
+                    $img->scaleDown(1600);
+                    $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
+                    $filename = $safeBase.'-'.$ts.'.'.$ext;
+                    $path = $dir.'/'.$filename;
+                    $binary = $img->encodeByExtension($ext, quality: $quality);
+                    Storage::disk('public')->put($path, $binary);
+
                     $listing->images()->create([
                         'image_path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'file_size' => strlen($binary),
+                        'mime_type' => $file->getMimeType(),
+                        'width' => $img->width(),
+                        'height' => $img->height(),
                         'is_primary' => $listing->images()->count() === 0,
                     ]);
                 }
