@@ -118,3 +118,5 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser,
   }
 })
+
+//wish list

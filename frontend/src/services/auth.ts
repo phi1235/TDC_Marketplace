@@ -72,3 +72,17 @@ export const authService = {
     return response.data
   }
 }
+
+//test api user
+
+export interface CurrentUser {
+  id: number
+  name: string
+  email: string
+  role: 'user' | 'admin'
+}
+
+export const getCurrentUser = async (): Promise<CurrentUser> => {
+  const res = await api.get('/auth/current-role')
+  return res.data
+}
