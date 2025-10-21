@@ -43,17 +43,36 @@ async function approveOne(id: number) {
   if (loading.value) return
   loading.value = true
   try {
-    await adminListingsService.approve(id)
+    console.log('Approving listing:', id)
+    const result = await adminListingsService.approve(id)
+    console.log('Approve result:', result)
     showToast('Duyệt thành công', 'success')
     await fetchData()
+    
+    // Tự động chuyển sang trang listings sau 1.5 giây
+    setTimeout(() => {
+      // Chỉ chuyển nếu không còn tin pending nào
+      if (rows.value.length === 0) {
+        window.location.href = '/dashboard/listings'
+      }
+    }, 1500)
   } catch (e: any) {
-    const msg = e?.response?.data?.message || ''
+    console.error('Approve error:', e)
+    console.error('Error response:', e?.response)
+    const msg = e?.response?.data?.message || e?.message || 'Duyệt thất bại'
     // Nếu đã duyệt bởi request trước, server trả 400 - coi như thành công
     if (e?.response?.status === 400 && msg.includes('Chỉ có thể duyệt')) {
       await fetchData()
       showToast('Tin đã được duyệt', 'success')
+      
+      // Tự động chuyển sang trang listings sau 1.5 giây
+      setTimeout(() => {
+        if (rows.value.length === 0) {
+          window.location.href = '/dashboard/listings'
+        }
+      }, 1500)
     } else {
-      showToast(msg || 'Duyệt thất bại', 'error')
+      showToast(msg, 'error')
     }
   } finally {
     loading.value = false
@@ -75,11 +94,26 @@ async function confirmReject() {
     showReject.value = false
     selectedId.value = null
     await fetchData()
+    
+    // Tự động chuyển sang trang listings sau 1.5 giây
+    setTimeout(() => {
+      // Chỉ chuyển nếu không còn tin pending nào
+      if (rows.value.length === 0) {
+        window.location.href = '/dashboard/listings'
+      }
+    }, 1500)
   } catch (e: any) {
     const msg = e?.response?.data?.message || ''
     if (e?.response?.status === 400 && msg.includes('Chỉ có thể từ chối')) {
       await fetchData()
       showToast('Tin đã được xử lý', 'success')
+      
+      // Tự động chuyển sang trang listings sau 1.5 giây
+      setTimeout(() => {
+        if (rows.value.length === 0) {
+          window.location.href = '/dashboard/listings'
+        }
+      }, 1500)
     } else {
       showToast(msg || 'Từ chối thất bại', 'error')
     }

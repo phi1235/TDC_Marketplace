@@ -36,6 +36,21 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        {
+          path: 'listings',
+          name: 'dashboard-listings',
+          component: () => import('@/views/listings/AdminListingsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'pending',
+          name: 'dashboard-pending',
+          component: () => import('@/views/listings/PendingAdminView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+      ],
     },
     {
       path: '/panel',
@@ -61,20 +76,6 @@ const router = createRouter({
       name: 'listwish',
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
-      children: [
-        {
-          path: 'listings',
-          name: 'dashboard-listings',
-          component: () => import('@/views/listings/AdminListingsView.vue'),
-          meta: { requiresAuth: true, requiresAdmin: true },
-        },
-        {
-          path: 'pending',
-          name: 'dashboard-pending',
-          component: () => import('@/views/listings/PendingAdminView.vue'),
-          meta: { requiresAuth: true, requiresAdmin: true },
-        },
-      ],
     },
     {
       path: '/profile',
@@ -92,18 +93,18 @@ const router = createRouter({
 })
 
 // Navigation guards
-// router.beforeEach((to, from, next) => {
-//   const authStore = useAuthStore()
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
   
-//   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-//     next('/login')
-//   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-//     next('/dashboard')
-//   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
-//     next('/dashboard')
-//   } else {
-//     next()
-//   }
-// })
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next('/')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/')
+  } else {
+    next()
+  }
+})
 
 export default router
