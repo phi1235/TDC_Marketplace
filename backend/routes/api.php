@@ -35,6 +35,8 @@ Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('/search-es', [ElasticSearchController::class, 'index']);
 Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
+Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
+Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
 
 
 // Listings routes (public)
