@@ -76,11 +76,16 @@ const router = createRouter({
         },
       ],
     },
-    ,
     {
       path: '/seller',
       name: 'seller',
       component: () => import('@/views/dashboard/SellerList.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/testapi',
+      name: 'testapi',
+      component: () => import('@/views/dashboard/TestAPI.vue'),
       meta: { requiresAuth: true },
     },
     {

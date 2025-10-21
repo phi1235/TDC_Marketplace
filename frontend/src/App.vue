@@ -46,6 +46,9 @@
             </nav>
           </div>
         </div>
+        <router-link to="/testapi" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+                Don't touch me
+              </router-link>
       </header>
 
       <!-- Main Content -->

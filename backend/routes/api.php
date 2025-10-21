@@ -14,6 +14,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowSellerController;
 //SellerProfile
 use App\Models\SellerProfile;
+//test api
+use App\Http\Controllers\TestAPIController;
 
 use App\Http\Controllers\ElasticSearchController;
 
@@ -136,3 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/sellers', function() {
     return SellerProfile::all();
 });
+
+//Test api
+Route::get('/testapi', [TestAPIController::class, 'index']);
+Route::get('testapi/{id}', [TestAPIController::class], 'show');
+
+Route::post('/testapi', [TestAPIController::class, 'store']);
