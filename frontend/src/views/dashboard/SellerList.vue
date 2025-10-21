@@ -26,6 +26,13 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import FollowButton from '@/components/FollowButton.vue';
+import api from '@/services/api';
+// main.ts hoặc App.vue
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+authStore.fetchUser() // load user hiện tại từ token
+
 
 const sellers = ref([]);
 const loading = ref(true);
@@ -44,15 +51,14 @@ const fetchSellers = async () => {
 };
 
 // Lấy thông tin user hiện tại
-onMounted(async () => {
-  try {
-    const res = await axios.get('/api/auth/me'); // API trả user đã login
-    user.value = res.data;
-  } catch (err) {
-    user.value = null; // chưa login
-  }
+  onMounted(async () => {
+    try {
+      const res = await api.get('/auth/me') // dùng api chứ không dùng axios bình thường
+      user.value = res.data
+    } catch (err) {
+      user.value = null
+    }
 
-  // Sau khi xác định user, load danh sách sellers
-  fetchSellers();
-});
+    fetchSellers()
+  })
 </script>
