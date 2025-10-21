@@ -35,7 +35,7 @@ export interface Listing {
   }
   images?: Array<{
     id: number
-    file_path: string
+    image_path: string
     is_primary: boolean
     sort_order: number
   }>
