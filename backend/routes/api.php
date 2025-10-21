@@ -10,6 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
 use App\Http\Controllers\UserController;
+// FollowSeller
+use App\Http\Controllers\FollowSellerController;
+//SellerProfile
+use App\Models\SellerProfile;
 
 use App\Http\Controllers\ElasticSearchController;
 
@@ -114,3 +118,21 @@ Route::get('/auth/current-role', function (Request $request) {
 
 //list_wish
 Route::get('/wishes', [WishlistController::class, 'index']);
+//follow_sellers
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/follow-sellers', [FollowSellerController::class, 'follow']);
+    Route::delete('/follow-sellers/{seller}', [FollowSellerController::class, 'unfollow']);
+    Route::get('/follow-sellers/{seller}/status', [FollowSellerController::class, 'status']);
+});
+
+
+
+// Test local không cần login
+// Route::post('/follow-toggle', [FollowSellerController::class, 'toggle']);
+// Route::get('/follow-status/{sellerId}', [FollowSellerController::class, 'status']);
+
+
+//SellerProfile
+Route::get('/sellers', function() {
+    return SellerProfile::all();
+});
