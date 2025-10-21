@@ -114,7 +114,12 @@ const handleLogin = () => {
     .then((res) => {
       if (res.success) {
         showToast("Đăng nhập thành công", "success");
-        router.push("/dashboard");
+        // Redirect dựa trên role
+        if (auth.isAdmin) {
+          router.push("/dashboard");
+        } else {
+          router.push("/");
+        }
       } else {
         errorMessage.value = res.error || "Đăng nhập thất bại";
         showToast(errorMessage.value, "error");
