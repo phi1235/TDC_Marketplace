@@ -12,10 +12,17 @@ class WishlistController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $wishlists = Auth::user()->wishlists()
-            ->with(['listing.seller', 'listing.category', 'listing.images'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        // $wishlists = Auth::user()->wishlists()
+        //     ->with(['listing.seller', 'listing.category', 'listing.images'])
+        //     ->orderBy('created_at', 'desc')
+        //     ->paginate(20);
+
+        // return response()->json($wishlists);
+
+        //get api no depend user_error
+        $wishlists = Wishlist::with(['listing.seller', 'listing.category', 'listing.images'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
 
         return response()->json($wishlists);
     }
@@ -45,14 +52,5 @@ class WishlistController extends Controller
                 'is_favorited' => true,
             ]);
         }
-    }
-
-    public function check(Request $request, Listing $listing): JsonResponse
-    {
-        $isFavorited = Auth::user()->wishlists()
-            ->where('listing_id', $listing->id)
-            ->exists();
-
-        return response()->json(['is_favorited' => $isFavorited]);
     }
 }
