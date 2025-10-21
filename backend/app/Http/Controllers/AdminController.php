@@ -163,7 +163,19 @@ class AdminController extends Controller
 
                 case 'delete':
                     // Only allow deletion of pending or rejected listings
-                    $listings->whereIn('status', ['pending', 'rejected'])->delete();
+                    $toDelete = $listings->whereIn('status', ['pending', 'rejected'])->get();
+                    foreach ($toDelete as $item) {
+                        // Avoid triggering Scout indexing if configured
+                        Listing::withoutSyncingToSearch(function () use ($item) {
+                            // delete relations first to avoid FK constraints
+                            try { $item->images()->delete(); } catch (\Throwable $e) {}
+                            try { $item->offers()->delete(); } catch (\Throwable $e) {}
+                            try { $item->views()->delete(); } catch (\Throwable $e) {}
+                            try { $item->wishlists()->delete(); } catch (\Throwable $e) {}
+                            try { $item->reviews()->delete(); } catch (\Throwable $e) {}
+                            $item->delete();
+                        });
+                    }
                     break;
             }
 
@@ -209,12 +221,15 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            $listing->update([
-                'status' => 'approved',
-                'admin_notes' => $request->admin_notes,
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-            ]);
+            // Avoid triggering Scout indexing if not configured
+            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
+                $listing->update([
+                    'status' => 'approved',
+                    'admin_notes' => $request->admin_notes,
+                    'approved_at' => now(),
+                    'approved_by' => Auth::id(),
+                ]);
+            });
 
             // Log admin activity
             $listing->auditLogs()->create([
@@ -262,13 +277,16 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            $listing->update([
-                'status' => 'rejected',
-                'admin_notes' => $request->admin_notes,
-                'rejection_reason' => $request->rejection_reason,
-                'rejected_at' => now(),
-                'rejected_by' => Auth::id(),
-            ]);
+            // Avoid triggering Scout indexing if not configured
+            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
+                $listing->update([
+                    'status' => 'rejected',
+                    'admin_notes' => $request->admin_notes,
+                    'rejection_reason' => $request->rejection_reason,
+                    'rejected_at' => now(),
+                    'rejected_by' => Auth::id(),
+                ]);
+            });
 
             // Log admin activity
             $listing->auditLogs()->create([

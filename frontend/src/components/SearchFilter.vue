@@ -1,140 +1,261 @@
 <template>
-  <div class="container mx-auto px-4 py-10">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <!-- 🔍 Bộ lọc -->
-      <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Tìm kiếm & Bộ lọc</h2>
+  <div class="p-6 max-w-7xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">🔍 Tìm kiếm sản phẩm</h2>
 
-        <!-- Tìm kiếm -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-600 mb-1">Từ khóa</label>
-          <input
-            v-model="filters.keyword"
-            type="text"
-            placeholder="Nhập tên sản phẩm..."
-            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
+    <!-- Ô nhập -->
+    <div class="relative flex gap-3 mb-6">
+      <div class="flex-1 relative">
+        <input
+          v-model="keyword"
+          type="text"
+          autocomplete="off"
+          placeholder="Nhập từ khóa..."
+          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+          @focus="showDropdown = true"
+          @blur="hideDropdown"
+          @input="handleInput"
+          @compositionstart="isComposing = true"
+          @compositionend="handleCompositionEnd"
+          @keydown.enter.prevent="handleEnter"
+          @keydown.down.prevent="moveDown"
+          @keydown.up.prevent="moveUp"
+        />
 
-        <!-- Danh mục -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-600 mb-1">Danh mục</label>
-          <select
-            v-model="filters.category"
-            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">Tất cả</option>
-            <option v-for="cat in categories" :key="cat">{{ cat }}</option>
-          </select>
-        </div>
-
-        <!-- Khoảng giá -->
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-600 mb-1">Khoảng giá (VNĐ)</label>
-          <input
-            type="range"
-            min="0"
-            max="1000000"
-            step="50000"
-            v-model="filters.price"
-            class="w-full accent-blue-500"
-          />
-          <p class="text-sm text-gray-600 mt-2">
-            Dưới {{ Number(filters.price).toLocaleString() }}₫
-          </p>
-        </div>
-
-        <!-- Sắp xếp -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-600 mb-1">Sắp xếp</label>
-          <select
-            v-model="filters.sort"
-            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="newest">Mới nhất</option>
-            <option value="asc">Giá tăng dần</option>
-            <option value="desc">Giá giảm dần</option>
-          </select>
-        </div>
-
-        <!-- Nút -->
-        <button
-          @click="applyFilters"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
+        <!-- Dropdown -->
+        <ul
+          v-if="showDropdown && (loadingSuggest || suggestions.length)"
+          class="absolute left-0 top-full z-10 w-full bg-white border border-gray-200 rounded-lg shadow-md mt-1 max-h-60 overflow-auto"
         >
-          Áp dụng bộ lọc
-        </button>
-      </div>
+          <li v-if="loadingSuggest" class="px-4 py-2 text-gray-400 italic">Đang gợi ý...</li>
 
-      <!-- 🧾 Kết quả -->
-      <div class="md:col-span-3">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">
-          Kết quả: {{ filteredItems.length }} sản phẩm
-        </h2>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            v-for="item in filteredItems"
-            :key="item.id"
-            class="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden hover:shadow-lg transition"
+          <li
+            v-for="(item, i) in suggestions"
+            :key="i"
+            class="px-4 py-2 cursor-pointer transition"
+            :class="i === selectedIndex ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-50'"
+            @mousedown.prevent="selectSuggestion(item)"
           >
-            <img :src="item.image" alt="Sản phẩm" class="w-full h-48 object-cover" />
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-800 truncate">{{ item.name }}</h3>
-              <p class="text-sm text-gray-500">{{ item.category }}</p>
-              <p class="text-blue-600 font-bold mt-2">{{ item.price.toLocaleString() }}₫</p>
-            </div>
-          </div>
-        </div>
+            <span v-html="highlight(item)"></span>
+          </li>
+        </ul>
       </div>
+
+      <button
+        @click="searchProducts"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+      >
+        Tìm kiếm
+      </button>
+    </div>
+
+    <!-- Loading shimmer -->
+    <transition-group name="fade" tag="div" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div
+        v-if="loading"
+        v-for="n in 6"
+        :key="'skeleton-' + n"
+        class="border rounded-lg shadow-sm p-4 animate-pulse"
+      >
+        <div class="bg-gray-300 h-40 w-full rounded-lg mb-3 shimmer"></div>
+        <div class="h-4 bg-gray-300 rounded w-3/4 mb-2 shimmer"></div>
+        <div class="h-4 bg-gray-200 rounded w-1/2 mb-2 shimmer"></div>
+        <div class="h-5 bg-gray-400 rounded w-1/3 shimmer"></div>
+      </div>
+
+      <!-- Kết quả -->
+      <div
+        v-else
+        v-for="item in results"
+        :key="item._id"
+        class="border rounded-lg shadow-sm hover:shadow-md transition p-4 fade-item"
+      >
+        <img
+          :src="item._source.image || 'https://picsum.photos/300/200'"
+          class="w-full h-40 object-cover rounded-lg mb-3"
+        />
+        <h3 class="font-semibold text-lg mb-1">{{ item._source.title }}</h3>
+        <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ item._source.description }}</p>
+        <p class="font-bold text-blue-600">{{ formatPrice(item._source.price) }}₫</p>
+      </div>
+    </transition-group>
+
+    <div v-if="!loading && !results.length" class="text-gray-500 mt-4 text-center">
+      Không tìm thấy sản phẩm nào.
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 
-const filters = ref({
-  keyword: '',
-  category: '',
-  price: 1000000,
-  sort: 'newest'
-})
+const keyword = ref('')
+const results = ref([])
+const suggestions = ref([])
+const showDropdown = ref(false)
+const loading = ref(false)
+const loadingSuggest = ref(false)
+const isComposing = ref(false)
+const selectedIndex = ref(-1)
 
-const categories = ['Sách giáo khoa', 'Điện tử', 'Đồ dùng học tập', 'Quần áo']
+let debounceTimer = null
+let searchTimer = null
+let abortController = null
+const cache = new Map()
 
-const items = ref([
-  { id: 1, name: 'Sách Toán 12', category: 'Sách giáo khoa', price: 40000, image: 'https://picsum.photos/300/200?1' },
-  { id: 2, name: 'Laptop Dell cũ', category: 'Điện tử', price: 3500000, image: 'https://picsum.photos/300/200?2' },
-  { id: 3, name: 'Bút bi Thiên Long', category: 'Đồ dùng học tập', price: 5000, image: 'https://picsum.photos/300/200?3' },
-  { id: 4, name: 'Áo khoác Khoa CNTT', category: 'Quần áo', price: 120000, image: 'https://picsum.photos/300/200?4' }
-])
+// 🧠 Input realtime
+const handleInput = () => {
+  if (isComposing.value) return
+  showDropdown.value = true
+  selectedIndex.value = -1
+  debounceSuggest()
+}
 
-const filteredItems = computed(() => {
-  let results = items.value.filter(i =>
-    i.name.toLowerCase().includes(filters.value.keyword.toLowerCase())
-  )
+// ✅ Gõ tiếng Việt
+const handleCompositionEnd = () => {
+  isComposing.value = false
+  debounceSuggest()
+}
 
-  if (filters.value.category) {
-    results = results.filter(i => i.category === filters.value.category)
+// ⏳ Gợi ý
+const debounceSuggest = () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(fetchSuggestions, 120)
+}
+
+const fetchSuggestions = async () => {
+  const q = keyword.value.trim()
+  if (!q) {
+    suggestions.value = []
+    return
   }
 
-  results = results.filter(i => i.price <= filters.value.price)
+  if (cache.has('suggest_' + q)) {
+    suggestions.value = cache.get('suggest_' + q)
+    return
+  }
 
-  if (filters.value.sort === 'asc') results.sort((a, b) => a.price - b.price)
-  if (filters.value.sort === 'desc') results.sort((a, b) => b.price - a.price)
+  if (abortController) abortController.abort()
+  abortController = new AbortController()
 
-  return results
+  loadingSuggest.value = true
+  try {
+    const res = await fetch(`http://localhost:8001/api/search-es/suggest?q=${encodeURIComponent(q)}`, {
+      signal: abortController.signal,
+    })
+    const data = await res.json()
+    suggestions.value = data.suggestions || []
+    cache.set('suggest_' + q, suggestions.value)
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error('Suggest error:', e)
+  } finally {
+    loadingSuggest.value = false
+  }
+}
+
+// 🔍 Instant search (gõ tới đâu ra kết quả)
+watch(keyword, (newVal) => {
+  clearTimeout(searchTimer)
+  if (!newVal.trim()) {
+    results.value = []
+    return
+  }
+  if (newVal.trim().length < 2) return
+
+  searchTimer = setTimeout(() => {
+    searchProducts()
+  }, 300)
 })
 
-const applyFilters = () => {
-  console.log('Filters applied:', filters.value)
+// 🔎 API chính
+const searchProducts = async () => {
+  const q = keyword.value.trim()
+  if (!q) return
+
+  if (cache.has('search_' + q)) {
+    results.value = cache.get('search_' + q)
+    return
+  }
+
+  loading.value = true
+  showDropdown.value = false
+
+  try {
+    const res = await fetch(`http://localhost:8001/api/search-es?q=${encodeURIComponent(q)}`)
+    const data = await res.json()
+    results.value = data.data || []
+    cache.set('search_' + q, results.value)
+  } catch (err) {
+    console.error('Search error:', err)
+  } finally {
+    setTimeout(() => (loading.value = false), 200) // cho hiệu ứng fade-in
+  }
 }
+
+// ⌨️ Điều hướng phím
+const moveDown = () => {
+  if (!suggestions.value.length) return
+  selectedIndex.value = (selectedIndex.value + 1) % suggestions.value.length
+  keyword.value = suggestions.value[selectedIndex.value]
+}
+
+const moveUp = () => {
+  if (!suggestions.value.length) return
+  selectedIndex.value =
+    (selectedIndex.value - 1 + suggestions.value.length) % suggestions.value.length
+  keyword.value = suggestions.value[selectedIndex.value]
+}
+
+const handleEnter = () => {
+  if (selectedIndex.value >= 0 && suggestions.value[selectedIndex.value]) {
+    selectSuggestion(suggestions.value[selectedIndex.value])
+  } else {
+    searchProducts()
+  }
+}
+
+const selectSuggestion = (item) => {
+  keyword.value = item
+  showDropdown.value = false
+  searchProducts()
+}
+
+const hideDropdown = () => setTimeout(() => (showDropdown.value = false), 200)
+
+const highlight = (text) => {
+  const q = keyword.value
+  if (!q) return text
+  const regex = new RegExp(`(${q})`, 'gi')
+  return text.replace(regex, '<mark class="bg-yellow-200">$1</mark>')
+}
+
+const formatPrice = (p) => Number(p).toLocaleString('vi-VN')
 </script>
 
 <style scoped>
-/* Một số hiệu ứng nhẹ */
-input[type="range"] {
-  cursor: pointer;
+/* 💫 Hiệu ứng shimmer */
+.shimmer {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* ✨ Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 </style>
