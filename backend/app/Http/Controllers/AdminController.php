@@ -32,6 +32,8 @@ class AdminController extends Controller
 
     public function pendingListings(Request $request): JsonResponse
     {
+        \Log::info('PendingListings called', ['request' => $request->all()]);
+        
         $query = Listing::where('status', 'pending')
             ->with(['seller', 'category', 'images']);
 
@@ -54,7 +56,11 @@ class AdminController extends Controller
             });
         }
 
+        \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
+        
         $listings = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        \Log::info('PendingListings result', ['count' => $listings->count(), 'data' => $listings->items()]);
 
         return response()->json($listings);
     }

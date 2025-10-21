@@ -1,49 +1,8 @@
 <template>
   <div id="app">
     <div class="min-h-screen bg-gray-50">
-      <!-- Simple Header -->
-      <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-          <div class="flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span class="text-white font-bold text-lg">T</span>
-              </div>
-              <span class="text-xl font-bold text-gray-900">TDC Marketplace</span>
-            </div>
-            
-            <nav class="flex items-center space-x-4">
-              <router-link to="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Trang chủ
-              </router-link>
-              <router-link to="/listings" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Danh sách
-              </router-link>
-              <router-link to="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Đăng nhập
-              </router-link>
-              <router-link to="/register" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
-                Đăng ký
-              </router-link>
-              <router-link to="/dashboard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Dashboard Page
-              </router-link>
-              <router-link to="/panel" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Panel Page
-              </router-link>
-              <router-link to="/userpanel" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                User Page
-              </router-link>
-              <router-link to="/listwish" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                List wish page
-              </router-link>
-              <router-link to="/listingcard" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Listing Card page
-              </router-link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <!-- Header Component -->
+      <Header />
 
       <!-- Main Content -->
       <main>
@@ -56,7 +15,16 @@
 </template>
 
 <script setup lang="ts">
-// No script for App-level toast container
+import { onMounted } from 'vue'
+import Header from '@/components/Header.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+// Fetch user data when app starts
+onMounted(() => {
+  auth.fetchUser()
+})
 </script>
 
 <style>
