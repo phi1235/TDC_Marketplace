@@ -8,7 +8,11 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+// rbac user api
+use App\Http\Controllers\UserController;
+
 use App\Http\Controllers\ElasticSearchController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,6 +33,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('/search-es', [ElasticSearchController::class, 'index']);
+Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
 
 
 // Listings routes (public)
@@ -86,4 +91,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
+
+    
 });
+//rbac api user
+Route::get('/user/current', [UserController::class, 'currentUser']);
+Route::get('/users', [UserController::class, 'allUsers']);
+//search dashboard
+Route::get('/users/search', [UserController::class, 'search']);
+
+
+// create api test role user_error
+Route::get('/auth/current-role', function (Request $request) {
+    // Giả lập user hiện tại
+    return response()->json([
+        'id' => 2,
+        'name' => 'Nguyễn Văn A',
+        'email' => 'nguyenvana@tdc.edu.vn',
+        'role' => 'user',
+    ]);
+});
+
+//list_wish
+Route::get('/wishes', [WishlistController::class, 'index']);

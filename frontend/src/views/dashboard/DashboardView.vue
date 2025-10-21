@@ -1,4 +1,51 @@
-<script>
+<script setup lang="ts">
+import {ref, onMounted, computed } from 'vue'
+import { getAllUsers, searchUsers} from '@/services/user';
+//
+const users = ref<User[]>([]);
+
+//get api all user
+const fetchUsers = async() => {
+  try{
+    users.value = await getAllUsers();
+    for(let i = 0; i < users.value.length; i++){
+      console.log(users.value[i]);
+    }
+  }catch(error){
+    console.error('Error fetching users:', error)
+  }
+}
+
+//getapi search
+const keyword = ref('');
+
+const search = async () => {
+  try {
+    users.value = await searchUsers(keyword.value)
+  } catch (error) {
+    console.error('Error searching users:', error)
+  }
+}
+//onMounted: gọi hàm lên, hay dùng gọi api
+onMounted(() => {
+  fetchUsers();
+})
+
+// Computed filtered theo dropdown
+const selectedRole = ref('all');
+const filteredUsers = computed(() => {
+  // all user
+  if (selectedRole.value === 'all') return users.value
+  //user is_active
+  if (selectedRole.value === 'active') {
+    return users.value.filter(user => user.is_active)
+  }
+  //filter() lọc dữ liệu mảng, trả về dữ liệu mới
+  //role 1 là admin 2 là user, user.role trả về 2 cái
+  return users.value.filter(user => user.role === selectedRole.value)
+})
+
+
 </script>
 <template>
   <div class="dashboard">
@@ -11,25 +58,31 @@
       <h2 class="title">DASHBOARD</h2>
       <ul class="list-items">
         <li class="item active"><a href="#">USERS</a></li>
-        <li class="item"><a href="#">LISTINGS</a></li>
-        <li class="item"><a href="#">PENDING</a></li>
+        <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
+        <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
         <li class="item"><a href="#">REPORTS</a></li>
       </ul>
     </nav>
 
     <!-- CONTENT -->
     <main class="content">
+
       <div class="func">
-        <div class="total">Tổng số: <b>999</b></div>
+        <div class="total">Tổng số: <b>{{ users.length }}</b></div>
 
         <div class="search">
-          <input type="search" placeholder="Tìm kiếm..." />
-          <button>Tìm</button>
+          <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
+              <!-- Button -->
+          <button id="btn_search"
+            @click="search"
+            class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
+            Tìm
+          </button>
         </div>
 
         <div class="filter">
           <label for="role">Bộ lọc:</label>
-          <select id="role" name="role">
+          <select id="role" v-model="selectedRole" name="role">
             <option value="all">Tất cả</option>
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -56,7 +109,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <!-- <tr>
               <td>1</td>
               <td>#001</td>
               <td>Trương Tuấn Dũng</td>
@@ -67,7 +120,21 @@
               <td>✅</td>
               <td>2025-10-15</td>
               <td>24</td>
-            </tr>
+            </tr> -->
+            <tr v-for="(user, index) in filteredUsers" :key="user.id">
+          <td class="px-2 py-1 border">{{ index + 1 }}</td>
+          <td class="px-2 py-1 border">{{ user.id }}</td>
+          <td class="px-2 py-1 border">{{ user.name }}</td>
+          <td class="px-2 py-1 border">{{ user.email }}</td>
+          <td class="px-2 py-1 border">{{ user.role }}</td>
+          <td class="px-2 py-1 border">{{ user.phone }}</td>
+          <td class="px-2 py-1 border">
+            <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
+          </td>
+          <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+          <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
+          <td class="px-2 py-1 border">{{ user.login_count }}</td>
+        </tr>
           </tbody>
         </table>
 
@@ -80,9 +147,27 @@
           <button class="page-btn next">Sau »</button>
         </div>
       </div>
+
+      <!-- Router outlet cho vùng bên phải -->
+      <router-view />
+
     </main>
   </div>
 </template>
+
+<style scoped>
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.badge.pending { background-color: #f59e0b; }
+.badge.approved { background-color: #10b981; }
+.badge.rejected { background-color: #ef4444; }
+</style>
 
 <style scoped>
 /* RESET */
@@ -239,4 +324,12 @@ th, td {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+
+#btn_search{
+  padding: 1px 10px;
+}
+=======
+.btn-primary { background:#2563eb; color:#fff; padding:10px 14px; border-radius:8px; }
+
 </style>
