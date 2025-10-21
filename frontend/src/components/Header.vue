@@ -46,6 +46,61 @@
             Danh sách
           </router-link>
 
+          <!-- Test links dropdown for team -->
+          <div class="relative test-menu-container">
+            <button
+              @click="showTestMenu = !showTestMenu"
+              class="flex items-center space-x-1 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              <span>Test Pages</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+
+            <!-- Test pages dropdown -->
+            <div
+              v-if="showTestMenu"
+              class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+            >
+              <router-link
+                to="/dashboard"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false"
+              >
+                Dashboard Page
+              </router-link>
+              <router-link
+                to="/panel"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false"
+              >
+                Panel Page
+              </router-link>
+              <router-link
+                to="/userpanel"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false"
+              >
+                User Page
+              </router-link>
+              <router-link
+                to="/listwish"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false"
+              >
+                List wish page
+              </router-link>
+              <router-link
+                to="/listingcard"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false"
+              >
+                Listing Card page
+              </router-link>
+            </div>
+          </div>
+
           <!-- Auth Buttons -->
           <div v-if="!isAuthenticated" class="flex items-center space-x-2">
             <router-link
@@ -60,6 +115,29 @@
             >
               Đăng ký
             </router-link>
+          <div class="flex items-center space-x-2">
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <template v-if="!auth.isAuthenticated">
+              <router-link
+                to="/login"
+                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Đăng nhập
+              </router-link>
+              <router-link
+                to="/register"
+                class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Đăng ký
+              </router-link>
+            </template>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <template v-else>
+              <!-- Menu cho admin -->
+              <template v-if="auth.isAdmin">
+                <router-link
+                  to="/dashboard"
           </div>
 
           <!-- User Menu -->
@@ -158,5 +236,37 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('.relative')) {
     showUserMenu.value = false
   }
+const handleLogout = async () => {
+  try {
+    await auth.logout()
+    showToast('Đăng xuất thành công', 'success')
+    router.push('/')
+    showUserMenu.value = false
+  } catch (error) {
+    showToast('Đăng xuất thất bại', 'error')
+  }
+}
+
+// Close dropdowns when clicking outside
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement
+  
+  // Close user menu if clicking outside
+  if (!target.closest('.user-menu-container')) {
+    showUserMenu.value = false
+  }
+  
+  // Close test menu if clicking outside
+  if (!target.closest('.test-menu-container')) {
+    showTestMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>

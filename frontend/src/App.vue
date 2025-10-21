@@ -45,6 +45,8 @@
           </div>
         </div>
       </header>
+      <!-- Header Component -->
+      <Header />
 
       <!-- Main Content -->
       <main>
@@ -57,12 +59,13 @@
 </template>
 
 <script setup lang="ts">
-import Header from '@/components/Header.vue'
 import { onMounted } from 'vue'
+import Header from '@/components/Header.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
+// Fetch user data when app starts
 onMounted(() => {
   auth.fetchUser()
 })
