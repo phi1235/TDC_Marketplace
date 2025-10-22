@@ -1,6 +1,6 @@
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
-export function showToast(message: string, type: ToastType = 'info') {
+export function showToast(type: ToastType, message: string) {
   const root = document.getElementById('toast-root')
   if (!root) return
 
@@ -14,7 +14,8 @@ export function showToast(message: string, type: ToastType = 'info') {
     warning: 'bg-yellow-600',
   }
 
-  el.classList.add(...colors[type].split(' '))
+  const colorClass = colors[type] || colors.info
+  el.classList.add(...colorClass.split(' '))
   el.innerHTML = `<div class="font-medium">${message}</div>`
 
   root.appendChild(el)

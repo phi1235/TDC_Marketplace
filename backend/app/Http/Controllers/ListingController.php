@@ -9,7 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ListingController extends Controller
 {
@@ -50,7 +51,8 @@ class ListingController extends Controller
         $sortOrder = $request->get('order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $listings = $query->paginate(20);
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->paginate($perPage);
 
         return response()->json($listings);
     }
@@ -83,6 +85,8 @@ class ListingController extends Controller
             
             // Handle image uploads with optimization
             if ($request->hasFile('images')) {
+                $manager = new ImageManager(new Driver());
+                
                 foreach ($request->file('images') as $file) {
                     if (!$file) { continue; }
 
@@ -92,7 +96,7 @@ class ListingController extends Controller
                     $ts = now()->format('YmdHis');
                     $dir = 'listings/'.date('Y/m/d');
 
-                    $img = Image::read($file->getPathname())->orientate();
+                    $img = $manager->read($file->getPathname());
                     $img->scaleDown(1600);
                     $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
                     $filename = $safeBase.'-'.$ts.'.'.$ext;
@@ -113,14 +117,14 @@ class ListingController extends Controller
             }
 
             // Log activity
-            $listing->auditLogs()->create([
-                'user_id' => Auth::id(),
-                'action' => 'created',
-                'old_values' => null,
-                'new_values' => $listing->toArray(),
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
+            // $listing->auditLogs()->create([
+            //     'user_id' => Auth::id(),
+            //     'action' => 'created',
+            //     'old_values' => null,
+            //     'new_values' => $listing->toArray(),
+            //     'ip_address' => request()->ip(),
+            //     'user_agent' => request()->userAgent(),
+            // ]);
 
             return response()->json([
                 'message' => 'Tin rao đã được tạo thành công và đang chờ duyệt',
@@ -281,7 +285,8 @@ class ListingController extends Controller
             });
         }
 
-        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json($listings);
     }

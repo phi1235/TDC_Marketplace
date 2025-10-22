@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { adminListingsService } from '@/services/adminListings'
 import { showToast } from '@/utils/toast'
+import { imageUrl } from '@/utils/image'
 
 const rows = ref<any[]>([])
 const total = ref(0)
@@ -43,38 +44,21 @@ async function approveOne(id: number) {
   if (loading.value) return
   loading.value = true
   try {
-    console.log('Approving listing:', id)
-    const result = await adminListingsService.approve(id)
-    console.log('Approve result:', result)
-    showToast('Duyệt thành công', 'success')
-    await fetchData()
-    
-    // Tự động chuyển sang trang listings sau 1.5 giây
-    setTimeout(() => {
-      // Chỉ chuyển nếu không còn tin pending nào
-      if (rows.value.length === 0) {
-        window.location.href = '/dashboard/listings'
-      }
-    }, 1500)
+    await adminListingsService.approve(id)
+    showToast('success', 'Duyệt thành công')
   } catch (e: any) {
-    console.error('Approve error:', e)
-    console.error('Error response:', e?.response)
-    const msg = e?.response?.data?.message || e?.message || 'Duyệt thất bại'
-    // Nếu đã duyệt bởi request trước, server trả 400 - coi như thành công
-    if (e?.response?.status === 400 && msg.includes('Chỉ có thể duyệt')) {
-      await fetchData()
-      showToast('Tin đã được duyệt', 'success')
-      
-      // Tự động chuyển sang trang listings sau 1.5 giây
-      setTimeout(() => {
-        if (rows.value.length === 0) {
-          window.location.href = '/dashboard/listings'
-        }
-      }, 1500)
+    const msg = e?.response?.data?.message || ''
+    // Thử refetch để xác định trạng thái thực tế
+    await fetchData()
+    const stillPending = rows.value.some((r) => r.id === id)
+    if (!stillPending) {
+      showToast('success', 'Tin đã được duyệt')
     } else {
-      showToast(msg, 'error')
+      showToast('error', msg || 'Duyệt thất bại')
     }
+    return
   } finally {
+    await fetchData()
     loading.value = false
   }
 }
@@ -87,37 +71,29 @@ function rejectOne(id: number) {
 
 async function confirmReject() {
   if (!selectedId.value || loading.value) return
+  const id = selectedId.value
   loading.value = true
   try {
-    await adminListingsService.reject(selectedId.value, rejectReason.value || 'Không phù hợp')
-    showToast('Từ chối thành công', 'success')
+    // Map free text to admin_notes, use enum 'other' for rejection_reason
+    await adminListingsService.reject(id, 'other', rejectReason.value || 'Không phù hợp')
+    showToast('success', 'Từ chối thành công')
     showReject.value = false
     selectedId.value = null
-    await fetchData()
-    
-    // Tự động chuyển sang trang listings sau 1.5 giây
-    setTimeout(() => {
-      // Chỉ chuyển nếu không còn tin pending nào
-      if (rows.value.length === 0) {
-        window.location.href = '/dashboard/listings'
-      }
-    }, 1500)
   } catch (e: any) {
     const msg = e?.response?.data?.message || ''
-    if (e?.response?.status === 400 && msg.includes('Chỉ có thể từ chối')) {
-      await fetchData()
-      showToast('Tin đã được xử lý', 'success')
-      
-      // Tự động chuyển sang trang listings sau 1.5 giây
-      setTimeout(() => {
-        if (rows.value.length === 0) {
-          window.location.href = '/dashboard/listings'
-        }
-      }, 1500)
+    // Thử refetch để xác định trạng thái thực tế
+    await fetchData()
+    const stillPending = rows.value.some((r) => r.id === id)
+    if (!stillPending) {
+      showToast('success', 'Tin đã từ chối thành công')
+      showReject.value = false
+      selectedId.value = null
     } else {
-      showToast(msg || 'Từ chối thất bại', 'error')
+      showToast('error', msg || 'Từ chối thất bại')
     }
+    return
   } finally {
+    await fetchData()
     loading.value = false
   }
 }
@@ -154,7 +130,7 @@ async function confirmReject() {
             <td style="padding:12px;">{{ (page-1)*perPage + i + 1 }}</td>
             <td style="padding:12px;">#{{ String(r.id).padStart(3,'0') }}</td>
             <td style="padding:12px;">
-              <img :src="r.images?.[0]?.image_path || r.thumbnail || 'https://via.placeholder.com/60'" alt="thumb"
+              <img :src="imageUrl(r.images?.[0]?.image_path || r.thumbnail) || 'https://via.placeholder.com/60'" alt="thumb"
                    style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" />
             </td>
             <td style="padding:12px; max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.title }}</td>

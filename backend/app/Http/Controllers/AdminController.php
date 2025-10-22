@@ -56,6 +56,8 @@ class AdminController extends Controller
             });
         }
 
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
         \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
         
         $listings = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -109,7 +111,8 @@ class AdminController extends Controller
         $sortOrder = $request->get('order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $listings = $query->paginate(20);
+        $perPage = (int)($request->get('per_page', 10));
+        $listings = $query->paginate($perPage);
 
         return response()->json($listings);
     }
@@ -118,14 +121,6 @@ class AdminController extends Controller
     {
         $stats = [
             'total_listings' => Listing::count(),
-            'pending_listings' => Listing::where('status', 'pending')->count(),
-            'approved_listings' => Listing::where('status', 'approved')->count(),
-            'rejected_listings' => Listing::where('status', 'rejected')->count(),
-            'active_listings' => Listing::where('status', 'approved')->where('status', 'active')->count(),
-            'inactive_listings' => Listing::where('status', 'approved')->where('status', 'inactive')->count(),
-            'today_listings' => Listing::whereDate('created_at', today())->count(),
-            'this_week_listings' => Listing::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-            'this_month_listings' => Listing::whereMonth('created_at', now()->month)->count(),
         ];
 
         return response()->json($stats);
