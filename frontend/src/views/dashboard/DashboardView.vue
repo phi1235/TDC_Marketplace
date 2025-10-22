@@ -57,7 +57,7 @@ const filteredUsers = computed(() => {
     <nav class="navbar">
       <h2 class="title">DASHBOARD</h2>
       <ul class="list-items">
-        <li class="item active"><a href="#">USERS</a></li>
+        <li class="item"><router-link to="/dashboard">USERS</router-link></li>
         <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
         <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
         <li class="item"><a href="#">REPORTS</a></li>
@@ -66,91 +66,80 @@ const filteredUsers = computed(() => {
 
     <!-- CONTENT -->
     <main class="content">
+      <!-- Chỉ hiển thị danh sách người dùng khi ở route /dashboard -->
+      <div v-if="$route.path === '/dashboard'">
+        <div class="func">
+          <div class="total">Tổng số: <b>{{ users.length }}</b></div>s không hiển
 
-      <div class="func">
-        <div class="total">Tổng số: <b>{{ users.length }}</b></div>
+          <div class="search">
+            <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
+                <!-- Button -->
+            <button id="btn_search"
+              @click="search"
+              class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
+              Tìm
+            </button>
+          </div>
 
-        <div class="search">
-          <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
-              <!-- Button -->
-          <button id="btn_search"
-            @click="search"
-            class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
-            Tìm
-          </button>
+          <div class="filter">
+            <label for="role">Bộ lọc:</label>
+            <select id="role" v-model="selectedRole" name="role">
+              <option value="all">Tất cả</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+              <option value="active">Active</option>
+            </select>
+          </div>
         </div>
 
-        <div class="filter">
-          <label for="role">Bộ lọc:</label>
-          <select id="role" v-model="selectedRole" name="role">
-            <option value="all">Tất cả</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-            <option value="active">Active</option>
-          </select>
-        </div>
-      </div>
+        <div class="inf">
+          <h2>Danh sách người dùng</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>ID</th>
+                <th>Tên</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Phone</th>
+                <th>Avatar</th>
+                <th>Active</th>
+                <th>Last Login</th>
+                <th>Login Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(user, index) in filteredUsers" :key="user.id">
+            <td class="px-2 py-1 border">{{ index + 1 }}</td>
+            <td class="px-2 py-1 border">{{ user.id }}</td>
+            <td class="px-2 py-1 border">{{ user.name }}</td>
+            <td class="px-2 py-1 border">{{ user.email }}</td>
+            <td class="px-2 py-1 border">{{ user.role }}</td>
+            <td class="px-2 py-1 border">{{ user.phone }}</td>
+            <td class="px-2 py-1 border">
+              <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
+            </td>
+            <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+            <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
+            <td class="px-2 py-1 border">{{ user.login_count }}</td>
+          </tr>
+            </tbody>
+          </table>
 
-      <div class="inf">
-        <h2>Danh sách người dùng</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>STT</th>
-              <th>ID</th>
-              <th>Tên</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Avatar</th>
-              <th>Active</th>
-              <th>Last Login</th>
-              <th>Login Count</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- <tr>
-              <td>1</td>
-              <td>#001</td>
-              <td>Trương Tuấn Dũng</td>
-              <td>dung@example.com</td>
-              <td>Admin</td>
-              <td>0909123456</td>
-              <td><img src="https://via.placeholder.com/40" /></td>
-              <td>✅</td>
-              <td>2025-10-15</td>
-              <td>24</td>
-            </tr> -->
-            <tr v-for="(user, index) in filteredUsers" :key="user.id">
-          <td class="px-2 py-1 border">{{ index + 1 }}</td>
-          <td class="px-2 py-1 border">{{ user.id }}</td>
-          <td class="px-2 py-1 border">{{ user.name }}</td>
-          <td class="px-2 py-1 border">{{ user.email }}</td>
-          <td class="px-2 py-1 border">{{ user.role }}</td>
-          <td class="px-2 py-1 border">{{ user.phone }}</td>
-          <td class="px-2 py-1 border">
-            <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
-          </td>
-          <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
-          <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
-          <td class="px-2 py-1 border">{{ user.login_count }}</td>
-        </tr>
-          </tbody>
-        </table>
-
-        <!-- Pagination -->
-        <div class="pagination">
-          <button class="page-btn prev" disabled>« Trước</button>
-          <button class="page-btn active">1</button>
-          <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-          <button class="page-btn next">Sau »</button>
+          <!-- Pagination -->
+          <div class="pagination">
+            <button class="page-btn prev" disabled>« Trước</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn next">Sau »</button>
+          </div>
         </div>
       </div>
 
-      <!-- Router outlet cho vùng bên phải -->
-      <router-view />
-
+      <!-- Hiển thị component con khi ở route con -->
+      <router-view v-else />
     </main>
   </div>
 </template>

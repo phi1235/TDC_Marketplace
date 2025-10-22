@@ -23,8 +23,11 @@ class ListingSeeder extends Seeder
         // Bật lại kiểm tra khóa ngoại
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+        // Tạo dữ liệu mẫu với Eloquent
         $seller = User::where('role', 'user')->first() ?? User::first();
-        if (!$seller) { return; }
+        if (!$seller) { 
+            return; 
+        }
 
         // Approved samples
         $approvedSamples = [
@@ -39,7 +42,7 @@ class ListingSeeder extends Seeder
                 'location' => 'TDC Campus',
                 'views_count' => 10,
                 'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
             ],
             [
                 'seller_id' => $seller->id,
@@ -52,7 +55,7 @@ class ListingSeeder extends Seeder
                 'location' => 'Thủ Đức, TP.HCM',
                 'views_count' => 125,
                 'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
             ],
             [
                 'seller_id' => $seller->id,
@@ -65,7 +68,33 @@ class ListingSeeder extends Seeder
                 'location' => 'Quận 9, TP.HCM',
                 'views_count' => 232,
                 'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
+            ],
+            [
+                'seller_id' => $seller->id,
+                'category_id' => 1,
+                'title' => 'Bút bi Thiên Long TL-027',
+                'description' => 'Bút bi Thiên Long TL-027 màu xanh, mực đậm, viết êm.',
+                'price' => 5000,
+                'condition' => 'new',
+                'status' => 'approved',
+                'location' => 'Thủ Đức, TP.HCM',
+                'views_count' => 78,
+                'approved_at' => now(),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
+            ],
+            [
+                'seller_id' => $seller->id,
+                'category_id' => 1,
+                'title' => 'Áo khoác Khoa CNTT TDC',
+                'description' => 'Áo khoác sinh viên TDC, màu xanh đen, vải thun lạnh thoáng mát.',
+                'price' => 120000,
+                'condition' => 'new',
+                'status' => 'approved',
+                'location' => 'Dĩ An, Bình Dương',
+                'views_count' => 98,
+                'approved_at' => now(),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
             ],
         ];
 
@@ -78,8 +107,6 @@ class ListingSeeder extends Seeder
             ['Giáo trình toán cao cấp', 'Sách còn mới 90%.', 120000],
             ['Tai nghe không dây', 'Âm thanh tốt, pin bền.', 350000],
             ['Balo sinh viên', 'Balo chống nước, còn mới.', 200000],
-            ['Bút bi Thiên Long TL-027', 'Bút bi Thiên Long TL-027 màu xanh, mực đậm, viết êm.', 5000],
-            ['Áo khoác Khoa CNTT TDC', 'Áo khoác sinh viên TDC, màu xanh đen, vải thun lạnh thoáng mát.', 120000],
         ];
 
         foreach ($pendingSamples as [$title, $desc, $price]) {
@@ -108,7 +135,7 @@ class ListingSeeder extends Seeder
             'location' => 'Khu B',
             'views_count' => 0,
             'rejected_at' => now(),
-            'rejected_by' => User::where('role', 'admin')->value('id'),
+            'rejected_by' => User::where('role', 'admin')->value('id') ?? 1,
             'rejection_reason' => 'policy_violation',
         ]);
     }

@@ -7,10 +7,8 @@ export interface Listing {
   title: string
   slug: string
   description: string
-  condition_grade: 'A' | 'B' | 'C' | 'D'
+  condition: 'new' | 'like_new' | 'good' | 'fair'
   price: number
-  original_price?: number
-  currency: string
   status: 'pending' | 'approved' | 'rejected' | 'sold' | 'archived'
   featured_until?: string
   view_count: number
@@ -55,10 +53,8 @@ export interface CreateListingData {
   category_id: number
   title: string
   description: string
-  condition_grade: 'A' | 'B' | 'C' | 'D'
+  condition: 'new' | 'like_new' | 'good' | 'fair'
   price: number
-  original_price?: number
-  currency: string
   images: File[]
 }
 
@@ -66,10 +62,8 @@ export interface UpdateListingData {
   category_id?: number
   title?: string
   description?: string
-  condition_grade?: 'A' | 'B' | 'C' | 'D'
+  condition?: 'new' | 'like_new' | 'good' | 'fair'
   price?: number
-  original_price?: number
-  currency?: string
   images?: File[]
 }
 
@@ -112,12 +106,8 @@ export const listingsService = {
     formData.append('category_id', data.category_id.toString())
     formData.append('title', data.title)
     formData.append('description', data.description)
-    formData.append('condition_grade', data.condition_grade)
+    formData.append('condition', data.condition)
     formData.append('price', data.price.toString())
-    if (data.original_price) {
-      formData.append('original_price', data.original_price.toString())
-    }
-    formData.append('currency', data.currency)
     
     // Add images
     data.images.forEach((image, index) => {
@@ -136,13 +126,11 @@ export const listingsService = {
     const formData = new FormData()
     
     // Add text fields
-    if (data.category_id) formData.append('category_id', data.category_id.toString())
-    if (data.title) formData.append('title', data.title)
-    if (data.description) formData.append('description', data.description)
-    if (data.condition_grade) formData.append('condition_grade', data.condition_grade)
-    if (data.price) formData.append('price', data.price.toString())
-    if (data.original_price) formData.append('original_price', data.original_price.toString())
-    if (data.currency) formData.append('currency', data.currency)
+    if (data.category_id !== undefined) formData.append('category_id', data.category_id.toString())
+    if (data.title !== undefined) formData.append('title', data.title)
+    if (data.description !== undefined) formData.append('description', data.description)
+    if (data.condition !== undefined) formData.append('condition', data.condition)
+    if (data.price !== undefined) formData.append('price', data.price.toString())
     
     // Add images if provided
     if (data.images) {
@@ -151,7 +139,7 @@ export const listingsService = {
       })
     }
 
-    const response = await api.put(`/listings/${id}`, formData, {
+    const response = await api.post(`/listings/${id}?_method=PUT`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

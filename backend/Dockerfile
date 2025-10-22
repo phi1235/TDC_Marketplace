@@ -41,13 +41,12 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
 
-# Expose port 9000 and start php-fpm server
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# EXPOSE 9000
-
-
-# 🔹 Expose port 8000
+# Expose port 8000
 EXPOSE 8000
 
-# 🔹 Start Laravel server directly
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
