@@ -155,5 +155,15 @@ export const listingsService = {
   async getMyListings(filters: ListingFilters = {}): Promise<PaginatedResponse<Listing>> {
     const response = await api.get('/my-listings', { params: filters })
     return response.data
+  },
+
+  async duplicateListing(id: number): Promise<{ message: string; listing: Listing }> {
+    const response = await api.post(`/listings/${id}/duplicate`)
+    return response.data
+  },
+
+  async toggleStatus(id: number): Promise<{ message: string; listing: Listing }> {
+    const response = await api.post(`/listings/${id}/toggle-status`)
+    return response.data
   }
 }

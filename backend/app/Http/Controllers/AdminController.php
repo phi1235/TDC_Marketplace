@@ -222,9 +222,13 @@ class AdminController extends Controller
                 ], 400);
             }
 
+            // Xóa "(Bản sao X)" khỏi title khi duyệt tin
+            $cleanTitle = preg_replace('/\s*\(Bản sao\s*\d*\)\s*$/u', '', $listing->title);
+
             // Avoid triggering Scout indexing if not configured
-            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
+            Listing::withoutSyncingToSearch(function () use ($request, $listing, $cleanTitle) {
                 $listing->update([
+                    'title' => $cleanTitle,
                     'status' => 'approved',
                     'admin_notes' => $request->admin_notes,
                     'approved_at' => now(),
