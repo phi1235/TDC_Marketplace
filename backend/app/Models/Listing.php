@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Laravel\Scout\Searchable;
 
 class Listing extends Model
@@ -28,6 +29,8 @@ class Listing extends Model
         'approved_by',
         'rejected_at',
         'rejected_by',
+        'duplicate_count',
+        'duplicate_source_id',
     ];
 
     protected $casts = [
@@ -76,9 +79,9 @@ class Listing extends Model
         return $this->hasMany(Order::class);
     }
 
-    public function auditLogs(): HasMany
+    public function auditLogs(): MorphMany
     {
-        return $this->hasMany(AuditLog::class, 'auditable_id')->where('auditable_type', self::class);
+        return $this->morphMany(AuditLog::class, 'auditable');
     }
 
     public function approver(): BelongsTo
@@ -89,6 +92,16 @@ class Listing extends Model
     public function rejecter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
+    }
+
+    public function duplicateSource(): BelongsTo
+    {
+        return $this->belongsTo(Listing::class, 'duplicate_source_id');
+    }
+
+    public function duplicates(): HasMany
+    {
+        return $this->hasMany(Listing::class, 'duplicate_source_id');
     }
 
     public function toSearchableArray(): array
