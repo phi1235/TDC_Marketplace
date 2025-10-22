@@ -23,84 +23,26 @@ class ListingSeeder extends Seeder
         // Bật lại kiểm tra khóa ngoại
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-
-        // Xóa bảng con trước (nếu có)
-        DB::table('listing_images')->truncate();
-
-        // Xóa bảng listings
-        DB::table('listings')->truncate();
-
-        // Bật lại kiểm tra khóa ngoại
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
         // Tạo dữ liệu mẫu với Eloquent
         $seller = User::where('role', 'user')->first() ?? User::first();
-        if (!$seller) { return; }
+        if (!$seller) { 
+            return; 
+        }
 
         // Approved samples
-        $approvedListings = [
+        $approvedSamples = [
             [
+                'seller_id' => $seller->id,
+                'category_id' => 1,
                 'title' => 'Laptop học tập 14 inch',
                 'description' => 'Máy chạy tốt, pin 5h.',
                 'price' => 7500000,
                 'condition' => 'good',
-
+                'status' => 'approved',
                 'location' => 'TDC Campus',
                 'views_count' => 10,
-            ],
-            [
-                'title' => 'Sách Giáo Khoa Toán 12',
-                'description' => 'Bộ sách giáo khoa Toán lớp 12 – bản chuẩn của Bộ GD&ĐT.',
-                'price' => 40000,
-                'condition' => 'like_new',
-                'location' => 'Thủ Đức, TP.HCM',
-                'views_count' => 125,
-            ],
-            [
-                'title' => 'Laptop Dell Inspiron Cũ',
-                'description' => 'Laptop Dell cũ phù hợp cho sinh viên học CNTT, cấu hình Core i5, SSD 256GB.',
-                'price' => 3500000,
-                'condition' => 'used',
-                'location' => 'Quận 9, TP.HCM',
-                'views_count' => 232,
-            ],
-            [
-                'title' => 'Bút bi Thiên Long TL-027',
-                'description' => 'Bút bi Thiên Long TL-027 màu xanh, mực đậm, viết êm.',
-                'price' => 5000,
-                'condition' => 'new',
-                'location' => 'Thủ Đức, TP.HCM',
-                'views_count' => 78,
-            ],
-            [
-                'title' => 'Áo khoác Khoa CNTT TDC',
-                'description' => 'Áo khoác sinh viên TDC, màu xanh đen, vải thun lạnh thoáng mát.',
-                'price' => 120000,
-                'condition' => 'new',
-                'location' => 'Dĩ An, Bình Dương',
-                'views_count' => 98,
-            ],
-        ];
-
-        foreach ($approvedListings as $listingData) {
-            Listing::create([
-                'seller_id' => $seller->id,
-                'category_id' => 1,
-                'title' => $listingData['title'],
-                'description' => $listingData['description'],
-                'price' => $listingData['price'],
-                'condition' => $listingData['condition'],
-                'status' => 'approved',
-                'location' => $listingData['location'],
-                'views_count' => $listingData['views_count'],
                 'approved_at' => now(),
                 'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
-            ]);
-                'status' => 'approved',
-                'location' => 'TDC Campus',
-                'views_count' => 10,
-                'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
             ],
             [
                 'seller_id' => $seller->id,
@@ -113,7 +55,7 @@ class ListingSeeder extends Seeder
                 'location' => 'Thủ Đức, TP.HCM',
                 'views_count' => 125,
                 'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
             ],
             [
                 'seller_id' => $seller->id,
@@ -126,7 +68,33 @@ class ListingSeeder extends Seeder
                 'location' => 'Quận 9, TP.HCM',
                 'views_count' => 232,
                 'approved_at' => now(),
-                'approved_by' => User::where('role', 'admin')->value('id'),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
+            ],
+            [
+                'seller_id' => $seller->id,
+                'category_id' => 1,
+                'title' => 'Bút bi Thiên Long TL-027',
+                'description' => 'Bút bi Thiên Long TL-027 màu xanh, mực đậm, viết êm.',
+                'price' => 5000,
+                'condition' => 'new',
+                'status' => 'approved',
+                'location' => 'Thủ Đức, TP.HCM',
+                'views_count' => 78,
+                'approved_at' => now(),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
+            ],
+            [
+                'seller_id' => $seller->id,
+                'category_id' => 1,
+                'title' => 'Áo khoác Khoa CNTT TDC',
+                'description' => 'Áo khoác sinh viên TDC, màu xanh đen, vải thun lạnh thoáng mát.',
+                'price' => 120000,
+                'condition' => 'new',
+                'status' => 'approved',
+                'location' => 'Dĩ An, Bình Dương',
+                'views_count' => 98,
+                'approved_at' => now(),
+                'approved_by' => User::where('role', 'admin')->value('id') ?? 1,
             ],
         ];
 
@@ -139,8 +107,6 @@ class ListingSeeder extends Seeder
             ['Giáo trình toán cao cấp', 'Sách còn mới 90%.', 120000],
             ['Tai nghe không dây', 'Âm thanh tốt, pin bền.', 350000],
             ['Balo sinh viên', 'Balo chống nước, còn mới.', 200000],
-            ['Bút bi Thiên Long TL-027', 'Bút bi Thiên Long TL-027 màu xanh, mực đậm, viết êm.', 5000],
-            ['Áo khoác Khoa CNTT TDC', 'Áo khoác sinh viên TDC, màu xanh đen, vải thun lạnh thoáng mát.', 120000],
         ];
 
         foreach ($pendingSamples as [$title, $desc, $price]) {
@@ -174,5 +140,3 @@ class ListingSeeder extends Seeder
         ]);
     }
 }
-}
-

@@ -9,7 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ListingController extends Controller
 {
@@ -84,6 +85,8 @@ class ListingController extends Controller
             
             // Handle image uploads with optimization
             if ($request->hasFile('images')) {
+                $manager = new ImageManager(new Driver());
+                
                 foreach ($request->file('images') as $file) {
                     if (!$file) { continue; }
 
@@ -93,7 +96,7 @@ class ListingController extends Controller
                     $ts = now()->format('YmdHis');
                     $dir = 'listings/'.date('Y/m/d');
 
-                    $img = Image::read($file->getPathname())->orientate();
+                    $img = $manager->read($file->getPathname());
                     $img->scaleDown(1600);
                     $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
                     $filename = $safeBase.'-'.$ts.'.'.$ext;

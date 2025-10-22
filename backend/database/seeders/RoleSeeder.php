@@ -11,8 +11,8 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // Create roles
-        $adminRole = Role::create(['name' => 'admin']);
-        $userRole = Role::create(['name' => 'user']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $userRole = Role::firstOrCreate(['name' => 'user']);
 
         // Create permissions
         $permissions = [
@@ -32,12 +32,12 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Assign permissions to roles
-        $adminRole->givePermissionTo(Permission::all());
-        $userRole->givePermissionTo([
+        $adminRole->syncPermissions(Permission::all());
+        $userRole->syncPermissions([
             'listings.create',
             'listings.edit',
             'listings.delete',

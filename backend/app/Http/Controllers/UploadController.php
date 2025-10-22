@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class UploadController extends Controller
 {
@@ -19,6 +20,7 @@ class UploadController extends Controller
         $files = is_array($request->file('images')) ? $request->file('images') : [$request->file('images')];
 
         $results = [];
+        $manager = new ImageManager(new Driver());
 
         foreach ($files as $file) {
             if (!$file) {
@@ -33,8 +35,7 @@ class UploadController extends Controller
             $dir = 'uploads/'.date('Y/m/d');
 
             // Read image
-            $image = Image::read($file->getPathname())
-                ->orientate();
+            $image = $manager->read($file->getPathname());
 
             // Cap max dimensions to save bandwidth (e.g., 1600px longest side)
             $imageMax = clone $image;

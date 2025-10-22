@@ -315,6 +315,10 @@ const removeFile = (index) => {
 
 // Submit form
 const submitForm = async () => {
+  console.log('🎯 [submitForm] Form submitted!')
+  console.log('📋 Form data:', form)
+  console.log('🖼️ Selected files:', selectedFiles.value)
+  
   if (!authStore.isAuthenticated) {
     showToast('error', 'Vui lòng đăng nhập để đăng tin')
     router.push('/login')
@@ -337,13 +341,17 @@ const submitForm = async () => {
       images: selectedFiles.value.map(item => item.file)
     }
 
+    console.log('📦 Payload prepared:', formData)
+    console.log('📤 Calling listingsService.createListing...')
+
     const response = await listingsService.createListing(formData)
     
+    console.log('✅ Listing created successfully:', response)
     showToast('success', 'Đăng tin thành công! Tin rao đang chờ duyệt.')
     router.push('/my-listings')
     
   } catch (error) {
-    console.error('Error creating listing:', error)
+    console.error('❌ Error creating listing:', error)
     
     if (error.response?.status === 422) {
       errors.value = error.response.data.errors

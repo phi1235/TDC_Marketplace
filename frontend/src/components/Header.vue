@@ -115,84 +115,106 @@
             >
               Đăng ký
             </router-link>
-          <div class="flex items-center space-x-2">
-            <!-- Hiển thị khi chưa đăng nhập -->
-            <template v-if="!auth.isAuthenticated">
-              <router-link
-                to="/login"
-                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Đăng nhập
-              </router-link>
-              <router-link
-                to="/register"
-                class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Đăng ký
-              </router-link>
-            </template>
-
-            <!-- Hiển thị khi đã đăng nhập -->
-            <template v-else>
-              <!-- Menu cho admin -->
-              <template v-if="auth.isAdmin">
-                <router-link
-                  to="/dashboard"
           </div>
 
-          <!-- User Menu -->
           <div v-else class="flex items-center space-x-2">
-            <router-link
-              to="/create-listing"
-              class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Đăng tin
-            </router-link>
-            <router-link
-              to="/my-listings"
-              class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Tin của tôi
-            </router-link>
-            <div class="relative">
-              <button
-                @click="toggleUserMenu"
-                class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            <!-- Menu cho admin -->
+            <template v-if="auth.isAdmin">
+              <router-link
+                to="/dashboard"
+                class="flex items-center space-x-1 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
               >
-                {{ user?.name }}
-                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
+                Quản trị
+              </router-link>
               
-              <!-- Dropdown Menu -->
-              <div
-                v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-              >
-                <router-link
-                  to="/profile"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="showUserMenu = false"
-                >
-                  Hồ sơ
-                </router-link>
-                <router-link
-                  v-if="isAdmin"
-                  to="/dashboard"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="showUserMenu = false"
-                >
-                  Quản trị
-                </router-link>
+              <!-- Admin User Menu -->
+              <div class="relative user-menu-container">
                 <button
-                  @click="handleLogout"
-                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="toggleUserMenu"
+                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Đăng xuất
+                  {{ user?.name }}
+                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
                 </button>
+                
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showUserMenu"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                >
+                  <router-link
+                    to="/profile"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false"
+                  >
+                    Hồ sơ
+                  </router-link>
+                  <button
+                    @click="handleLogout"
+                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
               </div>
-            </div>
+            </template>
+
+            <!-- User Menu -->
+            <template v-else>
+              <router-link
+                to="/create-listing"
+                class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Đăng tin
+              </router-link>
+              <router-link
+                to="/my-listings"
+                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Tin của tôi
+              </router-link>
+              <div class="relative user-menu-container">
+                <button
+                  @click="toggleUserMenu"
+                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  {{ user?.name }}
+                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div
+                  v-if="showUserMenu"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+                >
+                  <router-link
+                    to="/profile"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false"
+                  >
+                    Hồ sơ
+                  </router-link>
+                  <router-link
+                    v-if="isAdmin"
+                    to="/dashboard"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false"
+                  >
+                    Quản trị
+                  </router-link>
+                  <button
+                    @click="handleLogout"
+                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              </div>
+            </template>
           </div>
         </nav>
       </div>
@@ -201,19 +223,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { showToast } from '@/utils/toast'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const auth = useAuthStore()
 
 const searchQuery = ref('')
 const showUserMenu = ref(false)
+const showTestMenu = ref(false)
 
-const isAuthenticated = computed(() => authStore.isAuthenticated)
-const user = computed(() => authStore.user)
-const isAdmin = computed(() => authStore.isAdmin)
+const isAuthenticated = computed(() => auth.isAuthenticated)
+const user = computed(() => auth.user)
+const isAdmin = computed(() => auth.isAdmin)
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
@@ -225,17 +249,6 @@ const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
 }
 
-const handleLogout = async () => {
-  await authStore.logout()
-  showUserMenu.value = false
-  router.push('/')
-}
-
-// Close menu when clicking outside
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.relative')) {
-    showUserMenu.value = false
-  }
 const handleLogout = async () => {
   try {
     await auth.logout()
