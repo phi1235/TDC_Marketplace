@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Log; 
 
 class ElasticSearchService
 {
@@ -141,5 +141,105 @@ class ElasticSearchService
     ]);
 
     return $response->ok() || $response->status() === 400;
+}
+public function logSearch(string $keyword, int $resultsCount, ?int $userId = null): bool
+{
+    try {
+        $payload = [
+            'user_id' => ($userId ?? 0),
+            'keyword' => $keyword,
+            'timestamp' => now()->toISOString(),
+            'results_count' => $resultsCount,
+        ];
+
+        $res = Http::withHeaders(['Content-Type' => 'application/json'])
+            ->post("{$this->baseUrl}/search_history/_doc", $payload);
+
+        return $res->successful();
+    } catch (\Throwable $e) {
+        Log::error('Elasticsearch logSearch failed: '.$e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Tạo lại index search_history (mapping đơn giản cho thống kê & truy vấn theo user).
+ */
+public function recreateHistoryIndex(): bool
+{
+    // Xoá trước (nếu có)
+    try { Http::delete("{$this->baseUrl}/search_history"); } catch (\Throwable $e) {}
+    usleep(300000); // 0.3s
+
+    $body = [
+        'settings' => [
+            'number_of_shards' => 1,
+            'number_of_replicas' => 0,
+        ],
+        'mappings' => [
+            'properties' => [
+                'user_id'       => ['type' => 'keyword'],
+                'keyword'       => ['type' => 'text', 'fields' => ['keyword' => ['type' => 'keyword']]],
+                'timestamp'     => ['type' => 'date'],
+                'results_count' => ['type' => 'integer'],
+            ]
+        ]
+    ];
+
+    $res = Http::withHeaders(['Content-Type' => 'application/json'])
+        ->put("{$this->baseUrl}/search_history", $body);
+
+    Log::info('recreateHistoryIndex', ['status' => $res->status(), 'body' => $res->body()]);
+    return $res->ok() || $res->status() === 400;
+}
+public function clearSearchHistoryByUser(?int $userId = null): bool
+{
+    $id = (string)($userId ?? 0);
+    $url = "{$this->baseUrl}/search_history/_delete_by_query?conflicts=proceed&refresh=wait_for";
+
+    try {
+        $body = [
+            'query' => [
+                'term' => ['user_id' => $id]
+            ]
+        ];
+
+        $res = \Illuminate\Support\Facades\Http::withHeaders([
+            'Content-Type' => 'application/json'
+        ])->post($url, $body);
+
+        \Illuminate\Support\Facades\Log::info('🔍 ES Delete', [
+            'user_id' => $id,
+            'url' => $url,
+            'status' => $res->status(),
+            'body' => $res->body()
+        ]);
+
+        return $res->successful();
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('❌ ES clearSearchHistoryByUser failed: ' . $e->getMessage());
+        return false;
+    }
+}
+public function deleteByQuery(string $index, array $query): array
+{
+    try {
+        $url = "{$this->baseUrl}/{$index}/_delete_by_query?conflicts=proceed&refresh=true";
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json'
+        ])->post($url, ['query' => $query]);
+
+        Log::info('🔍 ES Delete', [
+            'user_id' => auth()->id() ?? 0,
+            'url' => $url,
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        return $response->json();
+    } catch (\Throwable $e) {
+        Log::error('❌ Elasticsearch deleteByQuery failed: ' . $e->getMessage());
+        return ['error' => $e->getMessage()];
+    }
 }
 }
