@@ -12,6 +12,7 @@ export interface Listing {
   status: 'pending' | 'approved' | 'rejected' | 'sold' | 'archived'
   featured_until?: string
   view_count: number
+  views_count: number // Backend uses this field name
   favorite_count: number
   created_at: string
   updated_at: string
@@ -19,30 +20,43 @@ export interface Listing {
     id: number
     name: string
     email: string
+    phone?: string
+    avatar?: string
     seller_profile?: {
       student_id?: string
       verified_student: boolean
       rating: number
       total_ratings: number
+      phone?: string
+      address?: string
+      total_sales?: number
     }
   }
   category?: {
     id: number
     name: string
     slug: string
+    icon?: string
+    description?: string
   }
   images?: Array<{
     id: number
     image_path: string
     is_primary: boolean
-    sort_order: number
+    sort_order?: number
+    original_name?: string
+    file_size?: number
+    mime_type?: string
+    width?: number
+    height?: number
   }>
   offers?: Array<{
     id: number
-    offer_price: number
+    offer_price?: number
+    amount?: number // Backend uses this field name
     message?: string
     status: string
-    buyer: {
+    buyer?: {
       id: number
       name: string
     }
@@ -165,5 +179,19 @@ export const listingsService = {
   async toggleStatus(id: number): Promise<{ message: string; listing: Listing }> {
     const response = await api.post(`/listings/${id}/toggle-status`)
     return response.data
+  },
+
+  // Get related listings (same category)
+  async getRelatedListings(id: number, categoryId: number, limit: number = 4): Promise<Listing[]> {
+    const response = await api.get('/listings', {
+      params: {
+        category_id: categoryId,
+        per_page: limit + 1, // Get one extra to exclude current listing
+        sort: 'created_at',
+        order: 'desc'
+      }
+    })
+    // Filter out current listing
+    return response.data.data.filter((listing: Listing) => listing.id !== id).slice(0, limit)
   }
 }
