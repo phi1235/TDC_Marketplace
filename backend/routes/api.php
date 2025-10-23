@@ -6,10 +6,16 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
 use App\Http\Controllers\UserController;
+// FollowSeller
+use App\Http\Controllers\FollowSellerController;
+//SellerProfile
+use App\Models\SellerProfile;
 
 use App\Http\Controllers\ElasticSearchController;
 
@@ -34,11 +40,17 @@ Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('/search-es', [ElasticSearchController::class, 'index']);
 Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
+Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
+Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
 
 
 // Listings routes (public)
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+
+// Categories routes (public)
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -58,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-listings', [ListingController::class, 'myListings']);
     Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
     Route::post('/listings/{listing}/toggle-status', [ListingController::class, 'toggleStatus']);
+
+    // Media upload
+    Route::post('/media/upload', [UploadController::class, 'upload']);
     
     // Wishlist routes
     Route::get('/wishlists', [WishlistController::class, 'index']);
@@ -114,3 +129,21 @@ Route::get('/auth/current-role', function (Request $request) {
 
 //list_wish
 Route::get('/wishes', [WishlistController::class, 'index']);
+//follow_sellers
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/follow-sellers', [FollowSellerController::class, 'follow']);
+    Route::delete('/follow-sellers/{seller}', [FollowSellerController::class, 'unfollow']);
+    Route::get('/follow-sellers/{seller}/status', [FollowSellerController::class, 'status']);
+});
+
+
+
+// Test local không cần login
+// Route::post('/follow-toggle', [FollowSellerController::class, 'toggle']);
+// Route::get('/follow-status/{sellerId}', [FollowSellerController::class, 'status']);
+
+
+//SellerProfile
+Route::get('/sellers', function() {
+    return SellerProfile::all();
+});

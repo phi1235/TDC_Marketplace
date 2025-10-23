@@ -47,7 +47,10 @@ class CampusPickupSeeder extends Seeder
         ];
 
         foreach ($pickups as $pickup) {
-            CampusPickup::create($pickup);
+            CampusPickup::firstOrCreate(
+                ['name' => $pickup['name']],
+                $pickup
+            );
         }
     }
 }
