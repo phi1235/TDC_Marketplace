@@ -4,19 +4,29 @@
 echo "🚀 Bắt đầu khởi động Laravel..."
 
 # ⏳ Chờ MySQL và Elasticsearch sẵn sàng (10–15 giây)
-sleep 12
+sleep 10
+
+# 📦 Cài đặt dependencies
+echo "📦 Cài đặt Composer dependencies..."
+composer install --no-interaction --prefer-dist --optimize-autoloader || true
 
 # 🔧 Dọn cache cũ
+echo "🔧 Dọn dẹp cache..."
 php artisan config:clear
 php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
 
-# 🧩 Migrate & seed database (nếu chưa)
-echo "🧩 Đang migrate và seed database..."
-php artisan migrate --force --seed || true
+# 🔐 Fix permissions cho storage và cache
+echo "🔐 Thiết lập quyền truy cập..."
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
 
-# 🔍 Kiểm tra Elasticsearch index
+# 🧩 Migrate & seed database (nếu chưa có)
+echo "🧩 Đang migrate và seed database..."
+php artisan migrate --force || true
+
+# 🔎 Kiểm tra Elasticsearch index
 echo "🔎 Kiểm tra Elasticsearch..."
 count=$(curl -s http://elasticsearch:9200/_cat/indices?v | grep listings | wc -l)
 
@@ -30,6 +40,12 @@ fi
 # 🔗 Liên kết storage (đề phòng lỗi ảnh)
 php artisan storage:link || true
 
-# 🚀 Khởi chạy Laravel server
-echo "🌐 Laravel đang chạy tại http://localhost:8001"
+# ⚡ Optimize cache cho production
+echo "⚡ Tối ưu hóa cache..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 🚀 Khởi động Laravel server
+echo "🌐 Laravel đang chạy tại http://localhost:8000"
 php artisan serve --host=0.0.0.0 --port=8000

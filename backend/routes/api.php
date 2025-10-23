@@ -6,9 +6,15 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+// rbac user api
+use App\Http\Controllers\UserController;
+
 use App\Http\Controllers\ElasticSearchController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,11 +35,18 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 Route::get('/search-es', [ElasticSearchController::class, 'index']);
+Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
+Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
+Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
 
 
 // Listings routes (public)
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+
+// Categories routes (public)
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -53,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-listings', [ListingController::class, 'myListings']);
     Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
     Route::post('/listings/{listing}/toggle-status', [ListingController::class, 'toggleStatus']);
+
+    // Media upload
+    Route::post('/media/upload', [UploadController::class, 'upload']);
     
     // Wishlist routes
     Route::get('/wishlists', [WishlistController::class, 'index']);
@@ -86,10 +102,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
     });
-    // routes/api.php
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/profile', [UserController::class, 'profile']);
-    Route::post('/profile/update', [UserController::class, 'update']);
+
+    
+});
+//rbac api user
+Route::get('/user/current', [UserController::class, 'currentUser']);
+Route::get('/users', [UserController::class, 'allUsers']);
+//search dashboard
+Route::get('/users/search', [UserController::class, 'search']);
+
+
+// create api test role user_error
+Route::get('/auth/current-role', function (Request $request) {
+    // Giả lập user hiện tại
+    return response()->json([
+        'id' => 2,
+        'name' => 'Nguyễn Văn A',
+        'email' => 'nguyenvana@tdc.edu.vn',
+        'role' => 'user',
+    ]);
 });
 
-});
+//list_wish
+Route::get('/wishes', [WishlistController::class, 'index']);

@@ -33,10 +33,29 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/create-listing',
+      name: 'create-listing',
+      component: () => import('@/views/listings/CreateListingView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-listings',
+      name: 'my-listings',
+      component: () => import('@/views/listings/MyListingsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/edit-listing/:id',
+      name: 'edit-listing',
+      component: () => import('@/views/listings/EditListingView.vue'),
+      meta: { requiresAuth: true },
+      props: true,
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresAdmin: true },
       children: [
         {
           path: 'listings',
@@ -51,6 +70,31 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresAdmin: true },
         },
       ],
+    },
+    {
+      path: '/panel',
+      name: 'panel',
+      component: () => import('@/views/dashboard/ContentPanel.vue'),
+      meta: { requiresAuth: true },
+    },
+    ,
+    {
+      path: '/userpanel',
+      name: 'user_panel',
+      component: () => import('@/views/dashboard/UserPanel.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/listingcard',
+      name: 'listingcard',
+      component: () => import('@/views/dashboard/ListingCardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/listwish',
+      name: 'listwish',
+      component: () => import('@/views/dashboard/ListWishView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/profile',
@@ -74,18 +118,18 @@ const router = createRouter({
 })
 
 // Navigation guards
-// router.beforeEach((to, from, next) => {
-//   const authStore = useAuthStore()
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
   
-//   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-//     next('/login')
-//   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-//     next('/dashboard')
-//   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
-//     next('/dashboard')
-//   } else {
-//     next()
-//   }
-// })
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next('/')
+  } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/')
+  } else {
+    next()
+  }
+})
 
 export default router

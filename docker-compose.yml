@@ -34,6 +34,7 @@ services:
       - "8001:8000"
     depends_on:
       - mysql
+      - elasticsearch
     environment:
       DB_CONNECTION: mysql
       DB_HOST: mysql
@@ -87,6 +88,7 @@ services:
       - meilisearch_data:/meili_data
     networks:
       - tdc-network
+
   # Elasticsearch for advanced search
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
@@ -96,12 +98,26 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+      - indices.memory.index_buffer_size=30%
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - thread_pool.search.queue_size=1000
+      - logger.level=WARN
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     ports:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
     networks:
       - tdc-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/ || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10  
 
   # phpMyAdmin UI for MySQL
   phpmyadmin:
