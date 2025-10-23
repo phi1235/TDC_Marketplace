@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { adminListingsService } from '@/services/adminListings'
 import { showToast } from '@/utils/toast'
+import { imageUrl } from '@/utils/image'
 
 type ListingStatus = 'pending' | 'approved' | 'rejected' | 'all'
 
@@ -131,7 +132,7 @@ async function deleteOne(id: number) {
             <td style="padding:12px;">{{ (page-1)*perPage + i + 1 }}</td>
             <td style="padding:12px;">#{{ String(r.id).padStart(3,'0') }}</td>
             <td style="padding:12px;">
-              <img :src="r.images?.[0]?.image_path || r.thumbnail || 'https://via.placeholder.com/60'" alt="thumb"
+              <img :src="imageUrl(r.images?.[0]?.image_path || r.thumbnail) || 'https://via.placeholder.com/60'" alt="thumb"
                    style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" />
             </td>
             <td style="padding:12px; max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.title }}</td>
