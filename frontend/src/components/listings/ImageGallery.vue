@@ -180,7 +180,11 @@ const currentIndex = ref(0)
 const showLightbox = ref(false)
 
 const currentImage = computed(() => {
-  return props.images[currentIndex.value] || null
+  console.log('🖼️ [ImageGallery] Images:', props.images)
+  console.log('🖼️ [ImageGallery] Current index:', currentIndex.value)
+  const image = props.images[currentIndex.value] || null
+  console.log('🖼️ [ImageGallery] Current image:', image)
+  return image
 })
 
 const getImageUrl = (path: string) => {
@@ -191,9 +195,10 @@ const getImageUrl = (path: string) => {
     return path
   }
   
-  // Otherwise, construct URL from API base
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  return `${baseUrl}/storage/${path}`
+  // Use direct backend URL for now
+  const url = `http://localhost:8001/storage/${path}`
+  console.log('🖼️ [ImageGallery] Generated URL:', url)
+  return url
 }
 
 const previousImage = () => {
