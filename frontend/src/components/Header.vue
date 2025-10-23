@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow-sm border-b">
+  <header class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-10 relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -8,7 +8,7 @@
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-lg">T</span>
             </div>
-            <span class="text-xl font-bold text-gray-900">TDC Marketplace</span>
+            <span class="text-xl font-bold text-gray-900 dark:text-gray-100">TDC Marketplace</span>
           </router-link>
         </div>
 
@@ -34,14 +34,14 @@
         <nav class="flex items-center space-x-4">
           <router-link
             to="/"
-            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
           >
             Trang chủ
           </router-link>
           
           <router-link
             to="/listings"
-            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
           >
             Danh sách
           </router-link>
@@ -105,7 +105,7 @@
           <div v-if="!isAuthenticated" class="flex items-center space-x-2">
             <router-link
               to="/login"
-              class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
             >
               Đăng nhập
             </router-link>
@@ -216,6 +216,16 @@
               </div>
             </template>
           </div>
+
+          <!-- Dark Mode Toggle -->
+          <button
+            @click="toggleDark"
+            class="ml-3 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            :title="isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'"
+          >
+            <span v-if="!isDark">🌙</span>
+            <span v-else>☀️</span>
+          </button>
         </nav>
       </div>
     </div>
@@ -223,7 +233,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
@@ -234,6 +244,7 @@ const auth = useAuthStore()
 const searchQuery = ref('')
 const showUserMenu = ref(false)
 const showTestMenu = ref(false)
+const isDark = ref(false)
 
 const isAuthenticated = computed(() => auth.isAuthenticated)
 const user = computed(() => auth.user)
@@ -275,9 +286,29 @@ const handleClickOutside = (event: Event) => {
   }
 }
 
+// Dark mode functions
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  }
 })
+
+watch(isDark, (val) => {
+  if (val) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+})
+
+const toggleDark = () => {
+  isDark.value = !isDark.value
+}
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
