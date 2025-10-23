@@ -16,6 +16,12 @@ export interface BulkActionPayload {
 
 export const adminListingsService = {
   async list(params: AdminListingQuery = {}) {
+    // Nếu có status=pending, gọi API pending riêng
+    if (params.status === 'pending') {
+      const res = await api.get('/admin/listings/pending', { params })
+      return res.data
+    }
+    // Các trường hợp khác gọi API all listings
     const res = await api.get('/admin/listings', { params })
     return res.data
   },

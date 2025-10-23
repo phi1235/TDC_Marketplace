@@ -48,6 +48,31 @@
       </button>
     </div>
 
+    <!-- 🔎 Lịch sử tìm kiếm -->
+    <div v-if="history.length" class="mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="font-semibold">🔎 Lịch sử tìm kiếm gần đây</h4>
+        <button
+          @click="clearHistory"
+          class="text-sm text-red-600 hover:text-red-700 hover:underline transition"
+        >
+          🗑 Xóa lịch sử
+        </button>
+      </div>
+
+      <ul class="flex flex-wrap gap-2">
+        <li
+          v-for="(h, i) in history"
+          :key="i + h.keyword"
+          class="bg-gray-100 px-3 py-1 rounded cursor-pointer hover:bg-gray-200"
+          @click="selectSuggestion(h.keyword)"
+          :title="new Date(h.timestamp).toLocaleString() + ' • ' + h.results_count + ' kết quả'"
+        >
+          {{ h.keyword }}
+        </li>
+      </ul>
+    </div>
+
     <!-- Loading shimmer -->
     <transition-group name="fade" tag="div" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
       <div
@@ -86,11 +111,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 const keyword = ref('')
 const results = ref([])
 const suggestions = ref([])
+const history = ref([])
 const showDropdown = ref(false)
 const loading = ref(false)
 const loadingSuggest = ref(false)
@@ -110,13 +136,11 @@ const handleInput = () => {
   debounceSuggest()
 }
 
-// ✅ Gõ tiếng Việt
 const handleCompositionEnd = () => {
   isComposing.value = false
   debounceSuggest()
 }
 
-// ⏳ Gợi ý
 const debounceSuggest = () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(fetchSuggestions, 120)
@@ -152,7 +176,6 @@ const fetchSuggestions = async () => {
   }
 }
 
-// 🔍 Instant search (gõ tới đâu ra kết quả)
 watch(keyword, (newVal) => {
   clearTimeout(searchTimer)
   if (!newVal.trim()) {
@@ -160,10 +183,7 @@ watch(keyword, (newVal) => {
     return
   }
   if (newVal.trim().length < 2) return
-
-  searchTimer = setTimeout(() => {
-    searchProducts()
-  }, 300)
+  searchTimer = setTimeout(searchProducts, 300)
 })
 
 // 🔎 API chính
@@ -184,10 +204,41 @@ const searchProducts = async () => {
     const data = await res.json()
     results.value = data.data || []
     cache.set('search_' + q, results.value)
+    fetchHistory()
   } catch (err) {
     console.error('Search error:', err)
   } finally {
-    setTimeout(() => (loading.value = false), 200) // cho hiệu ứng fade-in
+    setTimeout(() => (loading.value = false), 200)
+  }
+}
+
+// 📜 Lấy & xóa lịch sử
+const fetchHistory = async () => {
+  try {
+    const res = await fetch('http://localhost:8001/api/search-es/history', { credentials: 'include' })
+    const data = await res.json()
+    history.value = data.history || []
+  } catch (e) {
+    console.error('History error:', e)
+  }
+}
+
+const clearHistory = async () => {
+  if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm?')) return
+  try {
+    const res = await fetch('http://localhost:8001/api/search-es/history/clear', {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    const data = await res.json()
+    if (data.success) {
+      history.value = []
+      alert('🗑 Đã xóa lịch sử tìm kiếm!')
+    } else {
+      alert('❌ Xóa thất bại, thử lại sau.')
+    }
+  } catch (e) {
+    console.error('Clear history error:', e)
   }
 }
 
@@ -200,8 +251,7 @@ const moveDown = () => {
 
 const moveUp = () => {
   if (!suggestions.value.length) return
-  selectedIndex.value =
-    (selectedIndex.value - 1 + suggestions.value.length) % suggestions.value.length
+  selectedIndex.value = (selectedIndex.value - 1 + suggestions.value.length) % suggestions.value.length
   keyword.value = suggestions.value[selectedIndex.value]
 }
 
@@ -229,33 +279,6 @@ const highlight = (text) => {
 }
 
 const formatPrice = (p) => Number(p).toLocaleString('vi-VN')
+
+onMounted(fetchHistory)
 </script>
-
-<style scoped>
-/* 💫 Hiệu ứng shimmer */
-.shimmer {
-  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
-}
-
-@keyframes shimmer {
-  from {
-    background-position: -200% 0;
-  }
-  to {
-    background-position: 200% 0;
-  }
-}
-
-/* ✨ Fade transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-</style>

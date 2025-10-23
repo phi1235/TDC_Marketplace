@@ -88,6 +88,7 @@ services:
       - meilisearch_data:/meili_data
     networks:
       - tdc-network
+
   # Elasticsearch for advanced search
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
