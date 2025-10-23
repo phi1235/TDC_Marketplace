@@ -17,7 +17,7 @@ class StoreListingRequest extends FormRequest
             'category_id' => ['required', 'exists:categories,id'],
             'title' => ['required', 'string', 'max:200'],
             'description' => ['required', 'string', 'max:2000'],
-            'condition' => ['required', 'string', 'in:excellent,good,fair,poor'],
+            'condition' => ['required', 'string', 'in:new,like_new,good,fair'],
             'price' => ['required', 'numeric', 'min:0'],
             'location' => ['nullable', 'string', 'max:255'],
             'images' => ['sometimes', 'array', 'max:5'],

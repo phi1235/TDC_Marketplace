@@ -7,13 +7,12 @@ export interface Listing {
   title: string
   slug: string
   description: string
-  condition_grade: 'A' | 'B' | 'C' | 'D'
+  condition: 'new' | 'like_new' | 'good' | 'fair'
   price: number
-  original_price?: number
-  currency: string
   status: 'pending' | 'approved' | 'rejected' | 'sold' | 'archived'
   featured_until?: string
   view_count: number
+  views_count: number // Backend uses this field name
   favorite_count: number
   created_at: string
   updated_at: string
@@ -21,30 +20,43 @@ export interface Listing {
     id: number
     name: string
     email: string
+    phone?: string
+    avatar?: string
     seller_profile?: {
       student_id?: string
       verified_student: boolean
       rating: number
       total_ratings: number
+      phone?: string
+      address?: string
+      total_sales?: number
     }
   }
   category?: {
     id: number
     name: string
     slug: string
+    icon?: string
+    description?: string
   }
   images?: Array<{
     id: number
     image_path: string
     is_primary: boolean
-    sort_order: number
+    sort_order?: number
+    original_name?: string
+    file_size?: number
+    mime_type?: string
+    width?: number
+    height?: number
   }>
   offers?: Array<{
     id: number
-    offer_price: number
+    offer_price?: number
+    amount?: number // Backend uses this field name
     message?: string
     status: string
-    buyer: {
+    buyer?: {
       id: number
       name: string
     }
@@ -55,10 +67,8 @@ export interface CreateListingData {
   category_id: number
   title: string
   description: string
-  condition_grade: 'A' | 'B' | 'C' | 'D'
+  condition: 'new' | 'like_new' | 'good' | 'fair'
   price: number
-  original_price?: number
-  currency: string
   images: File[]
 }
 
@@ -66,10 +76,8 @@ export interface UpdateListingData {
   category_id?: number
   title?: string
   description?: string
-  condition_grade?: 'A' | 'B' | 'C' | 'D'
+  condition?: 'new' | 'like_new' | 'good' | 'fair'
   price?: number
-  original_price?: number
-  currency?: string
   images?: File[]
 }
 
@@ -112,12 +120,8 @@ export const listingsService = {
     formData.append('category_id', data.category_id.toString())
     formData.append('title', data.title)
     formData.append('description', data.description)
-    formData.append('condition_grade', data.condition_grade)
+    formData.append('condition', data.condition)
     formData.append('price', data.price.toString())
-    if (data.original_price) {
-      formData.append('original_price', data.original_price.toString())
-    }
-    formData.append('currency', data.currency)
     
     // Add images
     data.images.forEach((image, index) => {
@@ -136,13 +140,11 @@ export const listingsService = {
     const formData = new FormData()
     
     // Add text fields
-    if (data.category_id) formData.append('category_id', data.category_id.toString())
-    if (data.title) formData.append('title', data.title)
-    if (data.description) formData.append('description', data.description)
-    if (data.condition_grade) formData.append('condition_grade', data.condition_grade)
-    if (data.price) formData.append('price', data.price.toString())
-    if (data.original_price) formData.append('original_price', data.original_price.toString())
-    if (data.currency) formData.append('currency', data.currency)
+    if (data.category_id !== undefined) formData.append('category_id', data.category_id.toString())
+    if (data.title !== undefined) formData.append('title', data.title)
+    if (data.description !== undefined) formData.append('description', data.description)
+    if (data.condition !== undefined) formData.append('condition', data.condition)
+    if (data.price !== undefined) formData.append('price', data.price.toString())
     
     // Add images if provided
     if (data.images) {
@@ -151,7 +153,7 @@ export const listingsService = {
       })
     }
 
-    const response = await api.put(`/listings/${id}`, formData, {
+    const response = await api.post(`/listings/${id}?_method=PUT`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -167,5 +169,29 @@ export const listingsService = {
   async getMyListings(filters: ListingFilters = {}): Promise<PaginatedResponse<Listing>> {
     const response = await api.get('/my-listings', { params: filters })
     return response.data
+  },
+
+  async duplicateListing(id: number): Promise<{ message: string; listing: Listing }> {
+    const response = await api.post(`/listings/${id}/duplicate`)
+    return response.data
+  },
+
+  async toggleStatus(id: number): Promise<{ message: string; listing: Listing }> {
+    const response = await api.post(`/listings/${id}/toggle-status`)
+    return response.data
+  },
+
+  // Get related listings (same category)
+  async getRelatedListings(id: number, categoryId: number, limit: number = 4): Promise<Listing[]> {
+    const response = await api.get('/listings', {
+      params: {
+        category_id: categoryId,
+        per_page: limit + 1, // Get one extra to exclude current listing
+        sort: 'created_at',
+        order: 'desc'
+      }
+    })
+    // Filter out current listing
+    return response.data.data.filter((listing: Listing) => listing.id !== id).slice(0, limit)
   }
 }
