@@ -15,7 +15,7 @@ export interface WishlistItem {
     view_count: number
     images?: Array<{
       id: number
-      file_path: string
+      image_path: string
       is_primary: boolean
     }>
     seller?: {

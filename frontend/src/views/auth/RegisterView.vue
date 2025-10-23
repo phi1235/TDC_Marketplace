@@ -164,7 +164,7 @@ const handleSubmit = async () => {
     })
     if (res.success) {
       showToast("Đăng ký thành công! Vui lòng đăng nhập.", "success");
-      router.push("/login");
+    router.push("/login");
       return
     }
     // Chuẩn hóa lỗi từ store (BE 422)

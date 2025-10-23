@@ -33,7 +33,7 @@ services:
     ports:
       - "8001:8000"
     depends_on:
-      - mysql]
+      - mysql
       - elasticsearch
     environment:
       DB_CONNECTION: mysql
@@ -88,6 +88,7 @@ services:
       - meilisearch_data:/meili_data
     networks:
       - tdc-network
+
   # Elasticsearch for advanced search
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
@@ -113,10 +114,10 @@ services:
     networks:
       - tdc-network
     healthcheck:
-    test: ["CMD-SHELL", "curl -f http://localhost:9200/ || exit 1"]
-    interval: 10s
-    timeout: 10s
-    retries: 10  
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/ || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10  
 
   # phpMyAdmin UI for MySQL
   phpmyadmin:

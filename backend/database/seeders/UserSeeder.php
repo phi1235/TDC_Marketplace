@@ -12,15 +12,19 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Create admin user
-        $admin = User::create([
-            'name' => 'Admin TDC',
-            'email' => 'admin@tdc.edu.vn',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'is_active' => true,
-            'email_verified_at' => now(),
-        ]);
-        $admin->assignRole('admin');
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@tdc.edu.vn'],
+            [
+                'name' => 'Admin TDC',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+        if (!$admin->hasRole('admin')) {
+            $admin->assignRole('admin');
+        }
 
         // Create sample users
         $users = [
@@ -48,32 +52,38 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            $user = User::create([
-                'name' => $userData['name'],
-                'email' => $userData['email'],
-                'password' => Hash::make('password'),
-                'phone' => $userData['phone'],
-                'role' => 'user',
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            $user = User::firstOrCreate(
+                ['email' => $userData['email']],
+                [
+                    'name' => $userData['name'],
+                    'password' => Hash::make('password'),
+                    'phone' => $userData['phone'],
+                    'role' => 'user',
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
-            $user->assignRole('user');
+            if (!$user->hasRole('user')) {
+                $user->assignRole('user');
+            }
 
             // Create seller profile
-            SellerProfile::create([
-                'user_id' => $user->id,
-                'student_id' => 'SV' . rand(100000, 999999),
-                'verified_student' => true,
-                'verified_at' => now(),
-                'rating' => rand(35, 50) / 10, // 3.5 - 5.0
-                'total_ratings' => rand(5, 20),
-                'total_sales' => rand(0, 10),
-                'total_revenue' => rand(0, 5000000),
-                'bio' => 'Sinh viên ' . $userData['major'],
-                'academic_year' => $userData['academic_year'],
-                'major' => $userData['major'],
-            ]);
+            SellerProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'student_id' => 'SV' . rand(100000, 999999),
+                    'verified_student' => true,
+                    'verified_at' => now(),
+                    'rating' => rand(35, 50) / 10, // 3.5 - 5.0
+                    'total_ratings' => rand(5, 20),
+                    'total_sales' => rand(0, 10),
+                    'total_revenue' => rand(0, 5000000),
+                    'bio' => 'Sinh viên ' . $userData['major'],
+                    'academic_year' => $userData['academic_year'],
+                    'major' => $userData['major'],
+                ]
+            );
         }
     }
 }
