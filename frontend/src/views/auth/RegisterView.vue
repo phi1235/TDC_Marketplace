@@ -1,19 +1,7 @@
 <template>
   <div :class="darkMode ? 'dark bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'" class="min-h-screen transition-colors duration-300">
-    <!-- Header -->
-    <header class="bg-blue-600 dark:bg-gray-800 text-white py-4 shadow">
-      <div class="container mx-auto px-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">TDC Marketplace</h1>
 
-        <!-- Dark mode toggle -->
-        <button
-          @click="toggleDarkMode"
-          class="px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 transition"
-        >
-          {{ darkMode ? "☀️" : "🌙" }}
-        </button>
-      </div>
-    </header>
+    
 
     <!-- Main -->
     <main class="container mx-auto px-4 py-8">
@@ -164,7 +152,7 @@ const handleSubmit = async () => {
     })
     if (res.success) {
       showToast("Đăng ký thành công! Vui lòng đăng nhập.", "success");
-      router.push("/login");
+    router.push("/login");
       return
     }
     // Chuẩn hóa lỗi từ store (BE 422)

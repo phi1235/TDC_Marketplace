@@ -4,7 +4,7 @@
     <div class="aspect-w-16 aspect-h-12 bg-gray-200">
       <img
         v-if="listing.images && listing.images.length > 0"
-        :src="listing.images[0].file_path"
+        :src="listing.images[0].image_path"
         :alt="listing.title"
         class="w-full h-48 object-cover"
       />
@@ -106,7 +106,7 @@ interface Listing {
   currency: string
   condition_grade: string
   view_count: number
-  images?: Array<{ file_path: string }>
+  images?: Array<{ image_path: string }>
   seller?: { name: string }
 }
 
