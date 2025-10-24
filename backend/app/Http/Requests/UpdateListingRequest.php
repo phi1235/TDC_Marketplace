@@ -17,7 +17,7 @@ class UpdateListingRequest extends FormRequest
             'category_id' => ['sometimes', 'exists:categories,id'],
             'title' => ['sometimes', 'string', 'max:200'],
             'description' => ['sometimes', 'string', 'max:2000'],
-            'condition' => ['sometimes', 'string', 'in:excellent,good,fair,poor'],
+            'condition' => ['sometimes', 'string', 'in:new,like_new,good,fair'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'location' => ['sometimes', 'string', 'max:255'],
             'images' => ['sometimes', 'array', 'max:5'],
