@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow-sm border-b">
+  <header class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-10 relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -8,45 +8,101 @@
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-lg">T</span>
             </div>
-            <span class="text-xl font-bold text-gray-900">TDC Marketplace</span>
+            <span class="text-xl font-bold text-gray-900 dark:text-gray-100">TDC Marketplace</span>
           </router-link>
         </div>
 
-        <!-- Search Bar -->
-        <div class="flex-1 max-w-lg mx-8">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @keyup.enter="handleSearch"
-            />
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
+        <!-- 🔍 Search Bar with Suggest & History -->
+        <div class="flex-1 max-w-lg mx-8 relative">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Tìm kiếm sản phẩm..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            @input="handleInput"
+            @keydown.down.prevent="moveDown"
+            @keydown.up.prevent="moveUp"
+            @keydown.enter.prevent="handleEnter"
+            @focus="handleFocus"
+            @blur="hideDropdown"
+          />
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
+
+          <!-- Dropdown -->
+          <ul
+            v-if="showDropdown && (loadingSuggest || suggestions.length || (showHistory && history.length))"
+            class="absolute left-0 top-full z-50 w-full bg-white border border-gray-200 rounded-lg shadow-md mt-1 max-h-72 overflow-auto"
+          >
+            <!-- 🔍 Search full keyword -->
+            <li
+              v-if="searchQuery.trim()"
+              class="px-4 py-2 cursor-pointer text-gray-700 hover:bg-blue-50 font-medium border-b border-gray-100"
+              @mousedown.prevent="searchFullKeyword"
+            >
+              🔍 Tìm kiếm "<span class="text-blue-600">{{ searchQuery }}</span>" trong toàn bộ sản phẩm
+            </li>
+
+            <!-- History (chỉ hiển thị khi input trống) -->
+            <template v-else-if="showHistory && history.length">
+              <li class="px-4 py-2 text-gray-500 text-sm border-b bg-gray-50 font-semibold">
+                📜 Lịch sử tìm kiếm gần đây
+              </li>
+              <li
+                v-for="(item, i) in history"
+                :key="'h' + i"
+                class="px-4 py-2 cursor-pointer text-gray-700 hover:bg-blue-50"
+                @mousedown.prevent="selectHistory(item.keyword)"
+                :title="new Date(item.timestamp).toLocaleString()"
+              >
+                <span class="text-gray-800">{{ item.keyword }}</span>
+                <span class="text-xs text-gray-400 ml-2">({{ item.results_count }} kết quả)</span>
+              </li>
+              <li
+                class="px-4 py-2 text-sm text-red-600 hover:underline cursor-pointer border-t border-gray-100"
+                @mousedown.prevent="clearHistory"
+              >
+                🗑 Xóa lịch sử
+              </li>
+            </template>
+
+            <!-- Loading -->
+            <li v-if="loadingSuggest" class="px-4 py-2 text-gray-400 italic">Đang gợi ý...</li>
+
+            <!-- Suggest results -->
+            <li
+              v-for="(item, i) in suggestions"
+              :key="'s' + i"
+              class="px-4 py-2 cursor-pointer transition"
+              :class="i === selectedIndex ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-50'"
+              @mousedown.prevent="selectSuggestion(item)"
+            >
+              <span v-html="highlight(item)"></span>
+            </li>
+          </ul>
         </div>
 
         <!-- Navigation -->
         <nav class="flex items-center space-x-4">
           <router-link
             to="/"
-            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
           >
             Trang chủ
           </router-link>
           
           <router-link
             to="/listings"
-            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
           >
             Danh sách
           </router-link>
 
-          <!-- Test links dropdown for team -->
+          <!-- Test pages -->
           <div class="relative test-menu-container">
             <button
               @click="showTestMenu = !showTestMenu"
@@ -58,54 +114,27 @@
               </svg>
             </button>
 
-            <!-- Test pages dropdown -->
             <div
               v-if="showTestMenu"
               class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
             >
               <router-link
-                to="/dashboard"
+                v-for="item in testPages"
+                :key="item.name"
+                :to="item.to"
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 @click="showTestMenu = false"
               >
-                Dashboard Page
-              </router-link>
-              <router-link
-                to="/panel"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click="showTestMenu = false"
-              >
-                Panel Page
-              </router-link>
-              <router-link
-                to="/userpanel"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click="showTestMenu = false"
-              >
-                User Page
-              </router-link>
-              <router-link
-                to="/listwish"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click="showTestMenu = false"
-              >
-                List wish page
-              </router-link>
-              <router-link
-                to="/listingcard"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click="showTestMenu = false"
-              >
-                Listing Card page
+                {{ item.label }}
               </router-link>
             </div>
           </div>
 
-          <!-- Auth Buttons -->
+          <!-- Auth -->
           <div v-if="!isAuthenticated" class="flex items-center space-x-2">
             <router-link
               to="/login"
-              class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium"
             >
               Đăng nhập
             </router-link>
@@ -118,7 +147,6 @@
           </div>
 
           <div v-else class="flex items-center space-x-2">
-            <!-- Menu cho admin -->
             <template v-if="auth.isAdmin">
               <router-link
                 to="/dashboard"
@@ -126,42 +154,8 @@
               >
                 Quản trị
               </router-link>
-              
-              <!-- Admin User Menu -->
-              <div class="relative user-menu-container">
-                <button
-                  @click="toggleUserMenu"
-                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  {{ user?.name }}
-                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </button>
-                
-                <!-- Dropdown Menu -->
-                <div
-                  v-if="showUserMenu"
-                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-                >
-                  <router-link
-                    to="/profile"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false"
-                  >
-                    Hồ sơ
-                  </router-link>
-                  <button
-                    @click="handleLogout"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
-              </div>
             </template>
 
-            <!-- User Menu -->
             <template v-else>
               <router-link
                 to="/create-listing"
@@ -175,47 +169,50 @@
               >
                 Tin của tôi
               </router-link>
-              <div class="relative user-menu-container">
-                <button
-                  @click="toggleUserMenu"
-                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  {{ user?.name }}
-                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </button>
-                
-                <!-- Dropdown Menu -->
-                <div
-                  v-if="showUserMenu"
-                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-                >
-                  <router-link
-                    to="/profile"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false"
-                  >
-                    Hồ sơ
-                  </router-link>
-                  <router-link
-                    v-if="isAdmin"
-                    to="/dashboard"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false"
-                  >
-                    Quản trị
-                  </router-link>
-                  <button
-                    @click="handleLogout"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
-              </div>
             </template>
+
+            <!-- User menu -->
+            <div class="relative user-menu-container">
+              <button
+                @click="toggleUserMenu"
+                class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                {{ user?.name }}
+                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+
+              <div
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
+              >
+                <router-link
+                  to="/profile"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false"
+                >
+                  Hồ sơ
+                </router-link>
+                <button
+                  @click="handleLogout"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
           </div>
+
+          <!-- Dark Mode -->
+          <button
+            @click="toggleDark"
+            class="ml-3 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            :title="isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'"
+          >
+            <span v-if="!isDark">🌙</span>
+            <span v-else>☀️</span>
+          </button>
         </nav>
       </div>
     </div>
@@ -223,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
@@ -232,22 +229,143 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const searchQuery = ref('')
+const showDropdown = ref(false)
+const showHistory = ref(false)
+const suggestions = ref<string[]>([])
+const history = ref<any[]>([])
+const loadingSuggest = ref(false)
+const selectedIndex = ref(-1)
+const cache = new Map()
+let debounceTimer: any = null
+let abortController: AbortController | null = null
+
 const showUserMenu = ref(false)
 const showTestMenu = ref(false)
+const isDark = ref(false)
 
 const isAuthenticated = computed(() => auth.isAuthenticated)
 const user = computed(() => auth.user)
 const isAdmin = computed(() => auth.isAdmin)
 
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ name: 'listings', query: { q: searchQuery.value } })
+// === 🧠 Suggest & History Logic ===
+const handleInput = () => {
+  showHistory.value = false
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(fetchSuggestions, 150)
+}
+
+const handleFocus = () => {
+  showDropdown.value = true
+  if (!searchQuery.value.trim()) fetchHistory()
+}
+
+const fetchSuggestions = async () => {
+  const q = searchQuery.value.trim()
+  if (!q) {
+    suggestions.value = []
+    showHistory.value = true
+    return
+  }
+  if (cache.has('suggest_' + q)) {
+    suggestions.value = cache.get('suggest_' + q)
+    return
+  }
+
+  if (abortController) abortController.abort()
+  abortController = new AbortController()
+  loadingSuggest.value = true
+  try {
+    const res = await fetch(`http://localhost:8001/api/search-es/suggest?q=${encodeURIComponent(q)}`, {
+      signal: abortController.signal,
+    })
+    const data = await res.json()
+    suggestions.value = data.suggestions || []
+    cache.set('suggest_' + q, suggestions.value)
+  } catch (e: any) {
+    if (e.name !== 'AbortError') console.error('Suggest error:', e)
+  } finally {
+    loadingSuggest.value = false
   }
 }
 
-const toggleUserMenu = () => {
-  showUserMenu.value = !showUserMenu.value
+const fetchHistory = async () => {
+  try {
+    const res = await fetch('http://localhost:8001/api/search-es/history', { credentials: 'include' })
+    const data = await res.json()
+    history.value = data.history || []
+    showHistory.value = true
+  } catch (e) {
+    console.error('History error:', e)
+  }
 }
+
+const clearHistory = async () => {
+  if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tìm kiếm?')) return
+  try {
+    const res = await fetch('http://localhost:8001/api/search-es/history/clear', {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    const data = await res.json()
+    if (data.success) {
+      history.value = []
+      alert('🗑 Đã xóa lịch sử tìm kiếm!')
+    }
+  } catch (e) {
+    console.error('Clear history error:', e)
+  }
+}
+
+const selectSuggestion = (item: string) => {
+  searchQuery.value = item
+  showDropdown.value = false
+  router.push({ name: 'search', query: { q: item } })
+}
+
+const selectHistory = (keyword: string) => {
+  searchQuery.value = keyword
+  showDropdown.value = false
+  router.push({ name: 'search', query: { q: keyword } })
+}
+
+const searchFullKeyword = () => {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  showDropdown.value = false
+  router.push({ name: 'search', query: { q } })
+}
+
+const moveDown = () => {
+  if (!suggestions.value.length) return
+  selectedIndex.value = (selectedIndex.value + 1) % suggestions.value.length
+  searchQuery.value = suggestions.value[selectedIndex.value]
+}
+
+const moveUp = () => {
+  if (!suggestions.value.length) return
+  selectedIndex.value = (selectedIndex.value - 1 + suggestions.value.length) % suggestions.value.length
+  searchQuery.value = suggestions.value[selectedIndex.value]
+}
+
+const handleEnter = () => {
+  if (selectedIndex.value >= 0 && suggestions.value[selectedIndex.value]) {
+    selectSuggestion(suggestions.value[selectedIndex.value])
+  } else if (searchQuery.value.trim()) {
+    searchFullKeyword()
+  }
+}
+
+const hideDropdown = () => setTimeout(() => (showDropdown.value = false), 200)
+
+const highlight = (text: string) => {
+  const q = searchQuery.value
+  if (!q) return text
+  const regex = new RegExp(`(${q})`, 'gi')
+  return text.replace(regex, '<mark class="bg-yellow-200">$1</mark>')
+}
+
+// === 🔐 Auth Logic ===
+const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value)
 
 const handleLogout = async () => {
   try {
@@ -260,26 +378,49 @@ const handleLogout = async () => {
   }
 }
 
-// Close dropdowns when clicking outside
-const handleClickOutside = (event: Event) => {
-  const target = event.target as HTMLElement
-  
-  // Close user menu if clicking outside
-  if (!target.closest('.user-menu-container')) {
-    showUserMenu.value = false
-  }
-  
-  // Close test menu if clicking outside
-  if (!target.closest('.test-menu-container')) {
-    showTestMenu.value = false
-  }
+// === 🧭 Nav Test Pages ===
+const testPages = [
+  { label: 'Dashboard Page', to: '/dashboard' },
+  { label: 'Panel Page', to: '/panel' },
+  { label: 'User Page', to: '/userpanel' },
+  { label: 'List wish page', to: '/listwish' },
+  { label: 'Listing Card page', to: '/listingcard' },
+]
+
+// === 🌙 Dark Mode Logic ===
+const handleClickOutside = (e: Event) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.user-menu-container')) showUserMenu.value = false
+  if (!target.closest('.test-menu-container')) showTestMenu.value = false
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  }
 })
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+watch(isDark, (val) => {
+  if (val) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
 })
+
+const toggleDark = () => (isDark.value = !isDark.value)
+
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
+
+<style scoped>
+mark {
+  background-color: #fef08a;
+  color: inherit;
+}
+</style>
