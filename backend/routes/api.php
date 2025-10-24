@@ -18,6 +18,9 @@ use App\Http\Controllers\SolrSearchController;
 use App\Http\Controllers\ComparisonController;
 use App\Http\Controllers\DualSearchController;
 use App\Http\Controllers\SearchAnalyticsController;
+use App\Http\Controllers\LoadTestController;
+use App\Http\Controllers\RealtimeMonitorController;
+use App\Http\Controllers\AdvancedSearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -159,3 +162,25 @@ Route::get('/auth/current-role', function (Request $request) {
 
 //list_wish
 Route::get('/wishes', [WishlistController::class, 'index']);
+
+// Load Testing
+Route::prefix('load-test')->group(function () {
+    Route::post('/run', [LoadTestController::class, 'runLoadTest']);
+    Route::get('/results', [LoadTestController::class, 'getLoadTestResults']);
+});
+
+// Real-time Monitoring
+Route::prefix('monitor')->group(function () {
+    Route::get('/realtime', [RealtimeMonitorController::class, 'getRealtimeMetrics']);
+    Route::get('/trends', [RealtimeMonitorController::class, 'getPerformanceTrends']);
+    Route::get('/alerts', [RealtimeMonitorController::class, 'getAlerts']);
+});
+
+// Advanced Search Features
+Route::prefix('advanced-search')->group(function () {
+    Route::post('/faceted', [AdvancedSearchController::class, 'facetedSearch']);
+    Route::get('/suggestions', [AdvancedSearchController::class, 'getSuggestions']);
+    Route::post('/geospatial', [AdvancedSearchController::class, 'geospatialSearch']);
+    Route::post('/fuzzy', [AdvancedSearchController::class, 'fuzzySearch']);
+    Route::get('/analytics', [AdvancedSearchController::class, 'getSearchAnalytics']);
+});
