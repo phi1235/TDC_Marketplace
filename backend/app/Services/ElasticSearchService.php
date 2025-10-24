@@ -74,6 +74,20 @@ class ElasticSearchService
     }
 
     /**
+     * 🗑️ Xoá một document cụ thể
+     */
+    public function deleteDocument(string $index, int|string $id): bool
+    {
+        try {
+            $response = Http::delete("{$this->baseUrl}/{$index}/_doc/{$id}");
+            return $response->successful();
+        } catch (\Throwable $e) {
+            Log::error('Elasticsearch deleteDocument failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 🧹 Xoá toàn bộ index (dùng khi reset)
      */
     public function deleteIndex(string $index): bool
