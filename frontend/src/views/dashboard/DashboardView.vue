@@ -214,21 +214,25 @@ const filteredUsers = computed(() => {
         if (!(count === val)) return false;
       }
     }
-    
+
+    console.log('User last login:', user.last_login_at)
     //last login
-    if (f.last_login_preset && f.last_login_preset !== 'all') {
+    if (f.last_login && f.last_login !== 'all') {
       const now = new Date();
       const last = user.last_login_at ? new Date(user.last_login_at) : null;
-      if (f.last_login_preset === 'never') {
-        if (last !== null) return false;
-      } else {
-        const days = Number(f.last_login_preset); // 7 or 30
+
+      if (f.last_login === 'never') {
+        if (last !== null) return false; // chỉ lấy user chưa login lần nào
+      } else if (f.last_login === '7d') {
         if (!last) return false;
-        const diffDays = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays > days) return false; // last login older than preset => exclude
+        const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays > 7) return false; // last login cách đây hơn 7 ngày => bỏ
+      } else if (f.last_login === '30d') {
+        if (!last) return false;
+        const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays > 30) return false;
       }
     }
-
 
 
     // Block 3: Created Date
