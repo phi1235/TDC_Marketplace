@@ -2,6 +2,7 @@
 import { ref, watch, reactive, onMounted, computed } from 'vue'
 import { getAllUsers, searchUsers } from '@/services/user';
 import AdvancedFilter from '@/components/AdvancedFilterUsers.vue'
+
 //
 // const users = ref<User[]>([]);
 
@@ -134,7 +135,7 @@ function isFilterActive(f: Record<string, any> | null) {
   if (f.role !== 'all') return true;
   if (f.is_active !== 'all') return true;
   if (f.email_verified !== 'all') return true;
-  if (f.login_count_value !== null && f.login_count_value !== '') return true;
+  if (f.login_count_min !== null && f.login_count_min !== '') return true;
   if (f.last_login_preset !== 'all') return true;
   if (f.created_from || f.created_to || f.created_preset !== 'none') return true;
   return false;
@@ -178,6 +179,9 @@ const filteredUsers = computed(() => {
   // next apply advanced filter if present
   const f = appliedFilter.value;
   if (!f) return list;
+  // trước khi return list.filter(...)
+  console.log('Applied filter:', appliedFilter.value);
+  console.log('Sample user login_counts:', users.value.slice(0, 5).map(u => ({ id: u.id, login_count: u.login_count })));
 
   return list.filter(user => {
     // Block 1: Account Status
@@ -196,19 +200,22 @@ const filteredUsers = computed(() => {
       if (f.email_verified === 'unverified' && verified) return false;
     }
 
+    //login count
     // Block 2: Engagement
-    if (f.login_count_value !== null && f.login_count_value !== '' && !isNaN(Number(f.login_count_value))) {
-      const val = Number(f.login_count_value);
+    if (f.login_count_min !== null && f.login_count_min !== '' && !isNaN(Number(f.login_count_min))) {
+      const val = Number(f.login_count_min);
       const count = Number(user.login_count || 0);
-      if (f.login_count_op === '>') {
+      const op = f.login_count_op || '>'; // default >
+      if (op === '>') {
         if (!(count > val)) return false;
-      } else if (f.login_count_op === '<') {
+      } else if (op === '<') {
         if (!(count < val)) return false;
-      } else { // =
+      } else { // '='
         if (!(count === val)) return false;
       }
     }
-
+    
+    //last login
     if (f.last_login_preset && f.last_login_preset !== 'all') {
       const now = new Date();
       const last = user.last_login_at ? new Date(user.last_login_at) : null;
@@ -222,6 +229,8 @@ const filteredUsers = computed(() => {
       }
     }
 
+
+
     // Block 3: Created Date
     if ((f.created_from && f.created_from !== '') || (f.created_to && f.created_to !== '')) {
       const created = user.created_at ? new Date(user.created_at) : null;
@@ -233,7 +242,7 @@ const filteredUsers = computed(() => {
       if (f.created_to && f.created_to !== '') {
         const to = new Date(f.created_to);
         // include whole day: set to end of day
-        to.setHours(23,59,59,999);
+        to.setHours(23, 59, 59, 999);
         if (created > to) return false;
       }
     }
@@ -245,7 +254,7 @@ const filteredUsers = computed(() => {
       const now = new Date();
       if (f.created_preset === 'today') {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59,999);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         if (created < start || created > end) return false;
       } else if (f.created_preset === '7') {
         const cutoff = new Date();
@@ -276,6 +285,7 @@ function getAdvancedFilterPayload() {
 }
 </script>
 <template>
+
   <div class="dashboard">
     <!-- HEADER -->
     <!-- <header class="header">
@@ -326,7 +336,10 @@ function getAdvancedFilterPayload() {
             <!-- nút mở advanced filter -->
             <button @click="showAdvanced = true" class="btn-primary">Nâng cao</button>
           </div>
-          <AdvancedFilter v-model:visible="showAdvanced" @filter-change="applyAdvancedFilter" />
+          <AdvancedFilter :visible="showAdvanced" @update:visible="val => showAdvanced = val"
+            @filter-change="applyAdvancedFilter" />
+
+
         </div>
 
         <div class="inf">

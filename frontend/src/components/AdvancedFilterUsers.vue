@@ -35,7 +35,13 @@
       <div class="grid grid-cols-2 gap-4 mb-6">
         <div>
           <label class="block text-sm mb-1">Login Count ></label>
-          <input v-model.number="filters.login_count_min" type="number" class="border rounded px-3 py-2 w-full" />
+          <select v-model="filters.login_count_op" class="border rounded px-3 py-2 w-full">
+            <option value=">">></option>
+            <option value="<">
+              < </option>
+            <option value="=">=</option>
+          </select>
+          <input v-model.number="filters.login_count_min" type="number" class="border rounded px-3 py-2 w-full mt-1" />
         </div>
         <div>
           <label class="block text-sm mb-1">Last Login</label>
@@ -68,9 +74,17 @@
 import { defineProps, defineEmits, reactive, watch } from 'vue'
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits(['update:visible', 'filter-change'])
-const filters = reactive({ role:'all', is_active:'all', email_verified:'all', login_count_min:null, last_login:'all', created_from:null, created_to:null })
-
-watch(filters, () => emit('filter-change', filters), { deep: true })
-function close(){ emit('update:visible', false) }
-function reset(){ Object.assign(filters,{ role:'all',is_active:'all',email_verified:'all',login_count_min:null,last_login:'all',created_from:null,created_to:null }) }
+const filters = reactive({
+  role: 'all',
+  is_active: 'all',
+  email_verified: 'all',
+  login_count_min: null, // tên này
+  last_login: 'all',
+  created_from: null,
+  created_to: null
+})
+// realtime emit
+watch(filters, () => emit('filter-change', { ...filters }), { deep: true })
+function close() { emit('update:visible', false) }
+function reset() { Object.assign(filters, { role: 'all', is_active: 'all', email_verified: 'all', login_count_min: null, last_login: 'all', created_from: null, created_to: null }) }
 </script>
