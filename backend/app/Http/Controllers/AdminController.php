@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Listing;
 use App\Models\Report;
 use App\Models\User;
+use App\Services\ElasticSearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
-    public function __construct()
+    protected $elasticSearchService;
+
+    public function __construct(ElasticSearchService $elasticSearchService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
+        $this->elasticSearchService = $elasticSearchService;
     }
 
     public function dashboard(): JsonResponse
@@ -155,6 +159,22 @@ class AdminController extends Controller
                         'approved_at' => now(),
                         'approved_by' => Auth::id(),
                     ]);
+                    
+                    // Index approved listings to Elasticsearch
+                    $approvedListings = $listings->get();
+                    foreach ($approvedListings as $listing) {
+                        $this->elasticSearchService->indexDocument('listings', $listing->id, [
+                            'title' => $listing->title,
+                            'title_suggest' => [
+                                'input' => explode(' ', $listing->title),
+                                'weight' => 1
+                            ],
+                            'description' => $listing->description,
+                            'price' => (float) $listing->price,
+                            'category_id' => (int) $listing->category_id,
+                            'status' => 'approved',
+                        ]);
+                    }
                     break;
 
                 case 'reject':
@@ -165,6 +185,12 @@ class AdminController extends Controller
                         'rejected_at' => now(),
                         'rejected_by' => Auth::id(),
                     ]);
+                    
+                    // Remove rejected listings from Elasticsearch
+                    $rejectedListings = $listings->get();
+                    foreach ($rejectedListings as $listing) {
+                        $this->elasticSearchService->deleteDocument('listings', $listing->id);
+                    }
                     break;
 
                 case 'delete':
@@ -227,15 +253,26 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            // Avoid triggering Scout indexing if not configured
-            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
-                $listing->update([
-                    'status' => 'approved',
-                    'admin_notes' => $request->admin_notes,
-                    'approved_at' => now(),
-                    'approved_by' => Auth::id(),
-                ]);
-            });
+            // Update listing status
+            $listing->update([
+                'status' => 'approved',
+                'admin_notes' => $request->admin_notes,
+                'approved_at' => now(),
+                'approved_by' => Auth::id(),
+            ]);
+
+            // Index to Elasticsearch immediately after approval
+            $this->elasticSearchService->indexDocument('listings', $listing->id, [
+                'title' => $listing->title,
+                'title_suggest' => [
+                    'input' => explode(' ', $listing->title),
+                    'weight' => 1
+                ],
+                'description' => $listing->description,
+                'price' => (float) $listing->price,
+                'category_id' => (int) $listing->category_id,
+                'status' => 'approved', // Ensure status is included
+            ]);
 
             // Log admin activity
             $listing->auditLogs()->create([
@@ -283,16 +320,17 @@ class AdminController extends Controller
                 ], 400);
             }
 
-            // Avoid triggering Scout indexing if not configured
-            Listing::withoutSyncingToSearch(function () use ($request, $listing) {
-                $listing->update([
-                    'status' => 'rejected',
-                    'admin_notes' => $request->admin_notes,
-                    'rejection_reason' => $request->rejection_reason,
-                    'rejected_at' => now(),
-                    'rejected_by' => Auth::id(),
-                ]);
-            });
+            // Update listing status
+            $listing->update([
+                'status' => 'rejected',
+                'admin_notes' => $request->admin_notes,
+                'rejection_reason' => $request->rejection_reason,
+                'rejected_at' => now(),
+                'rejected_by' => Auth::id(),
+            ]);
+
+            // Remove from Elasticsearch when rejected
+            $this->elasticSearchService->deleteDocument('listings', $listing->id);
 
             // Log admin activity
             $listing->auditLogs()->create([
