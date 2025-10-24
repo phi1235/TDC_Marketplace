@@ -3,52 +3,6 @@ import { ref, watch, reactive, onMounted, computed } from 'vue'
 import { getAllUsers, searchUsers } from '@/services/user';
 import AdvancedFilter from '@/components/AdvancedFilterUsers.vue'
 
-//
-// const users = ref<User[]>([]);
-
-// //get api all user
-// const fetchUsers = async () => {
-//   try {
-//     users.value = await getAllUsers();
-//     for (let i = 0; i < users.value.length; i++) {
-//       console.log(users.value[i]);
-//     }
-//   } catch (error) {
-//     console.error('Error fetching users:', error)
-//   }
-// }
-
-// //getapi search
-// const keyword = ref('');
-
-// const search = async () => {
-//   try {
-//     users.value = await searchUsers(keyword.value)
-//   } catch (error) {
-//     console.error('Error searching users:', error)
-//   }
-// }
-// //onMounted: gọi hàm lên, hay dùng gọi api
-// onMounted(() => {
-//   fetchUsers();
-// })
-
-// // Computed filtered theo dropdown
-// const selectedRole = ref('all');
-// const filteredUsers = computed(() => {
-//   // all user
-//   if (selectedRole.value === 'all') return users.value
-//   //user is_active
-//   if (selectedRole.value === 'active') {
-//     return users.value.filter(user => user.is_active)
-//   }
-//   //filter() lọc dữ liệu mảng, trả về dữ liệu mới
-//   //role 1 là admin 2 là user, user.role trả về 2 cái
-//   return users.value.filter(user => user.role === selectedRole.value)
-// })
-
-
-
 //AdvancedFilter
 function applyAdvancedFilter(newFilters: any) {
   // newFilters chính là dữ liệu realtime từ popup
@@ -234,27 +188,31 @@ const filteredUsers = computed(() => {
       }
     }
 
-
-    // Block 3: Created Date
+    //created date
     if ((f.created_from && f.created_from !== '') || (f.created_to && f.created_to !== '')) {
       const created = user.created_at ? new Date(user.created_at) : null;
       if (!created) return false;
+
       if (f.created_from && f.created_from !== '') {
         const from = new Date(f.created_from);
+        // set giờ từ đầu ngày
+        from.setHours(0, 0, 0, 0);
         if (created < from) return false;
       }
+
       if (f.created_to && f.created_to !== '') {
         const to = new Date(f.created_to);
-        // include whole day: set to end of day
+        // set giờ đến cuối ngày
         to.setHours(23, 59, 59, 999);
         if (created > to) return false;
       }
     }
 
-    // created_preset quick: today / 7 / 30 / older_year
+    // Quick preset
     if (f.created_preset && f.created_preset !== 'none') {
       const created = user.created_at ? new Date(user.created_at) : null;
       if (!created) return false;
+
       const now = new Date();
       if (f.created_preset === 'today') {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -275,8 +233,8 @@ const filteredUsers = computed(() => {
       }
     }
 
-    // passed all checks
-    return true;
+// passed all checks
+return true;
   });
 });
 
@@ -359,6 +317,7 @@ function getAdvancedFilterPayload() {
                 <th>Phone</th>
                 <th>Avatar</th>
                 <th>Active</th>
+                <th>Created At</th>
                 <th>Last Login</th>
                 <th>Login Count</th>
               </tr>
@@ -375,6 +334,7 @@ function getAdvancedFilterPayload() {
                   <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
                 </td>
                 <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+                <td class="px-2 py-1 border">{{ user.created_at }}</td>
                 <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
                 <td class="px-2 py-1 border">{{ user.login_count }}</td>
               </tr>
