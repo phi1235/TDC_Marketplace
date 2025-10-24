@@ -67,7 +67,7 @@ class ElasticSearchController extends Controller
                 ],
             ],
             'size' => 30,
-            '_source' => ['title', 'description', 'price', 'category_id'],
+            '_source' => ['title', 'description', 'price', 'category_id', 'image'], // 👈 Thêm dòng này
         ];
 
         $result = $this->search->customSearch('listings', $query);
