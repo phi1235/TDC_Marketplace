@@ -16,6 +16,20 @@ class ElasticSearchService
     }
 
     /**
+     * 🏥 Kiểm tra health của Elasticsearch
+     */
+    public function ping(): bool
+    {
+        try {
+            $response = Http::timeout(5)->get("{$this->baseUrl}/_cluster/health");
+            return $response->successful();
+        } catch (\Throwable $e) {
+            Log::error('Elasticsearch ping failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 🧩 Index (hoặc cập nhật) một document vào Elasticsearch
      */
     public function indexDocument(string $index, int|string $id, array $data): bool

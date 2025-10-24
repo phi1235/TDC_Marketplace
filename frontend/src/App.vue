@@ -5,8 +5,8 @@
       <!-- Header -->
       <Header />
 
-      <!-- Skeleton Loading Overlay -->
-      <transition name="fade">
+      <!-- Skeleton Loading Overlay - DISABLED -->
+      <!-- <transition name="fade">
         <div
           v-if="isLoading"
           class="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 flex items-center justify-center z-50"
@@ -15,12 +15,15 @@
             <SkeletonLoader :count="8" />
           </div>
         </div>
-      </transition>
+      </transition> -->
 
       <!-- Main Content -->
       <main class="transition-colors duration-300">
         <router-view @route-loading="handleLoading" />
       </main>
+
+      <!-- Toast Container -->
+      <div id="toast-root" class="fixed top-4 right-4 z-50 space-y-2"></div>
     </div>
   </div>
 </template>
@@ -58,14 +61,14 @@ const toggleDark = () => {
   isDark.value = !isDark.value
 }
 
-// 🔄 Skeleton loading khi chuyển route
-router.beforeEach((to, from, next) => {
-  isLoading.value = true
-  setTimeout(() => next(), 200) // Delay giả lập
-})
-router.afterEach(() => {
-  setTimeout(() => (isLoading.value = false), 600)
-})
+// 🔄 Skeleton loading khi chuyển route - DISABLED
+// router.beforeEach((to, from, next) => {
+//   isLoading.value = true
+//   setTimeout(() => next(), 200) // Delay giả lập
+// })
+// router.afterEach(() => {
+//   setTimeout(() => (isLoading.value = false), 600)
+// })
 
 // Cho phép component con bật/tắt loading nếu cần
 const handleLoading = (val: boolean) => {
@@ -81,5 +84,26 @@ const handleLoading = (val: boolean) => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Toast animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Toast transitions */
+#toast-root > div {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 </style>

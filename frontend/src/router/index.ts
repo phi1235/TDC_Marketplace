@@ -69,6 +69,18 @@ const router = createRouter({
           component: () => import('@/views/listings/PendingAdminView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
+        {
+          path: 'comparison',
+          name: 'dashboard-comparison',
+          component: () => import('@/views/admin/ComparisonDashboard.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'search-analytics',
+          name: 'dashboard-search-analytics',
+          component: () => import('@/views/admin/SearchAnalyticsDashboard.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
       ],
     },
     {

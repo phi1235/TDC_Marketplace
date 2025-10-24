@@ -12,22 +12,15 @@
           </router-link>
         </div>
 
-        <!-- Search Bar -->
+        <!-- Dual Search Bar -->
         <div class="flex-1 max-w-lg mx-8">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @keyup.enter="handleSearch"
-            />
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-          </div>
+          <DualSearchBar
+            placeholder="Tìm kiếm sản phẩm..."
+            :show-engine-status="false"
+            :show-results="false"
+            :show-analytics="false"
+            @search="handleDualSearch"
+          />
         </div>
 
         <!-- Navigation -->
@@ -237,6 +230,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
+import DualSearchBar from './DualSearchBar.vue'
+// import type { DualSearchResult } from '@/services/dualSearch'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -248,12 +243,37 @@ const isDark = ref(false)
 
 const isAuthenticated = computed(() => auth.isAuthenticated)
 const user = computed(() => auth.user)
-const isAdmin = computed(() => auth.isAdmin)
+const isAdmin = computed(() => {
+  // Debug logging
+  console.log('Header - isAdmin computed:', {
+    user: auth.user,
+    role: auth.user?.role,
+    isAdmin: auth.user?.role === 'admin'
+  })
+  // Ensure user data is loaded before checking admin status
+  return auth.user?.role === 'admin'
+})
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
     router.push({ name: 'listings', query: { q: searchQuery.value } })
   }
+}
+
+const handleDualSearch = (result) => {
+  // Redirect to listings with search results
+  router.push({
+    name: 'listings',
+    query: { 
+      q: result.elasticsearch.data[0]?.title || result.solr.data[0]?.title || '',
+      dual_search: 'true',
+      es_count: result.elasticsearch.count,
+      solr_count: result.solr.count,
+      winner: result.comparison.winner
+    }
+  })
+  
+  showToast(`Search completed! ES: ${result.elasticsearch.count} results, Solr: ${result.solr.count} results`, 'success')
 }
 
 const toggleUserMenu = () => {
@@ -287,12 +307,20 @@ const handleClickOutside = (event: Event) => {
 }
 
 // Dark mode functions
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') {
     isDark.value = true
     document.documentElement.classList.add('dark')
+  }
+  
+  // Ensure user data is loaded on mount
+  if (auth.token && !auth.user) {
+    await auth.fetchUser()
+  } else if (auth.token && auth.user) {
+    // Refresh user data to ensure it's up to date
+    await auth.refreshUser()
   }
 })
 

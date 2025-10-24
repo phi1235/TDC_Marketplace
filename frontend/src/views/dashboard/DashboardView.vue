@@ -60,6 +60,7 @@ const filteredUsers = computed(() => {
         <li class="item"><router-link to="/dashboard">USERS</router-link></li>
         <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
         <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
+        <li class="item"><router-link to="/dashboard/comparison">SEARCH COMPARISON</router-link></li>
         <li class="item"><a href="#">REPORTS</a></li>
       </ul>
     </nav>

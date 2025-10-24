@@ -2,50 +2,15 @@
   <div class="p-6 max-w-7xl mx-auto">
     <h2 class="text-xl font-bold mb-4">🔍 Tìm kiếm sản phẩm</h2>
 
-    <!-- Ô nhập -->
-    <div class="relative flex gap-3 mb-6">
-      <div class="flex-1 relative">
-        <input
-          v-model="keyword"
-          type="text"
-          autocomplete="off"
-          placeholder="Nhập từ khóa..."
-          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          @focus="showDropdown = true"
-          @blur="hideDropdown"
-          @input="handleInput"
-          @compositionstart="isComposing = true"
-          @compositionend="handleCompositionEnd"
-          @keydown.enter.prevent="handleEnter"
-          @keydown.down.prevent="moveDown"
-          @keydown.up.prevent="moveUp"
-        />
-
-        <!-- Dropdown -->
-        <ul
-          v-if="showDropdown && (loadingSuggest || suggestions.length)"
-          class="absolute left-0 top-full z-10 w-full bg-white border border-gray-200 rounded-lg shadow-md mt-1 max-h-60 overflow-auto"
-        >
-          <li v-if="loadingSuggest" class="px-4 py-2 text-gray-400 italic">Đang gợi ý...</li>
-
-          <li
-            v-for="(item, i) in suggestions"
-            :key="i"
-            class="px-4 py-2 cursor-pointer transition"
-            :class="i === selectedIndex ? 'bg-blue-100 font-semibold' : 'hover:bg-blue-50'"
-            @mousedown.prevent="selectSuggestion(item)"
-          >
-            <span v-html="highlight(item)"></span>
-          </li>
-        </ul>
-      </div>
-
-      <button
-        @click="searchProducts"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-      >
-        Tìm kiếm
-      </button>
+    <!-- Dual Search Bar -->
+    <div class="mb-6">
+      <DualSearchBar
+        placeholder="Nhập từ khóa..."
+        :show-engine-status="false"
+        :show-results="true"
+        :show-analytics="false"
+        @search="handleDualSearch"
+      />
     </div>
 
     <!-- 🔎 Lịch sử tìm kiếm -->
@@ -112,6 +77,8 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
+import DualSearchBar from './DualSearchBar.vue'
+// import type { DualSearchResult } from '@/services/dualSearch'
 
 const keyword = ref('')
 const results = ref([])
@@ -279,6 +246,33 @@ const highlight = (text) => {
 }
 
 const formatPrice = (p) => Number(p).toLocaleString('vi-VN')
+
+const handleDualSearch = (result) => {
+  // Update results with best performing engine data
+  const winner = result.comparison.winner
+  if (winner === 'elasticsearch') {
+    results.value = result.elasticsearch.data
+  } else {
+    results.value = result.solr.data
+  }
+  
+  // Add to history
+  const query = result.elasticsearch.data[0]?.title || result.solr.data[0]?.title || ''
+  if (query && !history.value.includes(query)) {
+    history.value.unshift(query)
+    if (history.value.length > 10) {
+      history.value = history.value.slice(0, 10)
+    }
+    localStorage.setItem('searchHistory', JSON.stringify(history.value))
+  }
+  
+  console.log('Dual search completed:', {
+    elasticsearch: result.elasticsearch.count,
+    solr: result.solr.count,
+    winner: result.comparison.winner,
+    timeDifference: result.comparison.time_difference
+  })
+}
 
 onMounted(fetchHistory)
 </script>

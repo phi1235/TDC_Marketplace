@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schema name="listings" version="1.6">
+  <field name="_version_" type="long" indexed="true" stored="true"/>
+  
+  <!-- Core fields for listings -->
+  <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+  <field name="title" type="text_vietnamese" indexed="true" stored="true" required="true"/>
+  <field name="description" type="text_vietnamese" indexed="true" stored="true"/>
+  <field name="category_id" type="int" indexed="true" stored="true"/>
+  <field name="seller_id" type="int" indexed="true" stored="true"/>
+  <field name="price" type="double" indexed="true" stored="true"/>
+  <field name="original_price" type="double" indexed="true" stored="true"/>
+  <field name="condition_grade" type="string" indexed="true" stored="true"/>
+  <field name="status" type="string" indexed="true" stored="true"/>
+  <field name="view_count" type="int" indexed="true" stored="true"/>
+  <field name="favorite_count" type="int" indexed="true" stored="true"/>
+  <field name="created_at" type="date" indexed="true" stored="true"/>
+  <field name="updated_at" type="date" indexed="true" stored="true"/>
+  
+  <!-- Copy fields for search -->
+  <field name="text" type="text_vietnamese" indexed="true" stored="false" multiValued="true"/>
+  
+  <!-- Field types -->
+  <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true"/>
+  <fieldType name="int" class="solr.IntPointField"/>
+  <fieldType name="double" class="solr.DoublePointField"/>
+  <fieldType name="date" class="solr.DatePointField"/>
+  <fieldType name="long" class="solr.LongPointField"/>
+  
+  <!-- Vietnamese text field with proper tokenization -->
+  <fieldType name="text_vietnamese" class="solr.TextField" positionIncrementGap="100">
+    <analyzer type="index">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.StopFilterFactory" words="stopwords.txt" ignoreCase="true"/>
+    </analyzer>
+    <analyzer type="query">
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.StopFilterFactory" words="stopwords.txt" ignoreCase="true"/>
+    </analyzer>
+  </fieldType>
+  
+  <!-- Copy field definitions -->
+  <copyField source="title" dest="text"/>
+  <copyField source="description" dest="text"/>
+  
+  <!-- Unique key -->
+  <uniqueKey>id</uniqueKey>
+  
+  
+</schema>

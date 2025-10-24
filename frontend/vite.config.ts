@@ -14,15 +14,15 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      // Match only real API paths and forward to Laravel service inside Docker
+      // Match only real API paths and forward to Laravel service
       '^/api(?:/|$)': {
-        target: 'http://laravel:8000',
+        target: 'http://tdc-laravel:8000',
         changeOrigin: true,
         secure: false,
       },
       // Proxy storage files to Laravel
       '^/storage(?:/|$)': {
-        target: 'http://laravel:8000',
+        target: 'http://tdc-laravel:8000',
         changeOrigin: true,
         secure: false,
       },

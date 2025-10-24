@@ -24,16 +24,49 @@ interface RegisterData {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
+  // Try to restore user from localStorage
+  const savedUser = localStorage.getItem('auth_user')
+  console.log('Auth - Initial load:', {
+    savedUser: savedUser,
+    parsedUser: savedUser ? JSON.parse(savedUser) : null
+  })
+  
+  let parsedUser = null
+  if (savedUser) {
+    const temp = JSON.parse(savedUser)
+    // Handle nested user structure from old data
+    parsedUser = temp.user ? temp.user : temp
+  }
+  
+  const user = ref<User | null>(parsedUser)
   const token = ref<string | null>(localStorage.getItem('auth_token'))
   const loading = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const isAdmin = computed(() => user.value?.role === 'admin')
+  const isAdmin = computed(() => {
+    // Debug logging
+    console.log('Auth - isAdmin computed:', {
+      user: user.value,
+      role: user.value?.role,
+      isAdmin: user.value?.role === 'admin'
+    })
+    // Ensure user data is available before checking role
+    return user.value?.role === 'admin'
+  })
 
   // Set api default authorization header for current session (interceptor also handles this)
   if (token.value) {
+    console.log('Auth - Token found, setting up API header')
     ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
+    // Auto fetch user if token exists but user is null
+    if (!user.value) {
+      console.log('Auth - No user data, fetching...')
+      fetchUser()
+    } else {
+      console.log('Auth - User data already exists:', user.value)
+    }
+  } else {
+    console.log('Auth - No token found')
   }
 
   async function login(credentials: LoginCredentials) {
@@ -45,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       
       localStorage.setItem('auth_token', token.value)
+      localStorage.setItem('auth_user', JSON.stringify(user.value)) // Store user directly, not nested
       ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
@@ -67,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       
       localStorage.setItem('auth_token', token.value)
+      localStorage.setItem('auth_user', JSON.stringify(user.value)) // Store user directly, not nested
       ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
@@ -91,6 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     token.value = null
     localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_user')
     delete (api.defaults.headers as any).Authorization
   }
 
@@ -98,11 +134,24 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
+      console.log('Auth - fetchUser: Starting fetch...')
       const response = await api.get('/auth/me')
-      user.value = response.data
-    } catch (error) {
-      // Token might be invalid, logout
-      await logout()
+      user.value = response.data.user // Extract user from response.data.user
+      localStorage.setItem('auth_user', JSON.stringify(user.value))
+      console.log('Auth - fetchUser: Success:', user.value)
+    } catch (error: any) {
+      console.log('Auth - fetchUser: Error:', error.response?.status)
+      // Only logout if token is explicitly invalid (401)
+      if (error.response?.status === 401) {
+        await logout()
+      }
+      // For other errors (network, 500, etc.), keep user logged in
+    }
+  }
+
+  async function refreshUser() {
+    if (token.value && user.value) {
+      await fetchUser()
     }
   }
 
@@ -116,6 +165,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     fetchUser,
+    refreshUser,
   }
 })
 

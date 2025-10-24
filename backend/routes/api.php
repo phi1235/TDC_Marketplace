@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
 use App\Http\Controllers\ElasticSearchController;
+use App\Http\Controllers\SolrSearchController;
+use App\Http\Controllers\ComparisonController;
+use App\Http\Controllers\DualSearchController;
+use App\Http\Controllers\SearchAnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +42,36 @@ Route::get('/search-es', [ElasticSearchController::class, 'index']);
 Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
 Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
 Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
+
+// Solr search routes (public)
+Route::get('/search-solr', [SolrSearchController::class, 'index']);
+Route::get('/search-solr/suggest', [SolrSearchController::class, 'suggestions']);
+Route::delete('/search-solr/history/clear', [SolrSearchController::class, 'clearHistory']);
+Route::get('/search-solr/history', [SolrSearchController::class, 'history']);
+Route::get('/search-solr/filters', [SolrSearchController::class, 'searchWithFilters']);
+Route::get('/search-solr/stats', [SolrSearchController::class, 'stats']);
+Route::post('/search-solr/reindex', [SolrSearchController::class, 'reindex']);
+Route::delete('/search-solr/clear', [SolrSearchController::class, 'clearIndex']);
+
+// Comparison routes (public)
+Route::get('/comparison/performance', [ComparisonController::class, 'performance']);
+Route::get('/comparison/resources', [ComparisonController::class, 'resources']);
+Route::get('/comparison/quality', [ComparisonController::class, 'quality']);
+Route::get('/comparison/summary', [ComparisonController::class, 'summary']);
+Route::get('/comparison/realtime', [ComparisonController::class, 'realtime']);
+Route::get('/comparison/trends', [ComparisonController::class, 'trends']);
+Route::get('/comparison/recent', [ComparisonController::class, 'getRecentResults']);
+Route::post('/comparison/test', [ComparisonController::class, 'runTest']);
+
+// Dual search routes
+Route::get('/search-dual', [DualSearchController::class, 'search']);
+Route::get('/search-dual/ping', [DualSearchController::class, 'ping']);
+
+// Search analytics routes
+Route::post('/search-analytics', [SearchAnalyticsController::class, 'store']);
+Route::get('/search-analytics/stats', [SearchAnalyticsController::class, 'getStats']);
+Route::get('/search-analytics/history', [SearchAnalyticsController::class, 'getUserHistory']);
+Route::get('/search-analytics/performance', [SearchAnalyticsController::class, 'getPerformanceComparison']);
  
 
 // Listings routes (public)
