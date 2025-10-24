@@ -7,6 +7,7 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
 use App\Http\Controllers\ElasticSearchController;
-
+use App\Http\Controllers\SolrController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -38,7 +39,8 @@ Route::get('/search-es', [ElasticSearchController::class, 'index']);
 Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']);
 Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
 Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
- 
+Route::get('/search-solr', [SolrController::class, 'index']);
+Route::get('/search-compare', [CompareController::class, 'index']);
 
 // Listings routes (public)
 Route::get('/listings', [ListingController::class, 'index']);
