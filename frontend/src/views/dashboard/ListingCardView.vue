@@ -2,12 +2,9 @@
   <div class="p-6 bg-gray-50 min-h-screen">
     <h1 class="text-2xl font-bold mb-6 text-gray-800">Danh sách yêu thích</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <div
-        v-for="wish in wishes.data"
-        :key="wish.id"
-        class="bg-white shadow rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition"
-      >
+    <div v-if="wishes.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-for="wish in wishes.data" :key="wish.id"
+        class="bg-white shadow rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition">
         <div>
           <h3 class="text-lg font-semibold mb-2">Wishlist #{{ wish.id }}</h3>
           <p class="text-gray-500 text-sm">Ngày tạo: {{ formatDate(wish.created_at) }}</p>
@@ -15,10 +12,8 @@
         </div>
 
         <div class="mt-4 flex justify-end items-center">
-          <button
-            @click="toggleFavorite(wish)"
-            class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition"
-          >
+          <button @click="toggleFavorite(wish)"
+            class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition">
             <span v-if="wish.isFavorited">❤️</span>
             <span v-else>🤍</span>
             {{ wish.favoriteCount }}
@@ -27,19 +22,19 @@
       </div>
     </div>
 
+    <div v-else class="text-center text-gray-500 py-10">
+      Hiện chưa có sản phẩm yêu thích nào 😢
+    </div>
+
     <div class="mt-6 flex justify-center space-x-2">
-      <button
-        v-for="link in wishes.links"
-        :key="link.label"
-        :disabled="!link.url"
+      <button v-for="link in wishes.links" :key="link.label" :disabled="!link.url"
         class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        @click="getWishes(link.url)"
-      >
+        @click="getWishes(link.url)">
         <span v-html="link.label"></span>
       </button>
     </div>
 
-    <div v-if="wishes.data.length === 0" class="mt-6 text-center text-gray-400">
+    <div v-if="wishes.length === 0" class="mt-6 text-center text-gray-400">
       Chưa có sản phẩm yêu thích
     </div>
   </div>
@@ -47,7 +42,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/services/api'
 
 interface Wish {
   id: number
@@ -62,17 +57,13 @@ interface Pagination {
   links: any[]
 }
 
-const wishes = ref<Pagination>({ data: [], links: [] })
+const wishes = ref([])
 
 // Lấy dữ liệu wishlist
-const getWishes = async (url = 'http://localhost:8001/api/wishes') => {
+const getWishes = async () => {
   try {
-    const res = await axios.get(url.startsWith('http') ? url : `http://localhost:8001${url}`)
-    // Mặc định isFavorited = false, favoriteCount = 0
-    wishes.value = {
-      ...res.data,
-      data: res.data.data.map((w: Wish) => ({ ...w, isFavorited: false, favoriteCount: 0 }))
-    }
+    const res = await api.get('/wishes') // ← tự gắn token auto
+    wishes.value = res.data.data || []
   } catch (error) {
     console.error('Error fetching wishes:', error)
   }
@@ -90,8 +81,10 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(() => {
-  getWishes()
+onMounted(async () => {
+  await getWishes()  // ← chờ API trả về
+  console.log('✅ Result:', wishes.value)
+
 })
 </script>
 
