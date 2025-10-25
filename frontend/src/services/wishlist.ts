@@ -55,3 +55,13 @@ export const wishlistService = {
     return response.data
   }
 }
+
+//wishlist
+import axios from 'axios'
+import type { Pagination } from '@/types/Pagination' // nếu có
+
+export const getWishes = async (url = '/listwish') => {
+  const res = await axios.get(url.startsWith('http') ? url : `http://localhost:8001/api${url}`)
+  return res.data
+}
+
