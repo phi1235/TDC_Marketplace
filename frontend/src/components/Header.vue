@@ -238,7 +238,8 @@ const handleClickOutside = (event: Event) => {
 const wishesCount = ref(0);
 onMounted(async () => {
   const res = await getWishes()
-  wishesCount.value = res.data.length
+  wishesCount.value = res.length
+  console.log('API trả về: ', res)  // xem có data không
 })
 
 onMounted(() => {

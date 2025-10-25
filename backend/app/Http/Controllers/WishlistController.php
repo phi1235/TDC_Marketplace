@@ -20,9 +20,19 @@ class WishlistController extends Controller
         // return response()->json($wishlists);
 
         //get api no depend user_error
+        // $wishlists = Wishlist::with(['listing.seller', 'listing.category', 'listing.images'])
+        // ->orderBy('created_at', 'desc')
+        // ->paginate(20);
+
+        // return response()->json($wishlists);
+
+        //get api = user id is logining
+        $user = $request->user(); // Đã CÓ user ✅
+
         $wishlists = Wishlist::with(['listing.seller', 'listing.category', 'listing.images'])
+        ->where('user_id', $user->id) // lấy đúng wishlist theo user
         ->orderBy('created_at', 'desc')
-        ->paginate(20);
+        ->get(); // nếu muốn length => nên get thay vì paginate
 
         return response()->json($wishlists);
     }
