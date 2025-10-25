@@ -55,3 +55,10 @@ export const wishlistService = {
     return response.data
   }
 }
+
+//wishlist
+
+export const getWishes = async () => {
+  return (await api.get('/wishes')).data
+}
+
