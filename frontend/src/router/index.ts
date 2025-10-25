@@ -100,6 +100,13 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
     },
+    ,
+    {
+      path: '/seller',
+      name: 'seller',
+      component: () => import('@/views/dashboard/SellerList.vue'),
+      meta: { requiresAuth: true },
+    },
     {
       path: '/profile',
       name: 'profile',
