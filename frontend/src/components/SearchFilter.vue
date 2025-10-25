@@ -10,11 +10,7 @@
 
     <!-- 🌀 Loading Skeleton -->
     <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      <div
-        v-for="n in 6"
-        :key="'skeleton-' + n"
-        class="border rounded-lg shadow-sm p-4 animate-pulse"
-      >
+      <div v-for="n in 6" :key="'skeleton-' + n" class="border rounded-lg shadow-sm p-4 animate-pulse">
         <div class="bg-gray-300 h-40 w-full rounded-lg mb-3 shimmer"></div>
         <div class="h-4 bg-gray-300 rounded w-3/4 mb-2 shimmer"></div>
         <div class="h-4 bg-gray-200 rounded w-1/2 mb-2 shimmer"></div>
@@ -33,11 +29,10 @@
           </small>
         </h3>
 
-        <div
-          v-for="item in results[0]?.data?.results"
-          :key="item._id"
-          class="border rounded-lg shadow-sm hover:shadow-md transition p-4 mb-4"
-        >
+        <div v-for="item in results[0]?.data?.results" :key="item._id"
+          class="border rounded-lg shadow-sm hover:shadow-md transition p-4 mb-4 cursor-pointer"
+          @click="goToListingDetail(item)">
+          >
           <img :src="getImage(item)" class="w-full h-40 object-cover rounded-lg mb-3" />
           <h3 class="font-semibold text-lg mb-1">{{ getTitle(item) }}</h3>
           <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ getDescription(item) }}</p>
@@ -54,11 +49,8 @@
           </small>
         </h3>
 
-        <div
-          v-for="item in results[1]?.data?.results"
-          :key="item.id"
-          class="border rounded-lg shadow-sm hover:shadow-md transition p-4 mb-4"
-        >
+        <div v-for="item in results[1]?.data?.results" :key="item.id"
+          class="border rounded-lg shadow-sm hover:shadow-md transition p-4 mb-4">
           <img :src="getImage(item)" class="w-full h-40 object-cover rounded-lg mb-3" />
           <h3 class="font-semibold text-lg mb-1">{{ getTitle(item) }}</h3>
           <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ getDescription(item) }}</p>
@@ -68,17 +60,10 @@
     </div>
 
     <!-- 🧾 Normal Mode (ES hoặc Solr) -->
-    <transition-group
-      v-else
-      name="fade"
-      tag="div"
-      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
-    >
-      <div
-        v-for="item in results"
-        :key="item.id || item._id"
-        class="border rounded-lg shadow-sm hover:shadow-md transition p-4 fade-item"
-      >
+    <transition-group v-else name="fade" tag="div" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div v-for="item in results" :key="item.id || item._id"
+        class="border rounded-lg shadow-sm hover:shadow-md transition p-4 fade-item cursor-pointer"
+        @click="goToListingDetail(item)">
         <img :src="getImage(item)" class="w-full h-40 object-cover rounded-lg mb-3" />
         <h3 class="font-semibold text-lg mb-1">{{ getTitle(item) }}</h3>
         <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ getDescription(item) }}</p>
@@ -95,9 +80,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter() // 👈 thêm dòng này
 const keyword = ref('')
 const results = ref<any[]>([])
 const loading = ref(false)
@@ -193,6 +179,14 @@ const getPrice = (item: any) => {
   if (Array.isArray(item.price)) return item.price[0]
   return 0
 }
+const goToListingDetail = (item: any) => {
+  // Lấy ID cho cả ES và Solr
+  const id = item._id || item.id
+  if (!id) return
+
+  // Điều hướng đến trang chi tiết
+  router.push(`/listings/${id}`)
+}
 
 // 🎬 Lifecycle
 onMounted(() => {
@@ -224,12 +218,10 @@ mark {
 
 .shimmer {
   animation: shimmer 1.5s infinite linear;
-  background: linear-gradient(
-    90deg,
-    #f3f4f6 25%,
-    #e5e7eb 50%,
-    #f3f4f6 75%
-  );
+  background: linear-gradient(90deg,
+      #f3f4f6 25%,
+      #e5e7eb 50%,
+      #f3f4f6 75%);
   background-size: 200% 100%;
 }
 
@@ -237,8 +229,13 @@ mark {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
+}
+.fade-item:hover {
+  transform: translateY(-3px);
+  transition: all 0.2s ease;
 }
 </style>
