@@ -114,6 +114,11 @@ const router = createRouter({
       component: () => import('@/views/profile/ProfileView.vue'),
       meta: { requiresGuest: true },
     },
+    {
+    path: '/categories',
+    name: 'Categories',
+    component: () => import('@/views/categories/CategoriesView.vue'),
+  }
   ],
 })
 

@@ -41,8 +41,10 @@ Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
 
 
 // Listings routes (public)
+Route::get('/listings/latest', [ListingController::class, 'latest']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+
 
 // Categories routes (public)
 Route::get('/categories', [CategoryController::class, 'index']);

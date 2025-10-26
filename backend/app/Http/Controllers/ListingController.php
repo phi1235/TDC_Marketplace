@@ -42,7 +42,7 @@ class ListingController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -51,19 +51,56 @@ class ListingController extends Controller
         $sortOrder = $request->get('order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $perPage = (int)($request->get('per_page', 10));
+        $perPage = (int) ($request->get('per_page', 10));
         $listings = $query->paginate($perPage);
 
         return response()->json($listings);
     }
+    // public function latest()
+    // {
+    //     $listings = \App\Models\Listing::orderBy('created_at', 'desc')
+    //         ->take(12)
+    //         ->get();
+
+    //     return response()->json($listings);
+    //     // try {
+    //     //     // Lấy 12 tin rao mới nhất, sắp xếp theo ngày tạo giảm dần
+    //     //     $listings = \app\Models\Listing::orderBy('created_at', 'desc')
+    //     //         ->take(12)
+    //     //         ->get();
+
+    //     //     return response()->json($listings);
+    //     // } catch (\Exception $e) {
+    //     //     return response()->json([
+    //     //         'message' => 'Không thể tải tin rao mới nhất',
+    //     //         'error' => $e->getMessage()
+    //     //     ], 500);
+    //     // }
+    // }
+    public function latest()
+{
+    $listings = \App\Models\Listing::with(['images'])
+        ->where('status', 'approved')
+        ->orderBy('created_at', 'desc')
+        ->take(12)
+        ->get()
+        ->map(function ($listing) {
+            $listing->image_url = $listing->images->first()
+                ? asset('storage/' . $listing->images->first()->image_path)
+                : '/placeholder.jpg';
+            return $listing;
+        });
+
+    return response()->json($listings);
+}
 
     public function show(Listing $listing): JsonResponse
     {
         $listing->load(['seller.sellerProfile', 'category', 'images', 'offers']);
-        
+
         // Increment view count
         $listing->increment('views_count');
-        
+
         // Log view activity
         $listing->views()->create([
             'user_id' => Auth::id(),
@@ -78,29 +115,31 @@ class ListingController extends Controller
     {
         try {
             $data = $request->validated();
-            
+
             $data['status'] = 'pending'; // Default status for new listings
-            
+
             $listing = Auth::user()->listings()->create($data);
-            
+
             // Handle image uploads with optimization
             if ($request->hasFile('images')) {
                 $manager = new ImageManager(new Driver());
-                
+
                 foreach ($request->file('images') as $file) {
-                    if (!$file) { continue; }
+                    if (!$file) {
+                        continue;
+                    }
 
                     $ext = strtolower($file->getClientOriginalExtension());
                     $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $safeBase = preg_replace('/[^a-zA-Z0-9-_]/', '-', $base);
                     $ts = now()->format('YmdHis');
-                    $dir = 'listings/'.date('Y/m/d');
+                    $dir = 'listings/' . date('Y/m/d');
 
                     $img = $manager->read($file->getPathname());
                     $img->scaleDown(1600);
-                    $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
-                    $filename = $safeBase.'-'.$ts.'.'.$ext;
-                    $path = $dir.'/'.$filename;
+                    $quality = in_array($ext, ['jpg', 'jpeg']) ? 80 : 90;
+                    $filename = $safeBase . '-' . $ts . '.' . $ext;
+                    $path = $dir . '/' . $filename;
                     $binary = $img->encodeByExtension($ext, quality: $quality);
                     Storage::disk('public')->put($path, $binary);
 
@@ -153,9 +192,9 @@ class ListingController extends Controller
 
             $oldValues = $listing->toArray();
             $data = $request->validated();
-            
+
             // No slug handling needed for current database structure
-            
+
             // Reset status to pending if content changed
             if ($listing->status === 'rejected') {
                 $data['status'] = 'pending';
@@ -171,19 +210,21 @@ class ListingController extends Controller
                 }
 
                 foreach ($request->file('images') as $file) {
-                    if (!$file) { continue; }
+                    if (!$file) {
+                        continue;
+                    }
                     $ext = strtolower($file->getClientOriginalExtension());
                     $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $safeBase = preg_replace('/[^a-zA-Z0-9-_]/', '-', $base);
                     $ts = now()->format('YmdHis');
-                    $dir = 'listings/'.date('Y/m/d');
+                    $dir = 'listings/' . date('Y/m/d');
 
                     $manager = new ImageManager(new Driver());
                     $img = $manager->read($file->getPathname());
                     $img->scaleDown(1600);
-                    $quality = in_array($ext, ['jpg','jpeg']) ? 80 : 90;
-                    $filename = $safeBase.'-'.$ts.'.'.$ext;
-                    $path = $dir.'/'.$filename;
+                    $quality = in_array($ext, ['jpg', 'jpeg']) ? 80 : 90;
+                    $filename = $safeBase . '-' . $ts . '.' . $ext;
+                    $path = $dir . '/' . $filename;
                     $binary = $img->encodeByExtension($ext, quality: $quality);
                     Storage::disk('public')->put($path, $binary);
 
@@ -270,7 +311,7 @@ class ListingController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'message' => 'Có lỗi xảy ra khi xóa tin rao',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
@@ -297,11 +338,11 @@ class ListingController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        $perPage = (int)($request->get('per_page', 10));
+        $perPage = (int) ($request->get('per_page', 10));
         $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json($listings);
@@ -354,7 +395,7 @@ class ListingController extends Controller
                 foreach ($listing->images as $image) {
                     $newPath = 'listings/' . \Str::random(40) . '.' . pathinfo($image->image_path, PATHINFO_EXTENSION);
                     \Storage::disk('public')->copy($image->image_path, $newPath);
-                    
+
                     $newListing->images()->create([
                         'image_path' => $newPath,
                         'is_primary' => $image->is_primary,
@@ -387,7 +428,7 @@ class ListingController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'message' => 'Có lỗi xảy ra khi sao chép tin rao',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
@@ -405,7 +446,7 @@ class ListingController extends Controller
 
             $oldStatus = $listing->status;
             $newStatus = $listing->status === 'active' ? 'inactive' : 'active';
-            
+
             // Only allow status change for approved listings
             if ($listing->status !== 'approved') {
                 return response()->json(['message' => 'Chỉ có thể thay đổi trạng thái tin đã được duyệt'], 400);
@@ -434,4 +475,21 @@ class ListingController extends Controller
             ], 500);
         }
     }
+    public function featured(): JsonResponse
+    {
+        $query = Listing::with(['category', 'images'])
+            ->where('status', 'approved')
+            ->orderByDesc('created_at');
+
+        // Nếu có cột "is_featured" trong DB thì lọc thêm
+        if (Schema::hasColumn('listings', 'is_featured')) {
+            $query->where('is_featured', true);
+        }
+
+        $featuredListings = $query->get();
+
+        return response()->json($featuredListings);
+    }
+
+
 }
