@@ -53,6 +53,7 @@
 import { ref, onMounted } from 'vue'
 import { listingsService } from '@/services/listings'
 import { wishlistService } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 interface Listing {
   id: number
@@ -82,7 +83,7 @@ const listing = ref<Pagination>({
 })
 
 const loading = ref(false)
-const wishlistCount = ref(0) // tổng wishlist của user
+const wishlistStore = useWishlistStore() // tổng wishlist của user
 
 // Format ngày
 const formatDate = (dateStr: string) => {
@@ -106,13 +107,13 @@ const getListings = async (page?: number) => {
 }
 
 // Lấy wishlist của user để đánh dấu isFavorited
+// Lấy wishlist của user
 const loadWishlistStatus = async () => {
   const res = await wishlistService.getWishlist()
   
-  // Kiểm tra res.data, nếu không có thì res là array
-  const wishlistData = Array.isArray(res.data) ? res.data : res
-
-  wishlistCount.value = wishlistData.length
+  const wishlistData = Array.isArray(res) ? res : res.data
+  
+  wishlistStore.setCount(wishlistData.length)
 
   listing.value.data.forEach(l => {
     l.isFavorited = wishlistData.some((w: any) => w.listing_id === l.id)
@@ -125,17 +126,20 @@ const toggleFavorite = async (item: Listing) => {
   try {
     const res = await wishlistService.toggleWishlist(item.id)
 
-    // Tạo object mới để Vue re-render
+    // Cập nhật store tổng wishlist
+    wishlistStore.setCount(res.total ?? wishlistStore.count + (res.is_favorited ? 1 : -1))
+
+    // Cập nhật item trong danh sách
     listing.value.data = listing.value.data.map(l =>
       l.id === item.id
         ? { ...l, isFavorited: res.is_favorited, favoriteCount: res.is_favorited ? 1 : 0 }
         : l
     )
-
   } catch (err) {
     console.error(err)
   }
 }
+
 
 // Load lần đầu
 onMounted(() => getListings())

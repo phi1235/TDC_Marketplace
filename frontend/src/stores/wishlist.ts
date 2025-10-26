@@ -29,3 +29,15 @@ export const useWishStore = defineStore('wish', () => {
 
   return { wishes, total, fetchWishes }
 })
+
+
+//button wishlist view_count
+export const useWishlistStore = defineStore('wishlist', () => {
+  const count = ref(0)
+
+  const setCount = (value: number) => {
+    count.value = value
+  }
+
+  return { count, setCount }
+})
