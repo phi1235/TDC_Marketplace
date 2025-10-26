@@ -131,8 +131,8 @@ Route::get('/auth/current-role', function (Request $request) {
 // Route::get('/wishes', [WishlistController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wishes', [WishlistController::class, 'index']);
+    Route::delete('/wishlists/remove-by-listing/{listingId}', [WishlistController::class, 'removeByListing']);
 });
-
 // API toggle wishlist
 Route::middleware('auth:sanctum')->post('/wishlist/toggle', [WishlistController::class, 'toggle']);
 

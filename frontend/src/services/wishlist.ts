@@ -53,12 +53,19 @@ export const wishlistService = {
   async checkWishlist(listingId: number): Promise<{ is_favorited: boolean }> {
     const response = await api.get(`/wishlists/${listingId}/check`)
     return response.data
-  }
+  },
+
 }
 
 //wishlist
-
 export const getWishes = async () => {
   return (await api.get('/wishes')).data
 }
+
+//delete
+export const removeWishlistByListing = async (listingId: number) => {
+  const res = await api.delete(`/wishlists/remove-by-listing/${listingId}`);
+  return res.data;
+};
+
 

@@ -41,3 +41,5 @@ export const useWishlistStore = defineStore('wishlist', () => {
 
   return { count, setCount }
 })
+
+

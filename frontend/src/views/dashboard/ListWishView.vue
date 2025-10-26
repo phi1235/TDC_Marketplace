@@ -27,7 +27,7 @@
               <button class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                 Xem
               </button>
-              <button class="mx-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+              <button @click="removeFromWishlist(wish.listing.id)" class="mx-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
                 Bỏ
               </button>
             </td>
@@ -56,7 +56,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getWishes } from '@/services/wishlist'
+import { getWishes, removeWishlistByListing } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 interface Wish {
   id: number
@@ -85,7 +86,18 @@ onMounted(async () => {
     console.error("❌ Lỗi lấy wishlist:", err)
   }
 })
-
+//delete
+const wishlistStore = useWishlistStore()
+const removeFromWishlist = async (listingId: number) => {
+  try {
+    const res = await removeWishlistByListing(listingId);
+    wishlist.value = wishlist.value.filter(w => w.listing_id !== listingId);
+    wishlistStore.setCount(res.total);
+    console.log('✅ Xóa wishlist thành công', res.message);
+  } catch (err) {
+    console.error('❌ Lỗi xóa wishlist:', err);
+  }
+};
 
 // Format date đẹp hơn
 const formatDate = (dateStr: string) => {
