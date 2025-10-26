@@ -67,7 +67,7 @@
                   <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                     {{ listing.title }}
                   </h1>
-                  
+
                   <!-- Meta Info -->
                   <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
                     <div class="flex items-center">
@@ -127,7 +127,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-              <div>
+                  <div>
                     <div class="text-xs text-gray-500">Địa điểm</div>
                     <div class="font-medium text-gray-900">{{ listing.location || 'TDC Campus' }}</div>
                   </div>
@@ -141,8 +141,46 @@
                   {{ listing.description }}
                 </div>
               </div>
-              </div>
             </div>
+
+            <!-- ✅ Related inline (bên trong v-else-if="listing") -->
+            <section class="mt-10">
+              <h3 class="text-xl font-bold mb-4 text-gray-900">Tin rao tương tự</h3>
+
+              <div v-if="loadingRelated" class="text-gray-500 italic">Đang tải...</div>
+              <div v-else-if="errorRelated" class="text-red-600">{{ errorRelated }}</div>
+
+              <div v-else-if="relatedListings.length === 0" class="text-gray-500 italic">
+                Không có tin rao tương tự nào.
+              </div>
+
+              <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div
+                  v-for="item in relatedListings"
+                  :key="item.id"
+                  class="bg-white border rounded-lg shadow-sm hover:shadow-md transition p-3 cursor-pointer"
+                  @click="$router.push(`/listings/${item.id}`)"
+                >
+                  <div class="aspect-square rounded-md overflow-hidden bg-gray-100 mb-2">
+                    <img
+                      v-if="item.images && item.images.length"
+                      :src="buildImageUrl(item.images[0]?.image_path)"
+                      :alt="item.title"
+                      class="w-full h-full object-cover hover:scale-105 transition-transform"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      Không có ảnh
+                    </div>
+                  </div>
+                  <h4 class="text-sm font-semibold text-gray-800 truncate">{{ item.title }}</h4>
+                  <div class="text-blue-600 font-bold text-base mt-1">{{ formatPrice(item.price) }}</div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ item.category?.name || 'Chưa phân loại' }}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
 
           <!-- Right Column: Seller Info & Actions -->
           <div class="space-y-6">
@@ -182,7 +220,7 @@
                   </svg>
                   Sao chép liên kết
                 </button>
-                
+
                 <button
                   @click="reportListing"
                   class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
@@ -191,7 +229,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                   </svg>
                   Báo cáo tin rao
-              </button>
+                </button>
               </div>
             </div>
 
@@ -212,10 +250,10 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </div> <!-- /Right column -->
+        </div> <!-- /Grid -->
+      </div> <!-- /inner container -->
+    </div> <!-- /main content -->
 
     <!-- Contact Seller Modal -->
     <ContactSellerModal
@@ -231,6 +269,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import { listingsService, type Listing } from '@/services/listings'
 import { showToast } from '@/utils/toast'
@@ -238,6 +277,7 @@ import ImageGallery from '@/components/listings/ImageGallery.vue'
 import SellerInfoCard from '@/components/listings/SellerInfoCard.vue'
 import ContactSellerModal from '@/components/listings/ContactSellerModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
+import { watch } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -249,7 +289,6 @@ const showContactModal = ref(false)
 
 const breadcrumbItems = computed(() => {
   if (!listing.value) return []
-  
   return [
     { label: 'Tin rao', to: '/listings' },
     ...(listing.value.category ? [{ label: listing.value.category.name, to: `/listings?category=${listing.value.category_id}` }] : []),
@@ -258,11 +297,8 @@ const breadcrumbItems = computed(() => {
 })
 
 const formatPrice = (price: number) => {
-  if (price === 0) return 'Miễn phí'
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
+  if (!price) return '0'
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
 const formatDate = (dateString: string) => {
@@ -270,7 +306,7 @@ const formatDate = (dateString: string) => {
   const now = new Date()
   const diffTime = Math.abs(now.getTime() - date.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays === 0) return 'Hôm nay'
   if (diffDays === 1) return 'Hôm qua'
   if (diffDays < 7) return `${diffDays} ngày trước`
@@ -281,56 +317,57 @@ const formatDate = (dateString: string) => {
 
 const getConditionText = (condition: string) => {
   const conditions: Record<string, string> = {
-    'new': 'Mới (A)',
-    'like_new': 'Như mới (B)',
-    'good': 'Tốt (C)',
-    'fair': 'Khá (D)'
+    new: 'Mới (A)',
+    like_new: 'Như mới (B)',
+    good: 'Tốt (C)',
+    fair: 'Khá (D)'
   }
   return conditions[condition] || condition
 }
 
 const getStatusText = (status: string) => {
   const statuses: Record<string, string> = {
-    'pending': 'Chờ duyệt',
-    'approved': 'Đang bán',
-    'rejected': 'Bị từ chối',
-    'sold': 'Đã bán',
-    'archived': 'Đã ẩn'
+    pending: 'Chờ duyệt',
+    approved: 'Đang bán',
+    rejected: 'Bị từ chối',
+    sold: 'Đã bán',
+    archived: 'Đã ẩn'
   }
   return statuses[status] || status
 }
 
 const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
-    'pending': 'bg-yellow-100 text-yellow-800',
-    'approved': 'bg-green-100 text-green-800',
-    'rejected': 'bg-red-100 text-red-800',
-    'sold': 'bg-gray-100 text-gray-800',
-    'archived': 'bg-gray-100 text-gray-800'
+    pending: 'bg-yellow-100 text-yellow-800',
+    approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
+    sold: 'bg-gray-100 text-gray-800',
+    archived: 'bg-gray-100 text-gray-800'
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
+}
+
+const buildImageUrl = (path?: string) => {
+  if (!path) return ''
+  // nếu bạn đã có helper imageUrl, có thể dùng thay cho dòng dưới
+  return `/storage/${path}`
 }
 
 const loadListing = async () => {
   loading.value = true
   error.value = ''
-  
   try {
     const id = Number(route.params.id)
-    if (isNaN(id)) {
-      throw new Error('ID tin rao không hợp lệ')
-    }
-    
+    if (isNaN(id)) throw new Error('ID tin rao không hợp lệ')
+
     listing.value = await listingsService.getListing(id)
-    
-    // Update page title
+
     if (listing.value) {
       document.title = `${listing.value.title} - TDC Marketplace`
     }
   } catch (err: any) {
     console.error('Error loading listing:', err)
     error.value = err.response?.data?.message || 'Không thể tải thông tin tin rao'
-    
     if (err.response?.status === 404) {
       error.value = 'Tin rao không tồn tại hoặc đã bị xóa'
     }
@@ -339,9 +376,46 @@ const loadListing = async () => {
   }
 }
 
-const openContactModal = () => {
-  showContactModal.value = true
+const relatedListings = ref<any[]>([])
+const loadingRelated = ref(false)
+const errorRelated = ref('')
+
+const loadRelatedListings = async (id: number) => {
+  loadingRelated.value = true
+  errorRelated.value = ''
+  try {
+    const res = await axios.get(`/api/listings/${id}/related`)
+    relatedListings.value = res.data || []
+  } catch (err: any) {
+    console.error('Lỗi tải tin rao tương tự:', err)
+    errorRelated.value = err.response?.data?.message || 'Không thể tải tin rao tương tự'
+  } finally {
+    loadingRelated.value = false
+  }
 }
+
+onMounted(async () => {
+  await loadListing()
+  if (listing.value?.id) {
+    loadRelatedListings(listing.value.id)
+  }
+})
+// 🧭 Theo dõi ID thay đổi trên route
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    if (newId !== oldId) {
+      await loadListing()
+      if (listing.value?.id) {
+        loadRelatedListings(listing.value.id)
+      }
+      // Cuộn lên đầu trang cho UX tốt hơn
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+)
+/* ====== Actions ====== */
+const openContactModal = () => { showContactModal.value = true }
 
 const handleSendMessage = (message: string) => {
   console.log('Message sent:', message)
@@ -352,17 +426,12 @@ const copyLink = async () => {
   try {
     await navigator.clipboard.writeText(window.location.href)
     showToast('success', 'Đã sao chép liên kết!')
-  } catch (err) {
+  } catch {
     showToast('error', 'Không thể sao chép liên kết')
   }
 }
 
 const reportListing = () => {
-  // TODO: Implement report functionality
   showToast('info', 'Chức năng báo cáo đang được phát triển')
 }
-
-onMounted(() => {
-  loadListing()
-})
 </script>

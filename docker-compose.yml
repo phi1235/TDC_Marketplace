@@ -118,7 +118,22 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10  
-
+  # Apache Solr for full-text search comparison
+  solr:
+    image: solr:9.4
+    container_name: tdc-solr
+    restart: unless-stopped
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr_data:/var/solr
+    environment:
+      - SOLR_HEAP=512m
+    networks:
+      - tdc-network
+    command:
+      - solr-precreate
+      - listings
   # phpMyAdmin UI for MySQL
   phpmyadmin:
     image: phpmyadmin:latest
@@ -141,6 +156,7 @@ volumes:
   redis_data:
   meilisearch_data:
   es_data:
+  solr_data:
 
 networks:
   tdc-network:
