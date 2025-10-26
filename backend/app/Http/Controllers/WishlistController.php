@@ -37,37 +37,34 @@ class WishlistController extends Controller
         return response()->json($wishlists);
     }
 
-    public function toggle(Request $request, Listing $listing): JsonResponse
-    {
-        $user = Auth::user();
+public function toggle(Request $request, Listing $listing): JsonResponse
+{
+    $user = Auth::user();
 
-        // Kiểm tra user đã thích listing chưa
-        $wishlist = $user->wishlists()->where('listing_id', $listing->id)->first();
+    // Kiểm tra user đã thích listing chưa
+    $wishlist = $user->wishlists()->where('listing_id', $listing->id)->first();
 
-        if ($wishlist) {
-            // Nếu đã có → xóa
-            $wishlist->delete();
-            $listing->decrement('favorite_count');
-
-            $isFavorited = false;
-        } else {
-            // Nếu chưa có → thêm
-            $user->wishlists()->create([
-                'listing_id' => $listing->id,
-            ]);
-            $listing->increment('favorite_count');
-
-            $isFavorited = true;
-        }
-
-        // Tổng wishlist của user
-        $total = $user->wishlists()->count();
-
-        return response()->json([
-            'message' => $isFavorited ? 'Đã thêm vào danh sách yêu thích' : 'Đã xóa khỏi danh sách yêu thích',
-            'is_favorited' => $isFavorited,
-            'total' => $total,
+    if ($wishlist) {
+        // Nếu đã có → xóa
+        $wishlist->delete();
+        $isFavorited = false;
+    } else {
+        // Nếu chưa có → thêm
+        $user->wishlists()->create([
+            'listing_id' => $listing->id,
         ]);
+        $isFavorited = true;
     }
+
+    // Tổng wishlist của user (nếu muốn hiển thị số lượng)
+    $total = $user->wishlists()->count();
+
+    return response()->json([
+        'message' => $isFavorited ? 'Đã thêm vào danh sách yêu thích' : 'Đã xóa khỏi danh sách yêu thích',
+        'is_favorited' => $isFavorited,
+        'total' => $total, // nếu FE không cần có thể bỏ
+    ]);
+}
+
 
 }

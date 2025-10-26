@@ -108,9 +108,14 @@ const getListings = async (page?: number) => {
 // Lấy wishlist của user để đánh dấu isFavorited
 const loadWishlistStatus = async () => {
   const res = await wishlistService.getWishlist()
-  wishlistCount.value = res.total
+  
+  // Kiểm tra res.data, nếu không có thì res là array
+  const wishlistData = Array.isArray(res.data) ? res.data : res
+
+  wishlistCount.value = wishlistData.length
+
   listing.value.data.forEach(l => {
-    l.isFavorited = res.data.some((w: any) => w.listing_id === l.id)
+    l.isFavorited = wishlistData.some((w: any) => w.listing_id === l.id)
     l.favoriteCount = l.isFavorited ? 1 : 0
   })
 }
@@ -119,10 +124,14 @@ const loadWishlistStatus = async () => {
 const toggleFavorite = async (item: Listing) => {
   try {
     const res = await wishlistService.toggleWishlist(item.id)
-    item.isFavorited = res.is_favorited
-    item.favoriteCount = res.is_favorited ? 1 : 0
-    // Nếu backend trả về tổng wishlist, update
-    if (res.total !== undefined) wishlistCount.value = res.total
+
+    // Tạo object mới để Vue re-render
+    listing.value.data = listing.value.data.map(l =>
+      l.id === item.id
+        ? { ...l, isFavorited: res.is_favorited, favoriteCount: res.is_favorited ? 1 : 0 }
+        : l
+    )
+
   } catch (err) {
     console.error(err)
   }
