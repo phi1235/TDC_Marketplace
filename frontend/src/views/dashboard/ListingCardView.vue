@@ -19,9 +19,12 @@
         <div class="mt-4 flex justify-end items-center">
           <button @click="toggleFavorite(list)"
             class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition">
+            <!-- Icon ❤️ nếu đã thích, 🤍 nếu chưa -->
             <span v-if="list.isFavorited">❤️</span>
             <span v-else>🤍</span>
-            {{ list.favoriteCount }}
+
+            <!-- Số lượt yêu thích -->
+            <span>{{ list.favoriteCount }}</span>
           </button>
         </div>
       </div>
@@ -49,6 +52,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { listingsService } from '@/services/listings'
+import { wishlistService } from '@/services/wishlist'
 
 interface Listing {
   id: number
@@ -78,6 +82,7 @@ const listing = ref<Pagination>({
 })
 
 const loading = ref(false)
+const wishlistCount = ref(0) // tổng wishlist của user
 
 // Format ngày
 const formatDate = (dateStr: string) => {
@@ -85,13 +90,7 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-// Toggle yêu thích demo
-const toggleFavorite = (item: Listing) => {
-  item.isFavorited = !item.isFavorited
-  item.favoriteCount = (item.favoriteCount || 0) + (item.isFavorited ? 1 : -1)
-}
-
-// Lấy dữ liệu từ API
+// Lấy dữ liệu listings
 const getListings = async (page?: number) => {
   loading.value = true
   try {
@@ -100,15 +99,39 @@ const getListings = async (page?: number) => {
       ...res,
       data: res.data.sort((a, b) => a.id - b.id)
     }
+    await loadWishlistStatus()
   } finally {
     loading.value = false
   }
 }
 
+// Lấy wishlist của user để đánh dấu isFavorited
+const loadWishlistStatus = async () => {
+  const res = await wishlistService.getWishlist()
+  wishlistCount.value = res.total
+  listing.value.data.forEach(l => {
+    l.isFavorited = res.data.some((w: any) => w.listing_id === l.id)
+    l.favoriteCount = l.isFavorited ? 1 : 0
+  })
+}
+
+// Toggle wishlist
+const toggleFavorite = async (item: Listing) => {
+  try {
+    const res = await wishlistService.toggleWishlist(item.id)
+    item.isFavorited = res.is_favorited
+    item.favoriteCount = res.is_favorited ? 1 : 0
+    // Nếu backend trả về tổng wishlist, update
+    if (res.total !== undefined) wishlistCount.value = res.total
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 // Load lần đầu
 onMounted(() => getListings())
 </script>
+
 
 
 <style scoped>

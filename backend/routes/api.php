@@ -133,6 +133,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/wishes', [WishlistController::class, 'index']);
 });
 
+// API toggle wishlist
+Route::middleware('auth:sanctum')->post('/wishlist/toggle', [WishlistController::class, 'toggle']);
+
 
 //follow_sellers
 Route::middleware('auth:sanctum')->group(function () {
