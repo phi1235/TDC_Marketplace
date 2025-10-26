@@ -222,24 +222,12 @@ const handleClickOutside = (event: Event) => {
   }
 }
 
-//wishlist length
-// const wishes = ref({ data: [] })
-
-// const getWishes = async () => {
-//   const res = await axios.get('http://localhost:8001/api/wishes')
-//   wishes.value = res.data
-// }
-
-// const wishlistCount = computed(() => wishes.value.data.length)
-
-// onMounted(() => {
-//   getWishes()
-// })
+//wishlist
 const wishesCount = ref(0);
 onMounted(async () => {
   const res = await getWishes()
-  wishesCount.value = res.length
   console.log('API trả về: ', res)  // xem có data không
+  wishesCount.value = res.length
 })
 
 onMounted(() => {

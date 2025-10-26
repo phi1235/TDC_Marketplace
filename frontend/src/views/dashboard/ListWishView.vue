@@ -13,7 +13,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="wish in wishes.data" :key="wish.id" class="hover:bg-gray-50">
+          <tr v-for="wish in wishlist" :key="wish.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ wish.id }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatDate(wish.created_at) }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatDate(wish.updated_at) }}</td>
@@ -23,7 +23,7 @@
               </button>
             </td>
           </tr>
-          <tr v-if="wishes.data.length === 0">
+          <tr v-if="wishlist.length === 0">
             <td colspan="4" class="px-6 py-4 text-center text-gray-400">Chưa có sản phẩm yêu thích</td>
           </tr>
         </tbody>
@@ -31,9 +31,9 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-4 flex justify-center space-x-2">
+    <!-- <div class="mt-4 flex justify-center space-x-2">
       <button
-        v-for="link in wishes.links"
+        v-for="link in wishlist.links"
         :key="link.label"
         :disabled="!link.url"
         class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -41,13 +41,13 @@
       >
         <span v-html="link.label"></span>
       </button>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { getWishes } from '@/services/wishlist'
 
 interface Wish {
   id: number
@@ -60,16 +60,23 @@ interface Pagination {
   links: any[]
 }
 
-const wishes = ref<Pagination>({ data: [], links: [] })
+//wl
+const wishlist = ref([]);
 
-const getWishes = async (url = 'http://localhost:8001/api/wishes') => {
+onMounted(async () => {
   try {
-    const res = await axios.get(url.startsWith('http') ? url : `http://localhost:8001${url}`)
-    wishes.value = res.data
-  } catch (error) {
-    console.error('Error fetching wishes:', error)
+    console.log("🔍 Token hiện tại:", localStorage.getItem("auth_token") || localStorage.getItem("token"))
+
+    const res = await getWishes()
+    console.log('✅ API trả về: ', res)
+
+    wishlist.value = res || []
+    console.log('✅ wishlist sau khi gán: ', wishlist.value)
+  } catch (err) {
+    console.error("❌ Lỗi lấy wishlist:", err)
   }
-}
+})
+
 
 // Format date đẹp hơn
 const formatDate = (dateStr: string) => {
@@ -77,9 +84,7 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(() => {
-  getWishes()
-})
+
 </script>
 
 <style scoped>

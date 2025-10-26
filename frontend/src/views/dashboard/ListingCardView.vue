@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import api from '@/services/api'
+import { getWishes } from '@/services/wishlist'
 
 interface Wish {
   id: number
@@ -57,17 +57,26 @@ interface Pagination {
   links: any[]
 }
 
-const wishes = ref([])
+// const wishes = ref([])
 
 // Lấy dữ liệu wishlist
-const getWishes = async () => {
-  try {
-    const res = await api.get('/wishes') // ← tự gắn token auto
-    wishes.value = res.data.data || []
-  } catch (error) {
-    console.error('Error fetching wishes:', error)
-  }
-}
+// const getWishes = async () => {
+//   try {
+//     const res = await api.get('/wishes') // ← tự gắn token auto
+//     wishes.value = res.data.data || []
+//   } catch (error) {
+//     console.error('Error fetching wishes:', error)
+//   }
+// }
+
+const wishlist = ref([]);
+onMounted(async () => {
+  console.log('API trả về: ', res)  // xem có data không
+  const res = await getWishes()
+  console.log('API trả về: ', res)  // xem có data không
+  wishlist.value = res.data
+})
+
 
 // Toggle yêu thích (demo, không gọi API thực)
 const toggleFavorite = (wish: Wish) => {
@@ -82,7 +91,9 @@ const formatDate = (dateStr: string) => {
 }
 
 onMounted(async () => {
+  console.log("🔍 auth_token hiện tại:", localStorage.getItem("auth_token"))
   await getWishes()  // ← chờ API trả về
+  console.log(localStorage.getItem("auth_token"));
   console.log('✅ Result:', wishes.value)
 
 })
