@@ -6,20 +6,29 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-100">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày cập nhật</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="wish in wishlist" :key="wish.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ wish.id }}</td>
+          <tr v-for="(wish, index) in wishlist" :key="wish.id" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ index + 1 }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ wish.listing.title }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ wish.listing.price }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ wish.listing.location }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatDate(wish.created_at) }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ formatDate(wish.updated_at) }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <button class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
                 Xem
+              </button>
+              <button class="mx-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                Bỏ
               </button>
             </td>
           </tr>
