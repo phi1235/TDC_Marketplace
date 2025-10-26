@@ -2,7 +2,7 @@
   <div class="p-6 bg-gray-50 min-h-screen">
     <h1 class="text-2xl font-bold mb-6 text-gray-800">Danh sách yêu thích</h1>
     <div v-if="listing.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <div v-for="list in listing.data" :key="list.id"
+      <div v-for="list in listing" :key="list.id"
       class="bg-white shadow rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition">
       <div>
           <h3 class="text-lg font-semibold mb-2">Listing #{{ list.id }}</h3>
@@ -13,7 +13,7 @@
         <div class="mt-4 flex justify-end items-center">
           <button @click="toggleFavorite(list)"
             class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition">
-            <span v-if="wish.isFavorited">❤️</span>
+            <span v-if="list.isFavorited">❤️</span>
             <span v-else>🤍</span>
             {{ list.favoriteCount }}
           </button>
@@ -22,7 +22,7 @@
     </div>
 
     <div v-else class="text-center text-gray-500 py-10">
-      Hiện chưa có sản phẩm yêu thích nào 😢
+      <!-- Hiện chưa có sản phẩm yêu thích nào 😢 -->
     </div>
 
     <!-- <div class="mt-6 flex justify-center space-x-2">
@@ -34,7 +34,7 @@
     </div> -->
 
     <div v-if="listing.length === 0" class="mt-6 text-center text-gray-400">
-      Chưa có sản phẩm yêu thích
+      <!-- Chưa có sản phẩm yêu thích -->
     </div>
   </div>
 </template>
@@ -82,13 +82,6 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(async () => {
-  console.log("🔍 auth_token hiện tại:", localStorage.getItem("auth_token"))
-  await getListings()  // ← chờ API trả về
-  console.log(localStorage.getItem("auth_token"));
-  console.log('✅ Result:', listing.value)
-
-})
 </script>
 
 <style scoped>
