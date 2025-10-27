@@ -12,18 +12,6 @@
           </router-link>
         </div>
 
-        <!-- Search Bar -->
-        <div class="flex-1 max-w-lg mx-8">
-          <div class="relative">
-            <input v-model="searchQuery" type="text" placeholder="Tìm kiếm sản phẩm..."
-              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              @keyup.enter="handleSearch" />
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
         <!-- 🔍 Search Bar with Suggest & History -->
         <div class="flex-1 max-w-lg mx-8 relative">
           <input v-model="searchQuery" type="text" placeholder="Tìm kiếm sản phẩm..."
@@ -103,7 +91,6 @@
         <nav class="flex items-center space-x-4">
           <router-link to="/"
             class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
-          <router-link to="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
             Trang chủ
           </router-link>
 
@@ -150,7 +137,8 @@
 
           <!-- Auth -->
           <div v-if="!isAuthenticated" class="flex items-center space-x-2">
-            <router-link to="/login" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+            <router-link to="/login"
+              class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
               Đăng nhập
             </router-link>
             <router-link to="/register"
@@ -176,73 +164,6 @@
                 class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                 Tin của tôi
               </router-link>
-
-              <!-- Admin User Menu -->
-              <div class="relative user-menu-container">
-                <button @click="toggleUserMenu"
-                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                  {{ user?.name }}
-                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </button>
-
-                <!-- Dropdown Menu -->
-                <div v-if="showUserMenu"
-                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <router-link to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false">
-                    Hồ sơ
-                  </router-link>
-                  <button @click="handleLogout"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Đăng xuất
-                  </button>
-                </div>
-              </div>
-            </template>
-
-            <template v-else>
-              <router-link to="/create-listing"
-                class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
-                Đăng tin
-              </router-link>
-              
-              <router-link to="/my-listings"
-                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Tin của tôi
-              </router-link>
-              <div class="relative user-menu-container">
-                <button @click="toggleUserMenu"
-                  class="flex items-center text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                  {{ user?.name }}
-                  <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </button>
-
-                <!-- Dropdown Menu -->
-                <div v-if="showUserMenu"
-                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <router-link to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false">
-                    Hồ sơ
-                  </router-link>
-                  <router-link v-if="isAdmin" to="/dashboard"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="showUserMenu = false">
-                    Quản trị
-                  </router-link>
-                  <router-link v-else to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="showUserMenu = false">
-                    Danh sách ❤️ {{ wishlistStore.count }}
-                  </router-link>
-
-                  <button @click="handleLogout"
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Đăng xuất
-                  </button>
-                </div>
-              </div>
             </template>
 
             <!-- User menu -->
@@ -261,6 +182,10 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
+                <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Danh sách 💟 {{ wishlistStore.count }}
+                </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -278,8 +203,6 @@
           </button>
         </nav>
       </div>
-
-
     </div>
   </header>
 </template>
@@ -388,20 +311,20 @@ const clearHistory = async () => {
 const selectSuggestion = (item: string) => {
   searchQuery.value = item
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: item, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: item, engine: engine.value } })
 }
 
 const selectHistory = (keyword: string) => {
   searchQuery.value = keyword
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: keyword, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: keyword, engine: engine.value } })
 }
 
 const searchFullKeyword = () => {
   const q = searchQuery.value.trim()
   if (!q) return
   showDropdown.value = false
-  router.push({ name: 'search', query: { q, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q, engine: engine.value } })
 }
 
 const moveDown = () => {
