@@ -182,15 +182,17 @@
                 {{ unreadCount }}
               </span>
             </button>
-            <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
-              <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
-                <p> {{ value.title }} </p>
+            <transition name="fade-slide">
+              <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
+                <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
+                  <p> {{ value.title }} </p>
+                </div>
+                <router-link to="/notifications"
+                  class="block text-center py-2 hover:bg-gray-100">
+                  Xem tất cả thông báo
+                </router-link>
               </div>
-              <router-link to="/"
-                class="block text-center py-2 hover:bg-gray-100">
-                Xem tất cả thông báo
-              </router-link>
-            </div>
+            </transition>
           </div>
           
           <!-- Dark Mode -->
@@ -419,7 +421,8 @@ const notifications  = ref([
   { title: 'Tin nhắn mới từ admin' },
   { title: 'Khuyến mãi siêu hot' },
   { title: 'Notification thứ 4' },
-])
+]) //Hiện tạm thời, khi nào có api thì truyền vô
+
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
