@@ -173,6 +173,26 @@
             </div>
           </div>
 
+          <!-- Anounce for user -->
+           <div v-if="isAuthenticated" class="flex items-center space-x-2 relative">
+            <button @click="isOpen = !isOpen">
+              🔔
+              <span v-if="unreadCount > 0"
+                class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                {{ unreadCount }}
+              </span>
+            </button>
+            <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
+              <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
+                <p> {{ value.title }} </p>
+              </div>
+              <router-link to="/"
+                class="block text-center py-2 hover:bg-gray-100">
+                Xem tất cả thông báo
+              </router-link>
+            </div>
+          </div>
+          
           <!-- Dark Mode -->
           <button @click="toggleDark"
             class="ml-3 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -391,6 +411,16 @@ watch(isDark, (val) => {
 
 const toggleDark = () => (isDark.value = !isDark.value)
 
+//Anounce for user
+const isOpen = ref(false); //trạng thái để mở thông báo
+const unreadCount = ref(4); //tin chưa đọc
+const notifications  = ref([
+  { title: 'Bạn có đơn hàng mới' },
+  { title: 'Tin nhắn mới từ admin' },
+  { title: 'Khuyến mãi siêu hot' },
+  { title: 'Notification thứ 4' },
+])
+
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
@@ -398,5 +428,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 mark {
   background-color: #fef08a;
   color: inherit;
+}
+
+/* style announce */
+.fade-slide-enter-active {
+transition: all 0.2s ease;
+}
+.fade-slide-leave-active {
+transition: all 0.2s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+opacity: 0;
+transform: translateY(-5px);
 }
 </style>
