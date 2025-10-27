@@ -1,28 +1,28 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="max-w-6xl mx-auto">
+  <AdminLayout>
+    <div class="container mx-auto px-6 py-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Quản trị hệ thống</h1>
       
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-white rounded-lg shadow-md p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Tổng người dùng</h3>
-          <div class="text-3xl font-bold text-blue-600">1,234</div>
+          <div class="text-3xl font-bold text-blue-600">{{ stats.total_users || 0 }}</div>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Tin rao</h3>
-          <div class="text-3xl font-bold text-green-600">567</div>
+          <div class="text-3xl font-bold text-green-600">{{ stats.active_listings || 0 }}</div>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Chờ duyệt</h3>
-          <div class="text-3xl font-bold text-yellow-600">23</div>
+          <div class="text-3xl font-bold text-yellow-600">{{ stats.pending_listings || 0 }}</div>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Báo cáo</h3>
-          <div class="text-3xl font-bold text-red-600">12</div>
+          <div class="text-3xl font-bold text-red-600">{{ stats.total_reports || 0 }}</div>
         </div>
       </div>
 
@@ -53,22 +53,13 @@
         </p>
         <div class="flex space-x-4">
           <router-link 
-            to="/admin/comparison" 
+            to="/dashboard/comparison" 
             class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
             </svg>
             Comparison Dashboard
-          </router-link>
-          <router-link 
-            to="/search-test" 
-            class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center"
-          >
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            Search Test
           </router-link>
           <router-link 
             to="/dashboard/search-analytics" 
@@ -112,9 +103,32 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
-// Simple admin dashboard component
+import { ref, onMounted } from 'vue'
+import AdminLayout from '@/components/AdminLayout.vue'
+import { getDashboardStats } from '@/services/admin'
+import type { DashboardStats } from '@/services/admin'
+
+const stats = ref<DashboardStats>({
+  total_users: 0,
+  active_listings: 0,
+  pending_listings: 0,
+  total_reports: 0,
+  pending_reports: 0,
+})
+
+const isLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    stats.value = await getDashboardStats()
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>

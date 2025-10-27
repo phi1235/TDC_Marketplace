@@ -2,8 +2,8 @@
   <div id="app" :class="isDark ? 'dark' : ''">
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 relative">
 
-      <!-- Header -->
-      <Header />
+      <!-- Header - Only show on non-admin routes -->
+      <Header v-if="!isAdminRoute" />
 
       <!-- Skeleton Loading Overlay - DISABLED -->
       <!-- <transition name="fade">
@@ -29,14 +29,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const isDark = ref(false)
 const isLoading = ref(false)
 const router = useRouter()
+const route = useRoute()
+
+// Check if current route is an admin route
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/dashboard') || route.path.startsWith('/admin')
+})
 
 // 🌙 Dark mode
 onMounted(() => {

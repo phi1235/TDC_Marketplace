@@ -1,4 +1,8 @@
 import api from './api'
+import type { User } from './auth'
+
+// Re-export User type for convenience
+export type { User }
 
 export const userService = {
   getAllUsers() {
