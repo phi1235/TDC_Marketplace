@@ -100,8 +100,6 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
     },
-<<<<<<< HEAD
-    ,
     {
       path: '/seller',
       name: 'seller',
@@ -111,7 +109,6 @@ const router = createRouter({
       path: '/notifications',
       name: 'notifications',
       component: () => import('@/views/dashboard/NotificationsView.vue'),
->>>>>>> feature/Truong_Tuan_Dung/api_thong_bao
       meta: { requiresAuth: true },
     },
     {
