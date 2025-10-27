@@ -109,11 +109,28 @@
               </svg>
             </button>
 
+            <!-- Test pages dropdown -->
             <div v-if="showTestMenu"
               class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-              <router-link v-for="item in testPages" :key="item.name" :to="item.to"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="showTestMenu = false">
-                {{ item.label }}
+              <router-link to="/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Dashboard Page
+              </router-link>
+              <router-link to="/panel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Panel Page
+              </router-link>
+              <router-link to="/userpanel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                User Page
+              </router-link>
+              <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                List wish page
+              </router-link>
+              <router-link to="/listingcard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Listing Card page
               </router-link>
             </div>
           </div>
@@ -165,6 +182,10 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
+                <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Danh sách 💟 {{ wishlistStore.count }}
+                </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -191,6 +212,9 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
+// import axios from 'axios'
+import { getWishes } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -287,20 +311,20 @@ const clearHistory = async () => {
 const selectSuggestion = (item: string) => {
   searchQuery.value = item
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: item, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: item, engine: engine.value } })
 }
 
 const selectHistory = (keyword: string) => {
   searchQuery.value = keyword
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: keyword, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: keyword, engine: engine.value } })
 }
 
 const searchFullKeyword = () => {
   const q = searchQuery.value.trim()
   if (!q) return
   showDropdown.value = false
-  router.push({ name: 'search', query: { q, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q, engine: engine.value } })
 }
 
 const moveDown = () => {
@@ -354,21 +378,34 @@ const handleLogout = async () => {
   }
 }
 
-// === 🧭 Nav Test Pages ===
-const testPages = [
-  { label: 'Dashboard Page', to: '/dashboard' },
-  { label: 'Panel Page', to: '/panel' },
-  { label: 'User Page', to: '/userpanel' },
-  { label: 'List wish page', to: '/listwish' },
-  { label: 'Listing Card page', to: '/listingcard' },
-]
+// Close dropdowns when clicking outside
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement
 
-// === 🌙 Dark Mode Logic ===
-const handleClickOutside = (e: Event) => {
-  const target = e.target as HTMLElement
-  if (!target.closest('.user-menu-container')) showUserMenu.value = false
-  if (!target.closest('.test-menu-container')) showTestMenu.value = false
+  // Close user menu if clicking outside
+  if (!target.closest('.user-menu-container')) {
+    showUserMenu.value = false
+  }
+
+  // Close test menu if clicking outside
+  if (!target.closest('.test-menu-container')) {
+    showTestMenu.value = false
+  }
 }
+
+//wishlist
+const wishlistStore = useWishlistStore()
+
+onMounted(async () => {
+  try {
+    const res = await getWishes()
+    // res là array wishlist
+    wishlistStore.setCount(Array.isArray(res) ? res.length : 0)
+  } catch (err) {
+    console.error('Lỗi lấy wishlist:', err)
+    wishlistStore.setCount(0)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)

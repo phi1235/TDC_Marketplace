@@ -49,7 +49,7 @@ class ListingController extends Controller
 
         // Sort
         $sortBy = $request->get('sort', 'created_at');
-        $sortOrder = $request->get('order', 'desc');
+        $sortOrder = $request->get('order', 'asc');
         $query->orderBy($sortBy, $sortOrder);
 
         $perPage = (int)($request->get('per_page', 10));
