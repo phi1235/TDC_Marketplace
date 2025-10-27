@@ -9,6 +9,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
@@ -89,6 +90,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/offers/received', [OfferController::class, 'receivedOffers']);
     Route::post('/offers/{offer}/accept', [OfferController::class, 'accept']);
     Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
+
+    // Report routes
+    Route::post('/reports', [ReportController::class, 'store']);
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/{report}', [ReportController::class, 'show']);
+    Route::get('/reports-stats', [ReportController::class, 'stats']);
+    Route::get('/report-reasons', [ReportController::class, 'getReportReasons']);
+    Route::get('/reportable-types', [ReportController::class, 'getReportableTypes']);
 
     // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
