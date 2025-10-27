@@ -124,6 +124,7 @@
                 class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
                 Đăng tin
               </router-link>
+              
               <router-link to="/my-listings"
                 class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
                 Tin của tôi
@@ -163,6 +164,8 @@
           </div>
         </nav>
       </div>
+
+
     </div>
   </header>
 </template>
