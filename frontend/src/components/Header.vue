@@ -174,7 +174,7 @@
           </div>
 
           <!-- Anounce for user -->
-           <div v-if="isAuthenticated" class="flex items-center space-x-2 relative">
+           <div v-if="isAuthenticated" class="flex items-center space-x-2 relative bell">
             <button @click="isOpen = !isOpen">
               🔔
               <span v-if="unreadCount > 0"
@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
@@ -421,8 +421,17 @@ const notifications  = ref([
   { title: 'Tin nhắn mới từ admin' },
   { title: 'Khuyến mãi siêu hot' },
   { title: 'Notification thứ 4' },
-]) //Hiện tạm thời, khi nào có api thì truyền vô
+]) //hiện tạm thời, khi nào có api thì truyền vô
+//đóng khi click ra ngoài
+const closeNotificationIfOutside  = (e) => {
+  const bell = document.querySelector('.bell')
+  if (bell && !bell.contains(e.target)) {
+  isOpen.value = false
+  }
+}
 
+onMounted(() => document.addEventListener('click', closeNotificationIfOutside ))
+onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside )) 
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
