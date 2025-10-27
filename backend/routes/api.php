@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
 use App\Http\Controllers\UserController;
+// FollowSeller
+use App\Http\Controllers\FollowSellerController;
+//SellerProfile
+use App\Models\SellerProfile;
 
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
@@ -126,4 +130,30 @@ Route::get('/auth/current-role', function (Request $request) {
 });
 
 //list_wish
-Route::get('/wishes', [WishlistController::class, 'index']);
+// Route::get('/wishes', [WishlistController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/wishes', [WishlistController::class, 'index']);
+    Route::delete('/wishlists/remove-by-listing/{listingId}', [WishlistController::class, 'removeByListing']);
+});
+// API toggle wishlist
+Route::middleware('auth:sanctum')->post('/wishlist/toggle', [WishlistController::class, 'toggle']);
+
+
+//follow_sellers
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/follow-sellers', [FollowSellerController::class, 'follow']);
+    Route::delete('/follow-sellers/{seller}', [FollowSellerController::class, 'unfollow']);
+    Route::get('/follow-sellers/{seller}/status', [FollowSellerController::class, 'status']);
+});
+
+
+
+// Test local không cần login
+// Route::post('/follow-toggle', [FollowSellerController::class, 'toggle']);
+// Route::get('/follow-status/{sellerId}', [FollowSellerController::class, 'status']);
+
+
+//SellerProfile
+Route::get('/sellers', function() {
+    return SellerProfile::all();
+});

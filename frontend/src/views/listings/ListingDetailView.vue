@@ -277,6 +277,7 @@ import ImageGallery from '@/components/listings/ImageGallery.vue'
 import SellerInfoCard from '@/components/listings/SellerInfoCard.vue'
 import ContactSellerModal from '@/components/listings/ContactSellerModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
+import { watch } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -375,7 +376,6 @@ const loadListing = async () => {
   }
 }
 
-/* ========== Related Listings (inline) ========== */
 const relatedListings = ref<any[]>([])
 const loadingRelated = ref(false)
 const errorRelated = ref('')
@@ -400,7 +400,20 @@ onMounted(async () => {
     loadRelatedListings(listing.value.id)
   }
 })
-
+// 🧭 Theo dõi ID thay đổi trên route
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    if (newId !== oldId) {
+      await loadListing()
+      if (listing.value?.id) {
+        loadRelatedListings(listing.value.id)
+      }
+      // Cuộn lên đầu trang cho UX tốt hơn
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+)
 /* ====== Actions ====== */
 const openContactModal = () => { showContactModal.value = true }
 
