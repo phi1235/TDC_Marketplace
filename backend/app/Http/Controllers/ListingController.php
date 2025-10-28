@@ -500,6 +500,18 @@ public function related(Listing $listing): JsonResponse
         ], 500);
     }
 }
+public function getPublicListings()
+{
+    $listings = \App\Models\Listing::with(['images', 'category', 'seller'])
+        ->where('status', 'approved')
+        ->latest()
+        ->take(20)
+        ->get();
 
+    return response()->json([
+        'success' => true,
+        'data' => $listings,
+    ]);
+}
 
 }

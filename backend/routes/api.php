@@ -50,6 +50,7 @@ Route::get('/search-compare', [CompareController::class, 'index']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
+Route::get('/public-listings', [ListingController::class, 'getPublicListings']);
 
 // Categories routes (public)
 Route::get('/categories', [CategoryController::class, 'index']);
