@@ -16,7 +16,7 @@
                 <tr v-for="item in news" :key="item.id" class="border-t">
                     <td class="p-2 border">{{ item.title }}</td>
                     <td class="p-2 border">{{ shortText(item.content, 80) }}
-                        <router-link :to="`/notifications/detail`" class="text-blue-600 hover:underline ml-1">...Xem thêm</router-link>
+                        <router-link :to="`/detailNotification/${item.id}`" class="text-blue-600 hover:underline ml-1">...Xem thêm</router-link>
                     </td>
                     <td class="p-2 border"><img :src="item.thumbnail" class="w-16 h-10 object-cover" /></td>
                     <td class="p-2 text-sm border">{{ item.created_at }}</td>
@@ -47,6 +47,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+//demo tạm thời, sau này có db api thì thêm sau
 const news = ref([
     { id: 1, title: 'Thông báo bảo trì hệ thống', thumbnail: 'https://via.placeholder.com/150', content: 'Hệ thống sẽ tiến hành bảo trì định kỳ vào lúc 23:00 ngày 30/10/2025 để nâng cấp máy chủ và tối ưu hóa hiệu năng. Trong thời gian này, toàn bộ dịch vụ sẽ tạm ngừng hoạt động trong khoảng 30 phút. Quý khách vui lòng sắp xếp công việc phù hợp để tránh ảnh hưởng đến quá trình sử dụng. Xin cảm ơn sự thông cảm và hợp tác của quý khách.', created_at: '2025-10-28' },
     { id: 2, title: 'Ra mắt tính năng mới', thumbnail: 'https://via.placeholder.com/150', content: 'Chúng tôi vừa cập nhật tính năng đặt lịch xem nhà trực tiếp.', created_at: '2025-10-27' },
