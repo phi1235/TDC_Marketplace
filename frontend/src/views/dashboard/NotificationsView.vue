@@ -15,7 +15,7 @@
             <tbody>
                 <tr v-for="item in news" :key="item.id" class="border-t">
                     <td class="p-2 border">{{ item.title }}</td>
-                    <td class="p-2 border">{{ item.content }}</td>
+                    <td class="p-2 border">{{ shortText(item.content, 80) }}</td>
                     <td class="p-2 border"><img :src="item.thumbnail" class="w-16 h-10 object-cover" /></td>
                     <td class="p-2 text-sm border">{{ item.created_at }}</td>
                     <td class="p-2 text-right space-x-2">
@@ -46,9 +46,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 const news = ref([
-    { id: 1, title: 'Thông báo bảo trì hệ thống', thumbnail: 'https://via.placeholder.com/150', content: 'Hệ thống sẽ bảo trì vào 22h tối nay để nâng cấp hiệu năng.', created_at: '2025-10-28' },
+    { id: 1, title: 'Thông báo bảo trì hệ thống', thumbnail: 'https://via.placeholder.com/150', content: 'Hệ thống sẽ tiến hành bảo trì định kỳ vào lúc 23:00 ngày 30/10/2025 để nâng cấp máy chủ và tối ưu hóa hiệu năng. Trong thời gian này, toàn bộ dịch vụ sẽ tạm ngừng hoạt động trong khoảng 30 phút. Quý khách vui lòng sắp xếp công việc phù hợp để tránh ảnh hưởng đến quá trình sử dụng. Xin cảm ơn sự thông cảm và hợp tác của quý khách.', created_at: '2025-10-28' },
     { id: 2, title: 'Ra mắt tính năng mới', thumbnail: 'https://via.placeholder.com/150', content: 'Chúng tôi vừa cập nhật tính năng đặt lịch xem nhà trực tiếp.', created_at: '2025-10-27' },
-    { id: 3, title: 'Chương trình khuyến mãi tháng 11', thumbnail: 'https://via.placeholder.com/150', content: 'Giảm 20% phí đăng tin cho tất cả người dùng từ 1/11 đến 15/11.', created_at: '2025-10-25' },
+    { id: 3, title: 'Chương trình khuyến mãi tháng 11', thumbnail: 'https://via.placeholder.com/150', content: 'Chúng tôi xin thông báo đến quý người dùng rằng chính sách bảo mật và điều khoản sử dụng mới sẽ được áp dụng từ ngày 01/11/2025. Bản cập nhật lần này chú trọng vào việc tăng cường bảo vệ dữ liệu cá nhân, mật khẩu và lịch sử thao tác trên hệ thống. Vui lòng đọc kỹ nội dung trước khi tiếp tục sử dụng dịch vụ để tránh phát sinh tranh chấp ngoài ý muốn.', created_at: '2025-10-25' },
     { id: 4, title: 'Lưu ý bảo mật tài khoản', thumbnail: 'https://via.placeholder.com/150', content: 'Vui lòng bật xác thực 2 lớp để đảm bảo an toàn tài khoản.', created_at: '2025-10-23' }
 ])
 const showForm = ref(false)
@@ -72,6 +72,10 @@ function saveNews() {
 } 
 function deleteNews(id) {
     news.value = news.value.filter(n => n.id !== id)
+}
+
+function shortText(text, limit = 80){
+    return text.length > limit ? text.slice(0, limit) + '...' :text;
 }
 
 onMounted(() => {
