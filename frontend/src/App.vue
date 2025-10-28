@@ -3,8 +3,8 @@
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 relative">
 
       <!-- Header -->
-      <Header />
-
+      <Header v-if="!auth.isAdmin" />
+      <Navbar v-if="auth.isAdmin" />
       <!-- Skeleton Loading Overlay -->
       <transition name="fade">
         <div
@@ -18,6 +18,7 @@
       </transition>
 
       <!-- Main Content -->
+       <!-- check login -->
       <main class="transition-colors duration-300">
         <router-view @route-loading="handleLoading" />
       </main>
@@ -26,10 +27,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
+import Navbar from './components/Navbar.vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const isDark = ref(false)
 const isLoading = ref(false)
@@ -71,6 +74,11 @@ const toggleDark = () => {
 const handleLoading = (val: boolean) => {
   isLoading.value = val
 }
+
+//check user or admin login
+const auth = useAuthStore();
+const isAuthenticated = computed(() => auth.isAuthenticated)
+const isAdmin = computed(() => auth.isAdmin)
 </script>
 
 <style>

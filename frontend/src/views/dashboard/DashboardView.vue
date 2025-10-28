@@ -233,8 +233,8 @@ const filteredUsers = computed(() => {
       }
     }
 
-// passed all checks
-return true;
+    // passed all checks
+    return true;
   });
 });
 
@@ -248,114 +248,95 @@ function getAdvancedFilterPayload() {
 </script>
 <template>
 
-  <div class="dashboard">
-    <!-- HEADER -->
-    <!-- <header class="header">
-      <h1>Header</h1>
-    </header> -->
-    <!-- NAVBAR -->
-    <nav class="navbar">
-      <h2 class="title">DASHBOARD</h2>
-      <ul class="list-items">
-        <li class="item"><router-link to="/dashboard">USERS</router-link></li>
-        <li class="item"><router-link to="/dashboard/listings">LISTINGS</router-link></li>
-        <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
-        <li class="item"><a href="#">REPORTS</a></li>
-      </ul>
-    </nav>
-
+  <div class="dashboard min-h-screen p-6 bg-gray-100 flex">
     <!-- CONTENT -->
-    <main class="content">
+    <main class="content flex-1 bg-white p-6 rounded-xl shadow-md overflow-y-auto">
       <!-- Chỉ hiển thị danh sách người dùng khi ở route /dashboard -->
       <div v-if="$route.path === '/dashboard'">
-        <div class="func">
-          <div class="total">Tổng số: <b>{{ users.length }}</b></div>
-          <div class="search">
-            <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
-            <!-- Button -->
-            <button id="btn_search" @click="search" class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
-              Tìm
+
+        <!-- FUNCTION BAR -->
+        <div class="flex flex-wrap items-center gap-4 mb-5">
+          <div class="text-lg font-semibold">Tổng số: <b>{{ users.length }}</b></div>
+
+          <div class="flex">
+            <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..."
+              class="border border-gray-300 rounded-l-md px-3 py-2 outline-none focus:ring focus:ring-blue-300" />
+            <button id="btn_search" @click="search"
+              class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="font-medium">Bộ lọc:</label>
+            <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
+              <option value="all">Tất cả</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+              <option value="active">Active</option>
+            </select>
+            <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              Nâng cao
             </button>
           </div>
 
-          <!-- <div class="filter">
-            <label for="role">Bộ lọc:</label>
-            <select id="role" v-model="selectedRole" name="role">
-              <option value="all">Tất cả</option>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-              <option value="active">Active</option>
-            </select>
-          </div> -->
-          <div class="filter flex items-center gap-2">
-            <label class="font-medium">Bộ lọc:</label>
-            <select id="role" v-model="selectedRole" name="role" class="border rounded px-3 py-2">
-              <option value="all">Tất cả</option>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-              <option value="active">Active</option>
-            </select>
-            <!-- nút mở advanced filter -->
-            <button @click="showAdvanced = true" class="btn-primary">Nâng cao</button>
-          </div>
           <AdvancedFilter :visible="showAdvanced" @update:visible="val => showAdvanced = val"
             @filter-change="applyAdvancedFilter" />
-
-
         </div>
 
-        <div class="inf">
-          <h2>Danh sách người dùng</h2>
-          <table>
+        <!-- INFO / TABLE -->
+        <div>
+          <h2 class="text-xl font-bold mb-3">Danh sách người dùng</h2>
+          <table class="w-full bg-white rounded-lg overflow-hidden border">
             <thead>
-              <tr>
-                <th>STT</th>
-                <th>ID</th>
-                <th>Tên</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Phone</th>
-                <th>Avatar</th>
-                <th>Active</th>
-                <th>Created At</th>
-                <th>Last Login</th>
-                <th>Login Count</th>
+              <tr class="bg-gray-100 text-left">
+                <th class="px-3 py-2">STT</th>
+                <th class="px-3 py-2">ID</th>
+                <th class="px-3 py-2">Tên</th>
+                <th class="px-3 py-2">Email</th>
+                <th class="px-3 py-2">Role</th>
+                <th class="px-3 py-2">Phone</th>
+                <th class="px-3 py-2">Avatar</th>
+                <th class="px-3 py-2">Active</th>
+                <th class="px-3 py-2">Created At</th>
+                <th class="px-3 py-2">Last Login</th>
+                <th class="px-3 py-2">Login Count</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(user, index) in filteredUsers" :key="user.id">
-                <td class="px-2 py-1 border">{{ index + 1 }}</td>
-                <td class="px-2 py-1 border">{{ user.id }}</td>
-                <td class="px-2 py-1 border">{{ user.name }}</td>
-                <td class="px-2 py-1 border">{{ user.email }}</td>
-                <td class="px-2 py-1 border">{{ user.role }}</td>
-                <td class="px-2 py-1 border">{{ user.phone }}</td>
-                <td class="px-2 py-1 border">
-                  <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
+              <tr v-for="(user, index) in filteredUsers" :key="user.id" class="border-t">
+                <td class="px-3 py-2">{{ index + 1 }}</td>
+                <td class="px-3 py-2">{{ user.id }}</td>
+                <td class="px-3 py-2">{{ user.name }}</td>
+                <td class="px-3 py-2">{{ user.email }}</td>
+                <td class="px-3 py-2">{{ user.role }}</td>
+                <td class="px-3 py-2">{{ user.phone }}</td>
+                <td class="px-3 py-2">
+                  <img :src="user.avatar" class="w-10 h-10 rounded-full" />
                 </td>
-                <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
-                <td class="px-2 py-1 border">{{ user.created_at }}</td>
-                <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
-                <td class="px-2 py-1 border">{{ user.login_count }}</td>
+                <td class="px-3 py-2">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+                <td class="px-3 py-2">{{ user.created_at }}</td>
+                <td class="px-3 py-2">{{ user.last_login_at }}</td>
+                <td class="px-3 py-2">{{ user.login_count }}</td>
               </tr>
             </tbody>
           </table>
 
           <!-- Pagination -->
-          <div class="pagination">
-            <button class="page-btn prev" disabled>« Trước</button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn next">Sau »</button>
+          <div class="flex justify-center gap-2 mt-4">
+            <button class="px-3 py-1 rounded border bg-gray-200" disabled>« Trước</button>
+            <button class="px-3 py-1 rounded border bg-blue-600 text-white">1</button>
+            <button class="px-3 py-1 rounded border bg-white">2</button>
+            <button class="px-3 py-1 rounded border bg-white">3</button>
+            <button class="px-3 py-1 rounded border bg-gray-200">Sau »</button>
           </div>
         </div>
+
       </div>
 
-      <!-- Hiển thị component con khi ở route con -->
+      <!-- Route con -->
       <router-view v-else />
     </main>
   </div>
+
 </template>
 
 <style scoped>
@@ -394,7 +375,7 @@ function getAdvancedFilterPayload() {
 }
 </style>
 
-<style scoped>
+<!-- <style scoped>
 /* RESET */
 * {
   margin: 0;
@@ -565,4 +546,4 @@ td {
   padding: 10px 14px;
   border-radius: 8px;
 }
-</style>
+</style> -->
