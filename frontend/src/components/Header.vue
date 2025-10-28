@@ -132,6 +132,10 @@
                 @click="showTestMenu = false">
                 Listing Card page
               </router-link>
+              <router-link to="/notifications" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                News
+              </router-link>
             </div>
           </div>
 
