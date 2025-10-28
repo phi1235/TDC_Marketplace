@@ -20,6 +20,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy storage files to Laravel
+      '^/storage(?:/|$)': {
+        target: 'http://laravel:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   build: {

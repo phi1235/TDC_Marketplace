@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/search',
+      name: 'search',
+      component: () => import('@/components/SearchFilter.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),
@@ -77,7 +82,6 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ContentPanel.vue'),
       meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/userpanel',
       name: 'user_panel',
@@ -97,6 +101,23 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/seller',
+      name: 'seller',
+      component: () => import('@/views/dashboard/SellerList.vue'),
+      },
+     {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/dashboard/NotificationsView.vue'),
+      meta: { requiresAuth: true },
+    },
+     {
+      path: '/detailNotification/:id',//truyền id qua
+      name: 'detail-notification',
+      component: () => import('@/views/dashboard/DetailNotification.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
@@ -108,6 +129,7 @@ const router = createRouter({
       component: () => import('@/views/admin/AdminDashboard.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+<<<<<<< HEAD
     {
       path: '/profile',
       name: 'profile',
@@ -119,6 +141,8 @@ const router = createRouter({
     name: 'Categories',
     component: () => import('@/views/categories/CategoriesView.vue'),
   }
+=======
+>>>>>>> main
   ],
 })
 
