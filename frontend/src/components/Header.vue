@@ -186,10 +186,12 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
-                <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="showUserMenu = false">
-                  Danh sách 💟 {{ wishlistStore.count }}
-                </router-link>
+                <div v-if="isAuthenticated && !auth.isAdmin">
+                  <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Danh sách 💟 {{ wishlistStore.count }}
+                  </router-link>
+                </div>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
