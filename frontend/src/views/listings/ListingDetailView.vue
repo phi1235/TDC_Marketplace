@@ -28,14 +28,13 @@
     <div v-else-if="error" class="container mx-auto px-4 py-8">
       <div class="max-w-2xl mx-auto text-center">
         <svg class="w-24 h-24 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy tin rao</h2>
         <p class="text-gray-600 mb-6">{{ error }}</p>
-        <router-link
-          to="/listings"
-          class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
+        <router-link to="/listings"
+          class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
@@ -55,10 +54,7 @@
           <!-- Left Column: Images & Details -->
           <div class="lg:col-span-2 space-y-6">
             <!-- Image Gallery -->
-            <ImageGallery
-              :images="listing.images || []"
-              :alt-text="listing.title"
-            />
+            <ImageGallery :images="listing.images || []" :alt-text="listing.title" />
 
             <!-- Listing Details Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -72,20 +68,24 @@
                   <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
                     <div class="flex items-center">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                       {{ listing.views_count || listing.view_count || 0 }} lượt xem
                     </div>
                     <div class="flex items-center">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       {{ formatDate(listing.created_at) }}
                     </div>
                     <div class="flex items-center">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
                       {{ listing.category?.name || 'Chưa phân loại' }}
                     </div>
@@ -93,12 +93,10 @@
                 </div>
 
                 <!-- Status Badge -->
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ml-4',
-                    getStatusClass(listing.status)
-                  ]"
-                >
+                <span :class="[
+                  'px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ml-4',
+                  getStatusClass(listing.status)
+                ]">
                   {{ getStatusText(listing.status) }}
                 </span>
               </div>
@@ -114,7 +112,8 @@
               <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="flex items-center p-3 bg-gray-50 rounded-lg">
                   <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
                     <div class="text-xs text-gray-500">Tình trạng</div>
@@ -124,8 +123,10 @@
 
                 <div class="flex items-center p-3 bg-gray-50 rounded-lg">
                   <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
                     <div class="text-xs text-gray-500">Địa điểm</div>
@@ -155,19 +156,12 @@
               </div>
 
               <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div
-                  v-for="item in relatedListings"
-                  :key="item.id"
+                <div v-for="item in relatedListings" :key="item.id"
                   class="bg-white border rounded-lg shadow-sm hover:shadow-md transition p-3 cursor-pointer"
-                  @click="$router.push(`/listings/${item.id}`)"
-                >
+                  @click="$router.push(`/listings/${item.id}`)">
                   <div class="aspect-square rounded-md overflow-hidden bg-gray-100 mb-2">
-                    <img
-                      v-if="item.images && item.images.length"
-                      :src="buildImageUrl(item.images[0]?.image_path)"
-                      :alt="item.title"
-                      class="w-full h-full object-cover hover:scale-105 transition-transform"
-                    />
+                    <img v-if="item.images && item.images.length" :src="buildImageUrl(item.images[0]?.image_path)"
+                      :alt="item.title" class="w-full h-full object-cover hover:scale-105 transition-transform" />
                     <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                       Không có ảnh
                     </div>
@@ -189,44 +183,44 @@
               <div class="text-3xl font-bold text-blue-600 mb-3">
                 {{ formatPrice(listing.price) }}
               </div>
-              <button
-                @click="openContactModal"
-                class="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              <button @click="openContactModal"
+                class="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
                 Liên hệ người bán
               </button>
             </div>
 
             <!-- Seller Info Card -->
-            <SellerInfoCard
-              v-if="listing.seller"
-              :seller="listing.seller"
-              @contact="openContactModal"
-            />
-
+            <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="openContactModal" />
+            <button @click="handleBuyNow"
+              class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 active:scale-95 transition-transform">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19a2 2 0 100-4H8.1M7 13L5.4 5M16 21a1 1 0 11-2 0 1 1 0 012 0z" />
+              </svg>
+              Mua ngay
+            </button>
             <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Hành động nhanh</h3>
               <div class="space-y-2">
-                <button
-                  @click="copyLink"
-                  class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
+                <button @click="copyLink"
+                  class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   Sao chép liên kết
                 </button>
 
-                <button
-                  @click="reportListing"
-                  class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
+                <button @click="reportListing"
+                  class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                   </svg>
                   Báo cáo tin rao
                 </button>
@@ -236,8 +230,10 @@
             <!-- Safety Tips Card -->
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div class="flex items-start">
-                <svg class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div>
                   <h4 class="text-sm font-semibold text-yellow-800 mb-1">Lưu ý an toàn</h4>
@@ -256,14 +252,8 @@
     </div> <!-- /main content -->
 
     <!-- Contact Seller Modal -->
-    <ContactSellerModal
-      v-if="listing && listing.seller"
-      :is-open="showContactModal"
-      :listing="listing"
-      :seller="listing.seller"
-      @close="showContactModal = false"
-      @send="handleSendMessage"
-    />
+    <ContactSellerModal v-if="listing && listing.seller" :is-open="showContactModal" :listing="listing"
+      :seller="listing.seller" @close="showContactModal = false" @send="handleSendMessage" />
   </div>
 </template>
 

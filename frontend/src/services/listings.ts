@@ -193,5 +193,9 @@ export const listingsService = {
     })
     // Filter out current listing
     return response.data.data.filter((listing: Listing) => listing.id !== id).slice(0, limit)
-  }
+  },
+  async getPublicListings() {
+  const response = await api.get('/public-listings')
+  return response.data
+}
 }
