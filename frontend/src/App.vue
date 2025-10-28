@@ -58,14 +58,14 @@ const toggleDark = () => {
   isDark.value = !isDark.value
 }
 
-// 🔄 Skeleton loading khi chuyển route
-router.beforeEach((to, from, next) => {
-  isLoading.value = true
-  setTimeout(() => next(), 200) // Delay giả lập
-})
-router.afterEach(() => {
-  setTimeout(() => (isLoading.value = false), 600)
-})
+// // 🔄 Skeleton loading khi chuyển route
+// router.beforeEach((to, from, next) => {
+//   isLoading.value = true
+//   setTimeout(() => next(), 200) // Delay giả lập
+// })
+// router.afterEach(() => {
+//   setTimeout(() => (isLoading.value = false), 600)
+// })
 
 // Cho phép component con bật/tắt loading nếu cần
 const handleLoading = (val: boolean) => {
