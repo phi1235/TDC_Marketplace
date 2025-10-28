@@ -426,11 +426,21 @@ const handleClickOutside = (event: Event) => {
 //wishlist
 const wishlistStore = useWishlistStore()
 
+// ✅ Log real-time
+watch(
+  () => wishlistStore.count,
+  (newVal) => {
+    console.log("🎯 Wishlist Count (real-time):", newVal)
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
-  if (!auth.isAuthenticated) return  // ✅ nếu chưa đăng nhập thì KHÔNG gọi API nữa
+  await auth.checkAuthStatus?.()
+  if (!auth.isAuthenticated) return
+
   try {
     const res = await getWishes()
-    // res là array wishlist
     wishlistStore.setCount(Array.isArray(res) ? res.length : 0)
   } catch (err) {
     console.error('Lỗi lấy wishlist:', err)
