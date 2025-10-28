@@ -15,7 +15,9 @@
             <tbody>
                 <tr v-for="item in news" :key="item.id" class="border-t">
                     <td class="p-2 border">{{ item.title }}</td>
-                    <td class="p-2 border">{{ shortText(item.content, 80) }}</td>
+                    <td class="p-2 border">{{ shortText(item.content, 80) }}
+                        <router-link :to="`/notifications/detail`" class="text-blue-600 hover:underline ml-1">...Xem thêm</router-link>
+                    </td>
                     <td class="p-2 border"><img :src="item.thumbnail" class="w-16 h-10 object-cover" /></td>
                     <td class="p-2 text-sm border">{{ item.created_at }}</td>
                     <td class="p-2 text-right space-x-2">
@@ -69,16 +71,16 @@ function saveNews() {
         news.value.push({ ...form.value, id: Date.now(), created_at: new Date().toISOString().slice(0, 10) })
     }
     showForm.value = false
-} 
+}
 function deleteNews(id) {
     news.value = news.value.filter(n => n.id !== id)
 }
 
-function shortText(text, limit = 80){
-    return text.length > limit ? text.slice(0, limit) + '...' :text;
+function shortText(text, limit = 80) {
+    return text.length > limit ? text.slice(0, limit) : text;
 }
 
 onMounted(() => {
-  // nếu sau này dùng API thì viết ở đây, còn giờ để trống
+    // nếu sau này dùng API thì viết ở đây, còn giờ để trống
 })
 </script>
