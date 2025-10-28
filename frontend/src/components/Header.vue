@@ -427,6 +427,7 @@ const handleClickOutside = (event: Event) => {
 const wishlistStore = useWishlistStore()
 
 onMounted(async () => {
+  if (!auth.isAuthenticated) return  // ✅ nếu chưa đăng nhập thì KHÔNG gọi API nữa
   try {
     const res = await getWishes()
     // res là array wishlist
