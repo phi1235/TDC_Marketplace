@@ -74,6 +74,12 @@ const router = createRouter({
           component: () => import('@/views/listings/PendingAdminView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
+        {
+          path: 'reports',
+          name: 'dashboard-reports',
+          component: () => import('@/views/admin/AdminReportsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
       ],
     },
     {
@@ -100,7 +106,6 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/seller',
       name: 'seller',
@@ -111,6 +116,12 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-reports',
+      name: 'my-reports',
+      component: () => import('@/views/MyReportsView.vue'),
       meta: { requiresAuth: true },
     },
     {
