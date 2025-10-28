@@ -132,6 +132,10 @@
                 @click="showTestMenu = false">
                 Listing Card page
               </router-link>
+              <router-link to="/notifications" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                News
+              </router-link>
             </div>
           </div>
 
@@ -182,10 +186,12 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
-                <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  @click="showUserMenu = false">
-                  Danh sách 💟 {{ wishlistStore.count }}
-                </router-link>
+                <div v-if="isAuthenticated && !auth.isAdmin">
+                  <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Danh sách 💟 {{ wishlistStore.count }}
+                  </router-link>
+                </div>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -195,14 +201,16 @@
           </div>
 
           <!-- Anounce for user -->
-           <div v-if="isAuthenticated" class="flex items-center space-x-2 relative bell">
-            <button @click="isOpen = !isOpen">
-              🔔
-              <span v-if="unreadCount > 0"
-                class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
-                {{ unreadCount }}
-              </span>
-            </button>
+           <div v-if="!auth.isAdmin" class="flex items-center space-x-2 relative bell">
+            <div v-if="isAuthenticated">
+              <button @click="isOpen = !isOpen">
+                🔔
+                <span v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                  {{ unreadCount }}
+                </span>
+              </button>
+            </div>
             <transition name="fade-slide">
               <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
                 <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
@@ -418,10 +426,21 @@ const handleClickOutside = (event: Event) => {
 //wishlist
 const wishlistStore = useWishlistStore()
 
+// ✅ Log real-time
+watch(
+  () => wishlistStore.count,
+  (newVal) => {
+    console.log("🎯 Wishlist Count (real-time):", newVal)
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
+  await auth.checkAuthStatus?.()
+  if (!auth.isAuthenticated) return
+
   try {
     const res = await getWishes()
-    // res là array wishlist
     wishlistStore.setCount(Array.isArray(res) ? res.length : 0)
   } catch (err) {
     console.error('Lỗi lấy wishlist:', err)

@@ -111,6 +111,12 @@ const router = createRouter({
       component: () => import('@/views/dashboard/NotificationsView.vue'),
       meta: { requiresAuth: true },
     },
+     {
+      path: '/detailNotification/:id',//truyền id qua
+      name: 'detail-notification',
+      component: () => import('@/views/dashboard/DetailNotification.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
     {
       path: '/profile',
       name: 'profile',
