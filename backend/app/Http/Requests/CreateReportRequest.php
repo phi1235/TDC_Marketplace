@@ -26,11 +26,21 @@ class CreateReportRequest extends FormRequest
             'reportable_type' => [
                 'required',
                 'string',
-                Rule::in([
-                    'App\\Models\\Listing',
-                    'App\\Models\\User', 
-                    'App\\Models\\Review'
-                ])
+                function ($attribute, $value, $fail) {
+                    // Accept both escaped and unescaped versions
+                    $validTypes = [
+                        'App\\Models\\Listing',
+                        'App\\\\Models\\\\Listing',
+                        'App\\Models\\User',
+                        'App\\\\Models\\\\User',
+                        'App\\Models\\Review',
+                        'App\\\\Models\\\\Review'
+                    ];
+                    
+                    if (!in_array($value, $validTypes)) {
+                        $fail('Loại đối tượng báo cáo không hợp lệ.');
+                    }
+                }
             ],
             'reportable_id' => [
                 'required',
@@ -38,13 +48,43 @@ class CreateReportRequest extends FormRequest
                 'min:1',
                 function ($attribute, $value, $fail) {
                     $reportableType = $this->input('reportable_type');
-                    if ($reportableType && !class_exists($reportableType)) {
+                    
+                    // Normalize backslashes - handle both escaped and unescaped
+                    $reportableType = str_replace('\\\\', '\\', $reportableType);
+                    
+                    if (!$reportableType || !class_exists($reportableType)) {
                         $fail('Loại đối tượng báo cáo không hợp lệ.');
                         return;
                     }
                     
-                    if ($reportableType && !$reportableType::find($value)) {
+                    $reportable = $reportableType::find($value);
+                    if (!$reportable) {
                         $fail('Đối tượng báo cáo không tồn tại.');
+                        return;
+                    }
+                    
+                    // Kiểm tra nếu user đang báo cáo chính mình
+                    $userId = auth()->id();
+                    if (!$userId) {
+                        $fail('Bạn cần đăng nhập để báo cáo.');
+                        return;
+                    }
+                    
+                    // Nếu đối tượng báo cáo là User, check owner
+                    if ($reportableType === 'App\\Models\\User') {
+                        if ($reportable->id === $userId) {
+                            $fail('Bạn không thể báo cáo chính mình.');
+                        }
+                    } elseif ($reportableType === 'App\\Models\\Listing') {
+                        // Nếu đối tượng báo cáo là Listing, check listing owner
+                        if ($reportable->user_id === $userId) {
+                            $fail('Bạn không thể báo cáo bài đăng của chính mình.');
+                        }
+                    } elseif ($reportableType === 'App\\Models\\Review') {
+                        // Nếu đối tượng báo cáo là Review, check review owner
+                        if ($reportable->user_id === $userId) {
+                            $fail('Bạn không thể báo cáo đánh giá của chính mình.');
+                        }
                     }
                 }
             ],
