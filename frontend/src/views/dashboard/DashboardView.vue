@@ -1,53 +1,253 @@
 <script setup lang="ts">
-import {ref, onMounted, computed } from 'vue'
-import { getAllUsers, searchUsers} from '@/services/user';
-//
-const users = ref<User[]>([]);
+import { ref, watch, reactive, onMounted, computed } from 'vue'
+import { getAllUsers, searchUsers } from '@/services/user';
+import AdvancedFilter from '@/components/AdvancedFilterUsers.vue'
 
-//get api all user
-const fetchUsers = async() => {
-  try{
-    users.value = await getAllUsers();
-    for(let i = 0; i < users.value.length; i++){
-      console.log(users.value[i]);
-    }
-  }catch(error){
-    console.error('Error fetching users:', error)
-  }
+//AdvancedFilter
+function applyAdvancedFilter(newFilters: any) {
+  // newFilters chính là dữ liệu realtime từ popup
+  appliedFilter.value = newFilters;
 }
 
-//getapi search
-const keyword = ref('');
+// ---------- types ----------
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  email_verified_at: string | null;
+  phone?: string | null;
+  avatar?: string | null;
+  role: string;
+  is_active: boolean | number;
+  last_login_at: string | null;
+  login_count: number;
+  created_at: string | null;
+};
 
+// ---------- data ----------
+const users = ref<User[]>([]);
+const keyword = ref('');
+const selectedRole = ref('all'); // basic dropdown (all, user, admin, active)
+const showAdvanced = ref(false);
+const advancedFilterApplied = ref(false);
+
+// fetch all users
+const fetchUsers = async () => {
+  try {
+    users.value = await getAllUsers();
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  }
+};
+
+// search API
 const search = async () => {
   try {
-    users.value = await searchUsers(keyword.value)
+    users.value = await searchUsers(keyword.value);
   } catch (error) {
-    console.error('Error searching users:', error)
+    console.error('Error searching users:', error);
   }
-}
-//onMounted: gọi hàm lên, hay dùng gọi api
+};
+
 onMounted(() => {
   fetchUsers();
-})
+});
 
-// Computed filtered theo dropdown
-const selectedRole = ref('all');
+// ---------- ADVANCED FILTER STATE ----------
+const advancedFilter = reactive({
+  // Block 1: Account Status
+  role: 'all' as string,             // all | user | admin
+  is_active: 'all' as string,        // all | active | inactive
+  email_verified: 'all' as string,   // all | verified | unverified
+
+  // Block 2: Engagement & Behavior
+  login_count_op: '>' as string,     // > | < | =
+  login_count_value: null as number | null,
+  last_login_preset: 'all' as string, // all | 7 | 30 | never
+
+  // Block 3: Created Date
+  created_from: '' as string,
+  created_to: '' as string,
+  created_preset: 'none' as string, // none | today | 7 | 30 | older_year
+});
+
+// copy of applied filter (so user can cancel / clear)
+const appliedFilter = ref<Record<string, any> | null>(null);
+
+// Watchers: if user wants "auto apply" (you chose 2), we'll apply every change.
+// Because you selected 2 (realtime), we update appliedFilter on change.
+watch(advancedFilter, () => {
+  // apply in realtime
+  appliedFilter.value = JSON.parse(JSON.stringify(advancedFilter));
+  advancedFilterApplied.value = isFilterActive(appliedFilter.value);
+}, { deep: true });
+
+// helper to check if filter isn't default
+function isFilterActive(f: Record<string, any> | null) {
+  if (!f) return false;
+  // any non-default value => active
+  if (f.role !== 'all') return true;
+  if (f.is_active !== 'all') return true;
+  if (f.email_verified !== 'all') return true;
+  if (f.login_count_min !== null && f.login_count_min !== '') return true;
+  if (f.last_login_preset !== 'all') return true;
+  if (f.created_from || f.created_to || f.created_preset !== 'none') return true;
+  return false;
+}
+
+// clear advanced filter
+function clearAdvancedFilter() {
+  advancedFilter.role = 'all';
+  advancedFilter.is_active = 'all';
+  advancedFilter.email_verified = 'all';
+  advancedFilter.login_count_op = '>';
+  advancedFilter.login_count_value = null;
+  advancedFilter.last_login_preset = 'all';
+  advancedFilter.created_from = '';
+  advancedFilter.created_to = '';
+  advancedFilter.created_preset = 'none';
+
+  appliedFilter.value = null;
+  advancedFilterApplied.value = false;
+}
+
+// If you prefer manual apply button instead of realtime: comment out the watch() above and use this function
+function applyAdvancedFilterManual() {
+  appliedFilter.value = JSON.parse(JSON.stringify(advancedFilter));
+  advancedFilterApplied.value = isFilterActive(appliedFilter.value);
+  showAdvanced.value = false;
+}
+
+// ---------- FILTERING LOGIC (computed) ----------
 const filteredUsers = computed(() => {
-  // all user
-  if (selectedRole.value === 'all') return users.value
-  //user is_active
+  // start from original users array
+  let list = users.value.slice();
+
+  // first apply basic selectedRole dropdown (original logic)
   if (selectedRole.value === 'active') {
-    return users.value.filter(user => user.is_active)
+    list = list.filter(u => Boolean(u.is_active));
+  } else if (selectedRole.value !== 'all') {
+    list = list.filter(u => u.role === selectedRole.value);
   }
-  //filter() lọc dữ liệu mảng, trả về dữ liệu mới
-  //role 1 là admin 2 là user, user.role trả về 2 cái
-  return users.value.filter(user => user.role === selectedRole.value)
-})
 
+  // next apply advanced filter if present
+  const f = appliedFilter.value;
+  if (!f) return list;
+  // trước khi return list.filter(...)
+  console.log('Applied filter:', appliedFilter.value);
+  console.log('Sample user login_counts:', users.value.slice(0, 5).map(u => ({ id: u.id, login_count: u.login_count })));
 
+  return list.filter(user => {
+    // Block 1: Account Status
+    if (f.role && f.role !== 'all') {
+      if (user.role !== f.role) return false;
+    }
+
+    if (f.is_active && f.is_active !== 'all') {
+      const wantActive = f.is_active === 'active';
+      if (Boolean(user.is_active) !== wantActive) return false;
+    }
+
+    if (f.email_verified && f.email_verified !== 'all') {
+      const verified = user.email_verified_at !== null && user.email_verified_at !== undefined;
+      if (f.email_verified === 'verified' && !verified) return false;
+      if (f.email_verified === 'unverified' && verified) return false;
+    }
+
+    //login count
+    // Block 2: Engagement
+    if (f.login_count_min !== null && f.login_count_min !== '' && !isNaN(Number(f.login_count_min))) {
+      const val = Number(f.login_count_min);
+      const count = Number(user.login_count || 0);
+      const op = f.login_count_op || '>'; // default >
+      if (op === '>') {
+        if (!(count > val)) return false;
+      } else if (op === '<') {
+        if (!(count < val)) return false;
+      } else { // '='
+        if (!(count === val)) return false;
+      }
+    }
+
+    console.log('User last login:', user.last_login_at)
+    //last login
+    if (f.last_login && f.last_login !== 'all') {
+      const now = new Date();
+      const last = user.last_login_at ? new Date(user.last_login_at) : null;
+
+      if (f.last_login === 'never') {
+        if (last !== null) return false; // chỉ lấy user chưa login lần nào
+      } else if (f.last_login === '7d') {
+        if (!last) return false;
+        const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays > 7) return false; // last login cách đây hơn 7 ngày => bỏ
+      } else if (f.last_login === '30d') {
+        if (!last) return false;
+        const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDays > 30) return false;
+      }
+    }
+
+    //created date
+    if ((f.created_from && f.created_from !== '') || (f.created_to && f.created_to !== '')) {
+      const created = user.created_at ? new Date(user.created_at) : null;
+      if (!created) return false;
+
+      if (f.created_from && f.created_from !== '') {
+        const from = new Date(f.created_from);
+        // set giờ từ đầu ngày
+        from.setHours(0, 0, 0, 0);
+        if (created < from) return false;
+      }
+
+      if (f.created_to && f.created_to !== '') {
+        const to = new Date(f.created_to);
+        // set giờ đến cuối ngày
+        to.setHours(23, 59, 59, 999);
+        if (created > to) return false;
+      }
+    }
+
+    // Quick preset
+    if (f.created_preset && f.created_preset !== 'none') {
+      const created = user.created_at ? new Date(user.created_at) : null;
+      if (!created) return false;
+
+      const now = new Date();
+      if (f.created_preset === 'today') {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        if (created < start || created > end) return false;
+      } else if (f.created_preset === '7') {
+        const cutoff = new Date();
+        cutoff.setDate(now.getDate() - 7);
+        if (created < cutoff) return false;
+      } else if (f.created_preset === '30') {
+        const cutoff = new Date();
+        cutoff.setDate(now.getDate() - 30);
+        if (created < cutoff) return false;
+      } else if (f.created_preset === 'older_year') {
+        const cutoff = new Date();
+        cutoff.setFullYear(now.getFullYear() - 1);
+        if (created > cutoff) return false;
+      }
+    }
+
+// passed all checks
+return true;
+  });
+});
+
+// small helper to show preview count (fast)
+const previewCount = computed(() => filteredUsers.value.length);
+
+// optional: if you want to send the advanced filter to backend as JSON when applied, prepare payload
+function getAdvancedFilterPayload() {
+  return appliedFilter.value ? JSON.parse(JSON.stringify(appliedFilter.value)) : null;
+}
 </script>
 <template>
+
   <div class="dashboard">
     <!-- HEADER -->
     <!-- <header class="header">
@@ -69,19 +269,16 @@ const filteredUsers = computed(() => {
       <!-- Chỉ hiển thị danh sách người dùng khi ở route /dashboard -->
       <div v-if="$route.path === '/dashboard'">
         <div class="func">
-          <div class="total">Tổng số: <b>{{ users.length }}</b></div>s không hiển
-
+          <div class="total">Tổng số: <b>{{ users.length }}</b></div>
           <div class="search">
             <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..." />
-                <!-- Button -->
-            <button id="btn_search"
-              @click="search"
-              class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
+            <!-- Button -->
+            <button id="btn_search" @click="search" class="bg-blue-500 text-white rounded-r-lg hover:bg-blue-600">
               Tìm
             </button>
           </div>
 
-          <div class="filter">
+          <!-- <div class="filter">
             <label for="role">Bộ lọc:</label>
             <select id="role" v-model="selectedRole" name="role">
               <option value="all">Tất cả</option>
@@ -89,7 +286,22 @@ const filteredUsers = computed(() => {
               <option value="admin">Admin</option>
               <option value="active">Active</option>
             </select>
+          </div> -->
+          <div class="filter flex items-center gap-2">
+            <label class="font-medium">Bộ lọc:</label>
+            <select id="role" v-model="selectedRole" name="role" class="border rounded px-3 py-2">
+              <option value="all">Tất cả</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+              <option value="active">Active</option>
+            </select>
+            <!-- nút mở advanced filter -->
+            <button @click="showAdvanced = true" class="btn-primary">Nâng cao</button>
           </div>
+          <AdvancedFilter :visible="showAdvanced" @update:visible="val => showAdvanced = val"
+            @filter-change="applyAdvancedFilter" />
+
+
         </div>
 
         <div class="inf">
@@ -105,25 +317,27 @@ const filteredUsers = computed(() => {
                 <th>Phone</th>
                 <th>Avatar</th>
                 <th>Active</th>
+                <th>Created At</th>
                 <th>Last Login</th>
                 <th>Login Count</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(user, index) in filteredUsers" :key="user.id">
-            <td class="px-2 py-1 border">{{ index + 1 }}</td>
-            <td class="px-2 py-1 border">{{ user.id }}</td>
-            <td class="px-2 py-1 border">{{ user.name }}</td>
-            <td class="px-2 py-1 border">{{ user.email }}</td>
-            <td class="px-2 py-1 border">{{ user.role }}</td>
-            <td class="px-2 py-1 border">{{ user.phone }}</td>
-            <td class="px-2 py-1 border">
-              <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
-            </td>
-            <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
-            <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
-            <td class="px-2 py-1 border">{{ user.login_count }}</td>
-          </tr>
+                <td class="px-2 py-1 border">{{ index + 1 }}</td>
+                <td class="px-2 py-1 border">{{ user.id }}</td>
+                <td class="px-2 py-1 border">{{ user.name }}</td>
+                <td class="px-2 py-1 border">{{ user.email }}</td>
+                <td class="px-2 py-1 border">{{ user.role }}</td>
+                <td class="px-2 py-1 border">{{ user.phone }}</td>
+                <td class="px-2 py-1 border">
+                  <img :src="user.avatar" alt="avatar" class="w-10 h-10 rounded-full" />
+                </td>
+                <td class="px-2 py-1 border">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+                <td class="px-2 py-1 border">{{ user.created_at }}</td>
+                <td class="px-2 py-1 border">{{ user.last_login_at }}</td>
+                <td class="px-2 py-1 border">{{ user.login_count }}</td>
+              </tr>
             </tbody>
           </table>
 
@@ -145,6 +359,19 @@ const filteredUsers = computed(() => {
 </template>
 
 <style scoped>
+.func {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -153,9 +380,18 @@ const filteredUsers = computed(() => {
   font-weight: 600;
   color: #fff;
 }
-.badge.pending { background-color: #f59e0b; }
-.badge.approved { background-color: #10b981; }
-.badge.rejected { background-color: #ef4444; }
+
+.badge.pending {
+  background-color: #f59e0b;
+}
+
+.badge.approved {
+  background-color: #10b981;
+}
+
+.badge.rejected {
+  background-color: #ef4444;
+}
 </style>
 
 <style scoped>
@@ -165,7 +401,10 @@ const filteredUsers = computed(() => {
   padding: 0;
   box-sizing: border-box;
 }
-ul, li, a {
+
+ul,
+li,
+a {
   list-style: none;
   text-decoration: none;
   color: inherit;
@@ -257,7 +496,7 @@ ul, li, a {
   background: #fff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .inf h2 {
@@ -276,7 +515,8 @@ thead {
   color: white;
 }
 
-th, td {
+th,
+td {
   padding: 12px 10px;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -315,10 +555,14 @@ th, td {
 }
 
 
-#btn_search{
+#btn_search {
   padding: 1px 10px;
 }
-=======
-.btn-primary { background:#2563eb; color:#fff; padding:10px 14px; border-radius:8px; }
 
+=======.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
 </style>

@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/search',
+      name: 'search',
+      component: () => import('@/components/SearchFilter.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),
@@ -77,7 +82,6 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ContentPanel.vue'),
       meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/userpanel',
       name: 'user_panel',
@@ -96,12 +100,22 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/seller',
       name: 'seller',
       component: () => import('@/views/dashboard/SellerList.vue'),
+      },
+     {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/dashboard/NotificationsView.vue'),
       meta: { requiresAuth: true },
+    },
+     {
+      path: '/detailNotification/:id',//truyền id qua
+      name: 'detail-notification',
+      component: () => import('@/views/dashboard/DetailNotification.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/profile',

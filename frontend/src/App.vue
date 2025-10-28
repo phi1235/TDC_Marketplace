@@ -1,48 +1,85 @@
 <template>
-  <div id="app">
-    <div class="min-h-screen bg-gray-50">
-      <!-- Header Component -->
+  <div id="app" :class="isDark ? 'dark' : ''">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 relative">
+
+      <!-- Header -->
       <Header />
 
+      <!-- Skeleton Loading Overlay -->
+      <transition name="fade">
+        <div
+          v-if="isLoading"
+          class="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 flex items-center justify-center z-50"
+        >
+          <div class="w-1/2">
+            <SkeletonLoader :count="8" />
+          </div>
+        </div>
+      </transition>
+
       <!-- Main Content -->
-      <main>
-        <router-view />
-        <!-- Toast container -->
-        <div id="toast-root" class="fixed top-4 right-4 z-50 space-y-3"></div>
+      <main class="transition-colors duration-300">
+        <router-view @route-loading="handleLoading" />
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
-const auth = useAuthStore()
+const isDark = ref(false)
+const isLoading = ref(false)
+const router = useRouter()
 
-// Fetch user data when app starts
+// 🌙 Dark mode
 onMounted(() => {
-  auth.fetchUser()
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  }
 })
+
+watch(isDark, (val) => {
+  if (val) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+})
+
+const toggleDark = () => {
+  isDark.value = !isDark.value
+}
+
+// // 🔄 Skeleton loading khi chuyển route
+// router.beforeEach((to, from, next) => {
+//   isLoading.value = true
+//   setTimeout(() => next(), 200) // Delay giả lập
+// })
+// router.afterEach(() => {
+//   setTimeout(() => (isLoading.value = false), 600)
+// })
+
+// Cho phép component con bật/tắt loading nếu cần
+const handleLoading = (val: boolean) => {
+  isLoading.value = val
+}
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  margin: 0;
-  padding: 0;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
