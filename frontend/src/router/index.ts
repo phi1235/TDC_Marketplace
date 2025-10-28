@@ -96,20 +96,20 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ListWishView.vue'),
       meta: { requiresAuth: true },
     },
-<<<<<<< HEAD
-=======
-    {
-      path: '/seller',
-      name: 'seller',
-      component: () => import('@/views/dashboard/SellerList.vue'),
-      },
-     {
-      path: '/notifications',
-      name: 'notifications',
-      component: () => import('@/views/dashboard/NotificationsView.vue'),
-      meta: { requiresAuth: true },
-    },
->>>>>>> origin/main
+// <<<<<<< HEAD
+// =======
+//     {
+//       path: '/seller',
+//       name: 'seller',
+//       component: () => import('@/views/dashboard/SellerList.vue'),
+//       },
+//      {
+//       path: '/notifications',
+//       name: 'notifications',
+//       component: () => import('@/views/dashboard/NotificationsView.vue'),
+//       meta: { requiresAuth: true },
+//     },
+// >>>>>>> origin/main
     {
       path: '/profile',
       name: 'profile',
@@ -129,17 +129,24 @@ const router = createRouter({
       meta: { requiresGuest: true },
     },
     {
-    path: '/categories',
-    name: 'Categories',
-    component: () => import('@/views/categories/CategoriesView.vue'),
-  }
+      path: '/categories',
+      name: 'Categories',
+      component: () => import('@/views/categories/CategoriesView.vue'),
+    },
+    {
+      path: "/terms",
+      name: "terms",
+      component: () => import("@/views/terms/TermsView.vue"),
+      meta: { title: "Điều khoản sử dụng" }
+    }
+
   ],
 })
 
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
