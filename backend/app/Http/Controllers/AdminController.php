@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ElasticSearchService;
 use App\Services\ReportService;
 use App\Services\AuditLogService;
+use App\Services\MonitoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,14 +18,16 @@ class AdminController extends Controller
     protected $elasticSearchService;
     protected ReportService $reportService;
     protected AuditLogService $auditLogService;
+    protected MonitoringService $monitoringService;
 
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService)
+    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService, MonitoringService $monitoringService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
         $this->reportService = $reportService;
         $this->auditLogService = $auditLogService;
+        $this->monitoringService = $monitoringService;
     }
 
     public function dashboard(): JsonResponse
@@ -462,6 +465,27 @@ class AdminController extends Controller
             ->paginate(20);
 
         return response()->json($users);
+    }
+
+    public function monitoring(Request $request): JsonResponse
+    {
+        $hours = (int) $request->input('hours', 24);
+        $endpoint = $request->input('endpoint');
+        $status = $request->filled('status') ? (int) $request->input('status') : null;
+        $data = $this->monitoringService->getOverview($hours, $endpoint, $status);
+        return response()->json($data);
+    }
+
+    public function monitoringExport(Request $request)
+    {
+        $hours = (int) $request->input('hours', 24);
+        $endpoint = $request->input('endpoint');
+        $status = $request->filled('status') ? (int) $request->input('status') : null;
+        $csv = $this->monitoringService->exportCsv($hours, $endpoint, $status);
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="monitoring.csv"'
+        ]);
     }
 
     public function toggleUserStatus(Request $request, User $user): JsonResponse

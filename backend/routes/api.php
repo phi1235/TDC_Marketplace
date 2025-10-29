@@ -120,6 +120,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Audit logs
         Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
 
+        // Monitoring
+        Route::get('/monitoring/overview', [AdminController::class, 'monitoring']);
+        Route::get('/monitoring/export', [AdminController::class, 'monitoringExport']);
+
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
