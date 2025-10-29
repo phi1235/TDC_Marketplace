@@ -1,6 +1,6 @@
 <template>
   <header class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-10 relative">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center">
@@ -109,11 +109,32 @@
               </svg>
             </button>
 
+            <!-- Test pages dropdown -->
             <div v-if="showTestMenu"
               class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-              <router-link v-for="item in testPages" :key="item.name" :to="item.to"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="showTestMenu = false">
-                {{ item.label }}
+              <router-link to="/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Dashboard Page
+              </router-link>
+              <router-link to="/panel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Panel Page
+              </router-link>
+              <router-link to="/userpanel" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                User Page
+              </router-link>
+              <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                List wish page
+              </router-link>
+              <router-link to="/listingcard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                Listing Card page
+              </router-link>
+              <router-link to="/notifications" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                News
               </router-link>
             </div>
           </div>
@@ -165,6 +186,12 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
+                <div v-if="isAuthenticated && !auth.isAdmin">
+                  <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Danh sách 💟 {{ wishlistStore.count }}
+                  </router-link>
+                </div>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -173,6 +200,30 @@
             </div>
           </div>
 
+          <!-- Anounce for user -->
+           <div v-if="!auth.isAdmin" class="flex items-center space-x-2 relative bell">
+            <div v-if="isAuthenticated">
+              <button @click="isOpen = !isOpen">
+                🔔
+                <span v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                  {{ unreadCount }}
+                </span>
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
+                <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
+                  <p> {{ value.title }} </p>
+                </div>
+                <router-link to="/notifications"
+                  class="block text-center py-2 hover:bg-gray-100">
+                  Xem tất cả thông báo
+                </router-link>
+              </div>
+            </transition>
+          </div>
+          
           <!-- Dark Mode -->
           <button @click="toggleDark"
             class="ml-3 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -187,10 +238,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
+// import axios from 'axios'
+import { getWishes } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -287,20 +341,20 @@ const clearHistory = async () => {
 const selectSuggestion = (item: string) => {
   searchQuery.value = item
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: item, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: item, engine: engine.value } })
 }
 
 const selectHistory = (keyword: string) => {
   searchQuery.value = keyword
   showDropdown.value = false
-  router.push({ name: 'search', query: { q: keyword, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q: keyword, engine: engine.value } })
 }
 
 const searchFullKeyword = () => {
   const q = searchQuery.value.trim()
   if (!q) return
   showDropdown.value = false
-  router.push({ name: 'search', query: { q, engine: engine.value } }) 
+  router.push({ name: 'search', query: { q, engine: engine.value } })
 }
 
 const moveDown = () => {
@@ -354,21 +408,45 @@ const handleLogout = async () => {
   }
 }
 
-// === 🧭 Nav Test Pages ===
-const testPages = [
-  { label: 'Dashboard Page', to: '/dashboard' },
-  { label: 'Panel Page', to: '/panel' },
-  { label: 'User Page', to: '/userpanel' },
-  { label: 'List wish page', to: '/listwish' },
-  { label: 'Listing Card page', to: '/listingcard' },
-]
+// Close dropdowns when clicking outside
+const handleClickOutside = (event: Event) => {
+  const target = event.target as HTMLElement
 
-// === 🌙 Dark Mode Logic ===
-const handleClickOutside = (e: Event) => {
-  const target = e.target as HTMLElement
-  if (!target.closest('.user-menu-container')) showUserMenu.value = false
-  if (!target.closest('.test-menu-container')) showTestMenu.value = false
+  // Close user menu if clicking outside
+  if (!target.closest('.user-menu-container')) {
+    showUserMenu.value = false
+  }
+
+  // Close test menu if clicking outside
+  if (!target.closest('.test-menu-container')) {
+    showTestMenu.value = false
+  }
 }
+
+//wishlist
+const wishlistStore = useWishlistStore()
+
+// ✅ Log real-time
+watch(
+  () => wishlistStore.count,
+  (newVal) => {
+    console.log("🎯 Wishlist Count (real-time):", newVal)
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  await auth.checkAuthStatus?.()
+  if (!auth.isAuthenticated) return
+
+  try {
+    const res = await getWishes()
+    wishlistStore.setCount(Array.isArray(res) ? res.length : 0)
+  } catch (err) {
+    console.error('Lỗi lấy wishlist:', err)
+    wishlistStore.setCount(0)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -391,6 +469,26 @@ watch(isDark, (val) => {
 
 const toggleDark = () => (isDark.value = !isDark.value)
 
+//Anounce for user
+const isOpen = ref(false); //trạng thái để mở thông báo
+const unreadCount = ref(4); //tin chưa đọc
+const notifications  = ref([
+  { title: 'Bạn có đơn hàng mới' },
+  { title: 'Tin nhắn mới từ admin' },
+  { title: 'Khuyến mãi siêu hot' },
+  { title: 'Notification thứ 4' },
+]) //hiện tạm thời, khi nào có api thì truyền vô
+//đóng khi click ra ngoài
+const closeNotificationIfOutside  = (e) => {
+  const bell = document.querySelector('.bell')
+  if (bell && !bell.contains(e.target)) {
+  isOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', closeNotificationIfOutside ))
+onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside )) 
+
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
@@ -398,5 +496,18 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 mark {
   background-color: #fef08a;
   color: inherit;
+}
+
+/* style announce */
+.fade-slide-enter-active {
+transition: all 0.2s ease;
+}
+.fade-slide-leave-active {
+transition: all 0.2s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+opacity: 0;
+transform: translateY(-5px);
 }
 </style>

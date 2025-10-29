@@ -51,6 +51,7 @@ Route::get('/listings/latest', [ListingController::class, 'latest']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
+Route::get('/public-listings', [ListingController::class, 'getPublicListings']);
 
 
 // Categories routes (public)
@@ -132,7 +133,15 @@ Route::get('/auth/current-role', function (Request $request) {
 });
 
 //list_wish
-Route::get('/wishes', [WishlistController::class, 'index']);
+// Route::get('/wishes', [WishlistController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/wishes', [WishlistController::class, 'index']);
+    Route::delete('/wishlists/remove-by-listing/{listingId}', [WishlistController::class, 'removeByListing']);
+});
+// API toggle wishlist
+Route::middleware('auth:sanctum')->post('/wishlist/toggle', [WishlistController::class, 'toggle']);
+
+
 //follow_sellers
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/follow-sellers', [FollowSellerController::class, 'follow']);
