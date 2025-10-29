@@ -134,7 +134,14 @@ const router = createRouter({
     path: '/categories',
     name: 'Categories',
     component: () => import('@/views/categories/CategoriesView.vue'),
-  }
+  },
+  {
+  path: "/privacy-policy",
+  name: "privacy-policy",
+  component: () => import("@/views/policy/PrivacyPolicyView.vue"),
+  meta: { title: "Chính sách bảo mật" }
+}
+
   ],
 })
 
