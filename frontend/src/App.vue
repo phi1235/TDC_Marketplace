@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
 import { useRouter } from 'vue-router'
@@ -35,12 +36,19 @@ const isDark = ref(false)
 const isLoading = ref(false)
 const router = useRouter()
 
-// 🌙 Dark mode
-onMounted(() => {
+const auth = useAuthStore()
+
+// 🌙 Dark mode + hydrate auth on first load
+onMounted(async () => {
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') {
     isDark.value = true
     document.documentElement.classList.add('dark')
+  }
+
+  // If we have a token but no user (after page reload), fetch current user
+  if (auth.token && !auth.user) {
+    await auth.fetchUser()
   }
 })
 
@@ -67,10 +75,10 @@ const toggleDark = () => {
 //   setTimeout(() => (isLoading.value = false), 600)
 // })
 
-// Cho phép component con bật/tắt loading nếu cần
-const handleLoading = (val: boolean) => {
-  isLoading.value = val
-}
+// // Cho phép component con bật/tắt loading nếu cần
+// const handleLoading = (val: boolean) => {
+//   isLoading.value = val
+// }
 </script>
 
 <style>

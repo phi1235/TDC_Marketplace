@@ -130,7 +130,7 @@
                   </svg>
                   <div>
                     <div class="text-xs text-gray-500">Địa điểm</div>
-                    <div class="font-medium text-gray-900">{{ listing.location || 'TDC Campus' }}</div>
+                    <div class="font-medium text-gray-900">TDC Campus</div>
                   </div>
                 </div>
               </div>
@@ -203,6 +203,12 @@
               </svg>
               Mua ngay
             </button>
+            <SellerInfoCard
+              v-if="listing.seller"
+              :seller="{ ...listing.seller, created_at: listing.created_at }"
+              @contact="openContactModal"
+            />
+
             <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Hành động nhanh</h3>
@@ -252,8 +258,25 @@
     </div> <!-- /main content -->
 
     <!-- Contact Seller Modal -->
-    <ContactSellerModal v-if="listing && listing.seller" :is-open="showContactModal" :listing="listing"
-      :seller="listing.seller" @close="showContactModal = false" @send="handleSendMessage" />
+    <ContactSellerModal
+      v-if="listing && listing.seller"
+      :is-open="showContactModal"
+      :listing="listing"
+      :seller="listing.seller"
+      @close="showContactModal = false"
+      @send="handleSendMessage"
+    />
+
+    <!-- Report Modal -->
+    <ReportModal
+      v-if="listing"
+      :is-open="showReportModal"
+      reportable-type="App\\Models\\Listing"
+      :reportable-id="listing.id"
+      :reportable-title="listing.title"
+      @close="showReportModal = false"
+      @submitted="handleReportSubmitted"
+    />
   </div>
 </template>
 
@@ -266,6 +289,7 @@ import { showToast } from '@/utils/toast'
 import ImageGallery from '@/components/listings/ImageGallery.vue'
 import SellerInfoCard from '@/components/listings/SellerInfoCard.vue'
 import ContactSellerModal from '@/components/listings/ContactSellerModal.vue'
+import ReportModal from '@/components/ReportModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 import { watch } from 'vue'
 
@@ -276,6 +300,7 @@ const listing = ref<Listing | null>(null)
 const loading = ref(true)
 const error = ref('')
 const showContactModal = ref(false)
+const showReportModal = ref(false)
 
 const breadcrumbItems = computed(() => {
   if (!listing.value) return []
@@ -422,6 +447,11 @@ const copyLink = async () => {
 }
 
 const reportListing = () => {
-  showToast('info', 'Chức năng báo cáo đang được phát triển')
+  showReportModal.value = true
+}
+
+const handleReportSubmitted = (report: any) => {
+  console.log('Report submitted:', report)
+  showToast('success', 'Báo cáo đã được gửi thành công')
 }
 </script>
