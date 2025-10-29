@@ -17,7 +17,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowSellerController;
 //SellerProfile
 use App\Models\SellerProfile;
-
+//payment
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
 /*
@@ -51,10 +52,19 @@ Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
 Route::get('/public-listings', [ListingController::class, 'getPublicListings']);
-
 // Categories routes (public)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']); // Buyer tạo đơn
+    Route::post('/orders/{id}/confirm', [OrderController::class, 'confirm']); // Seller xác nhận
+    Route::get('/orders/my', [OrderController::class, 'myOrders']); // Buyer xem
+    Route::get('/orders/received', [OrderController::class, 'receivedOrders']); // Seller xem
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+        Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
+
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -155,6 +165,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 //SellerProfile
-Route::get('/sellers', function() {
+Route::get('/sellers', function () {
     return SellerProfile::all();
 });

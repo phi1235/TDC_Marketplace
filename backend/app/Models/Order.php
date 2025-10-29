@@ -82,4 +82,8 @@ class Order extends Model
     {
         return $this->hasMany(OrderConfirmation::class);
     }
+   public function escrowAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+{
+    return $this->hasOne(EscrowAccount::class, 'order_id', 'id');
+}
 }

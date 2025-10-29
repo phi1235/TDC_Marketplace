@@ -18,28 +18,24 @@
             class="w-full pl-10 pr-40 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="handleInput" @keydown.down.prevent="moveDown" @keydown.up.prevent="moveUp"
             @keydown.enter.prevent="handleEnter" @focus="handleFocus" @blur="hideDropdown" />
-       <!-- 🔽 Dropdown chọn Engine + Nút tìm kiếm (liền khối) -->
-<div class="absolute right-0 top-0 bottom-0 flex items-center">
-  <!-- Select Engine -->
-  <select
-  v-model="engine"
-  class="h-full border-l border-gray-300 bg-gray-50 text-sm text-gray-700 px-5 pr-6 rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white transition appearance-none"
-  style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'><path fill=\'%23666\' d=\'M0 0l5 6 5-6z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.6rem center; background-size: 10px;"
->
-  <option value="es">Elasticsearch</option>
-  <option value="solr">Solr</option>
-  <option value="compare">So sánh</option>
-</select>
+          <!-- 🔽 Dropdown chọn Engine + Nút tìm kiếm (liền khối) -->
+          <div class="absolute right-0 top-0 bottom-0 flex items-center">
+            <!-- Select Engine -->
+            <select v-model="engine"
+              class="h-full border-l border-gray-300 bg-gray-50 text-sm text-gray-700 px-5 pr-6 rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white transition appearance-none"
+              style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'><path fill=\'%23666\' d=\'M0 0l5 6 5-6z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.6rem center; background-size: 10px;">
+              <option value="es">Elasticsearch</option>
+              <option value="solr">Solr</option>
+              <option value="compare">So sánh</option>
+            </select>
 
-  <!-- Button Search -->
-  <button
-    @click="searchFullKeyword"
-    class="h-full bg-blue-600 text-white px-4 rounded-r-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
-    title="Tìm kiếm"
-  >
-    🔍
-  </button>
-</div>
+            <!-- Button Search -->
+            <button @click="searchFullKeyword"
+              class="h-full bg-blue-600 text-white px-4 rounded-r-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+              title="Tìm kiếm">
+              🔍
+            </button>
+          </div>
 
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,6 +187,10 @@
                     @click="showUserMenu = false">
                     Danh sách 💟 {{ wishlistStore.count }}
                   </router-link>
+                  <router-link to="/orders/my" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Đơn hàng của tôi 📦
+                  </router-link>
                 </div>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -201,7 +201,7 @@
           </div>
 
           <!-- Anounce for user -->
-           <div v-if="!auth.isAdmin" class="flex items-center space-x-2 relative bell">
+          <div v-if="!auth.isAdmin" class="flex items-center space-x-2 relative bell">
             <div v-if="isAuthenticated">
               <button @click="isOpen = !isOpen">
                 🔔
@@ -216,14 +216,13 @@
                 <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
                   <p> {{ value.title }} </p>
                 </div>
-                <router-link to="/notifications"
-                  class="block text-center py-2 hover:bg-gray-100">
+                <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100">
                   Xem tất cả thông báo
                 </router-link>
               </div>
             </transition>
           </div>
-          
+
           <!-- Dark Mode -->
           <button @click="toggleDark"
             class="ml-3 p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -472,22 +471,22 @@ const toggleDark = () => (isDark.value = !isDark.value)
 //Anounce for user
 const isOpen = ref(false); //trạng thái để mở thông báo
 const unreadCount = ref(4); //tin chưa đọc
-const notifications  = ref([
+const notifications = ref([
   { title: 'Bạn có đơn hàng mới' },
   { title: 'Tin nhắn mới từ admin' },
   { title: 'Khuyến mãi siêu hot' },
   { title: 'Notification thứ 4' },
 ]) //hiện tạm thời, khi nào có api thì truyền vô
 //đóng khi click ra ngoài
-const closeNotificationIfOutside  = (e) => {
+const closeNotificationIfOutside = (e) => {
   const bell = document.querySelector('.bell')
   if (bell && !bell.contains(e.target)) {
-  isOpen.value = false
+    isOpen.value = false
   }
 }
 
-onMounted(() => document.addEventListener('click', closeNotificationIfOutside ))
-onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside )) 
+onMounted(() => document.addEventListener('click', closeNotificationIfOutside))
+onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside))
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
@@ -500,14 +499,16 @@ mark {
 
 /* style announce */
 .fade-slide-enter-active {
-transition: all 0.2s ease;
+  transition: all 0.2s ease;
 }
+
 .fade-slide-leave-active {
-transition: all 0.2s ease;
+  transition: all 0.2s ease;
 }
+
 .fade-slide-enter-from,
 .fade-slide-leave-to {
-opacity: 0;
-transform: translateY(-5px);
+  opacity: 0;
+  transform: translateY(-5px);
 }
 </style>
