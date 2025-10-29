@@ -4,7 +4,6 @@
 
       <!-- Header -->
       <Header v-if="!auth.isAdmin" />
-      <Navbar v-if="auth.isAdmin" />
       <!-- Skeleton Loading Overlay -->
       <transition name="fade">
         <div

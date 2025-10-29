@@ -58,10 +58,14 @@ const router = createRouter({
     },
     {
       path: '/dashboard',
-      name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
       children: [
+        {
+          path: '', // <--- DEFAULT CHILD
+          name: 'dashboard',
+          component: () => import('@/views/dashboard/DashboardHome.vue'),
+        },
         {
           path: 'listings',
           name: 'dashboard-listings',
@@ -72,6 +76,12 @@ const router = createRouter({
           path: 'pending',
           name: 'dashboard-pending',
           component: () => import('@/views/listings/PendingAdminView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'users',
+          name: 'dashboard-users',
+          component: () => import('@/views/dashboard/UsersView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
       ],
