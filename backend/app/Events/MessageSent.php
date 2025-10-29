@@ -18,9 +18,22 @@ class MessageSent implements ShouldBroadcastNow
     {
     }
 
-    public function broadcastOn(): Channel
+    public function broadcastOn(): array
     {
-        return new PrivateChannel('chat.' . $this->message->conversation_id);
+        $channels = [new PrivateChannel('chat.' . $this->message->conversation_id)];
+
+        try {
+            $participantIds = \App\Models\ConversationParticipant::where('conversation_id', $this->message->conversation_id)
+                ->pluck('user_id')
+                ->all();
+            foreach ($participantIds as $uid) {
+                $channels[] = new PrivateChannel('user.' . $uid);
+            }
+        } catch (\Throwable $e) {
+            // ignore silently; chat channel still works
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string

@@ -8,10 +8,35 @@
       </div>
       <div class="space-y-2 max-h-[70vh] overflow-auto">
         <div v-for="c in (conversations.data || conversations)" :key="c.id" @click="openConversation(c)"
-             class="p-2 rounded border cursor-pointer hover:bg-gray-50"
-             :class="{ 'border-blue-500': activeConversation?.id === c.id }">
-          <div class="text-sm font-medium">{{ getConvoTitle(c) }} <span v-if="c.is_support" class="ml-1 text-xs text-yellow-600">Support</span></div>
-          <div class="text-xs text-gray-500">Cập nhật: {{ formatTime(c.last_message_at) }}</div>
+             class="p-2 rounded border cursor-pointer transition-colors relative"
+             :class="{ 
+               'border-blue-500 bg-blue-50': activeConversation?.id === c.id,
+               'border-gray-300 bg-gray-100 font-semibold': (c.unread_count || 0) > 0 && activeConversation?.id !== c.id,
+               'hover:bg-gray-50': (c.unread_count || 0) === 0 && activeConversation?.id !== c.id
+             }">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium truncate">
+                {{ getConvoTitle(c) }} 
+                <span v-if="c.is_support" class="ml-1 text-xs text-yellow-600">Support</span>
+              </div>
+              <!-- Last message preview -->
+              <div class="text-xs text-gray-600 mt-1 truncate">
+                <span v-if="c._preview">{{ c._preview }}</span>
+                <template v-else>
+                  <span v-if="c.last_message?.type === 'image'">📷 Ảnh</span>
+                  <span v-else class="truncate">{{ c.last_message?.content || '' }}</span>
+                </template>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">{{ formatTime(c.last_message_at) }}</div>
+            </div>
+            <!-- Unread badge -->
+            <div v-if="(c.unread_count || 0) > 0" class="flex-shrink-0">
+              <span class="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                {{ c.unread_count > 99 ? '99+' : c.unread_count }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -64,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { chatService } from '@/services/chat'
 import { useAuthStore } from '@/stores/auth'
 import { initEcho, getEcho } from '@/utils/echo'
@@ -80,31 +105,77 @@ const fileInputRef = ref<HTMLInputElement|null>(null)
 const selectedImage = ref<File|null>(null)
 const selectedImagePreview = ref<string>('')
 const imageModalUrl = ref<string|null>(null)
-const myId = useAuthStore().user?.id
+const authStore = useAuthStore()
+const myId = authStore.user?.id
 const route = useRoute()
 let currentChannel: any = null
 let pollTimer: number | undefined
 const isTyping = ref(false)
 let typingTimer: number | undefined
+const subscribedChannels = new Set<number>() // Track subscribed channels
+let userChannelSubscribed = false
+
+// Subscribe to all conversations for real-time updates
+function subscribeToAllConversations() {
+  const echo = getEcho()
+  if (!echo) return
+  
+  // Unsubscribe from channels that no longer exist
+  subscribedChannels.forEach((convoId) => {
+    if (!conversations.value.find((c: any) => c.id === convoId)) {
+      echo.leave(`chat.${convoId}`)
+      subscribedChannels.delete(convoId)
+    }
+  })
+  
+  // Listen to all conversations
+  conversations.value.forEach((c: any) => {
+    if (subscribedChannels.has(c.id)) return // Already subscribed
+    
+    echo.private(`chat.${c.id}`)
+      .listen('.MessageSent', (e: any) => {
+        // Always update last message preview and ordering
+        const updates: any = { last_message: e, last_message_at: e.created_at, _preview: (e.type === 'image' ? '📷 Ảnh' : (e.content || '')) }
+        if (activeConversation.value?.id !== c.id && e.sender_id !== myId) {
+          const conv = conversations.value.find((conv: any) => conv.id === c.id)
+          updates.unread_count = ((conv?.unread_count || 0) + 1)
+        }
+        updateConversationInList(c.id, updates)
+      })
+    subscribedChannels.add(c.id)
+  })
+}
 
 async function loadConversations() {
   const res = await chatService.listConversations()
-  conversations.value = res.data || res
+  conversations.value = Array.isArray(res) ? res : (res.data || [])
+  // Sort by last_message_at descending
+  conversations.value.sort((a: any, b: any) => {
+    const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0
+    const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0
+    return timeB - timeA
+  })
+  // Re-subscribe to all conversations
+  subscribeToAllConversations()
   // Ensure support conversation exists for new users
-  const hasSupport = (conversations.value.data || conversations.value || []).some((c: any) => c.is_support)
+  const hasSupport = conversations.value.some((c: any) => c.is_support)
   if (!hasSupport) {
     try {
-      const convo = await chatService.startSupport()
-      const res2 = await chatService.listConversations()
-      conversations.value = res2.data || res2
-      // Put support convo on top visually
-      const list = conversations.value.data || conversations.value
-      const idx = list.findIndex((c: any) => c.id === convo.id)
-      if (idx > 0) {
-        const [sp] = list.splice(idx, 1)
-        list.unshift(sp)
-      }
+      await chatService.startSupport()
+      await loadConversations() // Reload to get updated list
     } catch (e) {}
+  }
+}
+
+function updateConversationInList(conversationId: number, updates: any) {
+  const idx = conversations.value.findIndex((c: any) => c.id === conversationId)
+  if (idx >= 0) {
+    const updated = { ...conversations.value[idx], ...updates }
+    // Remove then unshift to top to guarantee rerender and ordering
+    conversations.value.splice(idx, 1)
+    conversations.value.unshift(updated)
+    // Force reactive update of the array reference
+    conversations.value = [...conversations.value]
   }
 }
 
@@ -133,16 +204,26 @@ function startPolling() {
     const news = sorted.filter((m: any) => m.id > lastId)
     if (news.length) {
       messages.value.push(...news)
+      // Update sidebar preview for active conversation as fallback (when WS missed)
+      const latest = news[news.length - 1]
+      updateConversationInList(activeConversation.value.id, {
+        last_message: latest,
+        last_message_at: latest.created_at,
+        _preview: (latest.type === 'image' ? '📷 Ảnh' : (latest.content || ''))
+      })
+      // Mark as read for active conv
+      try { await chatService.markAsRead(activeConversation.value.id) } catch {}
       await nextTick(); scrollToBottom()
     }
   }, 2500)
 }
 
 async function openConversation(c: any) {
-  // Unsubscribe previous channel
+  // Unsubscribe previous channel (only typing whisper, keep global message listeners)
   if (currentChannel && activeConversation.value) {
-    const echo = getEcho()
-    if (echo) echo.leave(`private-chat.${activeConversation.value.id}`)
+    try {
+      currentChannel.stopListeningForWhisper && currentChannel.stopListeningForWhisper('typing')
+    } catch {}
     currentChannel = null
   }
   
@@ -152,15 +233,24 @@ async function openConversation(c: any) {
   await nextTick()
   scrollToBottom()
   
+  // Mark as read
+  if (c.unread_count > 0) {
+    try {
+      await chatService.markAsRead(c.id)
+      // Update conversation in list to clear unread count
+      updateConversationInList(c.id, { unread_count: 0 })
+      // Also update activeConversation
+      if (activeConversation.value?.id === c.id) {
+        activeConversation.value.unread_count = 0
+      }
+    } catch (e) {
+      console.error('Failed to mark as read:', e)
+    }
+  }
+  
   // Subscribe to WebSocket channel (Echo sẽ tự thêm prefix private-)
   const echo = initEcho()
   currentChannel = echo.private(`chat.${c.id}`)
-    .listen('MessageSent', (e: any) => {
-      if (e.id && !messages.value.find((m: any) => m.id === e.id)) {
-        messages.value.push(e)
-        nextTick().then(() => scrollToBottom())
-      }
-    })
     .listenForWhisper('typing', (e: any) => {
       if (e && e.user_id !== myId) {
         isTyping.value = true
@@ -246,6 +336,11 @@ async function send() {
     
     const msg = await chatService.send(activeConversation.value.id, payload)
     messages.value.push(msg)
+    // Update conversation in list with new last message
+    updateConversationInList(activeConversation.value.id, {
+      last_message: msg,
+      last_message_at: msg.created_at
+    })
     draft.value = ''
     clearImage()
     // Reset textarea height after sending
@@ -267,12 +362,54 @@ function notifyTyping() {
 }
 
 onMounted(async () => {
-  initEcho() // Initialize Echo on mount
+  const echo = initEcho() // Initialize Echo on mount
   await loadConversations()
+  
+  // Subscribe to all conversations for real-time updates
+  subscribeToAllConversations()
+  // Subscribe to user-level channel to update sidebar for any new message
+  if (authStore.user?.id && !userChannelSubscribed) {
+    echo.private(`user.${authStore.user.id}`)
+      .listen('.MessageSent', (e: any) => {
+        const preview = e.type === 'image' ? '📷 Ảnh' : (e.content || '')
+        const conv = conversations.value.find((c: any) => c.id === e.conversation_id)
+        if (!conv) {
+          // If the conversation is not present (new or not loaded), reload the list
+          loadConversations()
+          return
+        }
+        const updates: any = {
+          last_message: e,
+          last_message_at: e.created_at,
+          _preview: preview,
+        }
+        if (activeConversation.value?.id !== e.conversation_id && e.sender_id !== myId) {
+          updates.unread_count = ((conv?.unread_count || 0) + 1)
+        }
+        updateConversationInList(e.conversation_id, updates)
+        // Ensure consistency with backend-calculated fields/order (like manual refresh)
+        loadConversations()
+      })
+    userChannelSubscribed = true
+  }
+  // Re-subscribe after websocket reconnects
+  try {
+    // @ts-ignore - access pusher internals
+    const conn = echo.connector?.pusher?.connection
+    if (conn && typeof conn.bind === 'function') {
+      conn.bind('state_change', (states: any) => {
+        if (states?.current === 'connected') {
+          subscribeToAllConversations()
+        }
+      })
+    }
+  } catch {}
+  
   // Tự động mở chat support với admin
   if (route.query.support === '1') {
     const convo = await chatService.startSupport()
     await loadConversations()
+    subscribeToAllConversations() // Re-subscribe after reload
     openConversation(convo)
     return
   }
@@ -281,16 +418,52 @@ onMounted(async () => {
     const uid = Number(route.query.user_id)
     const convo = await chatService.start(uid)
     await loadConversations()
+    subscribeToAllConversations() // Re-subscribe after reload
     openConversation(convo)
     return
   }
   if (conversations.value.length) openConversation(conversations.value[0])
 })
 
+// In case auth loads after mount, subscribe to user channel when ready
+watch(() => authStore.user?.id, (val) => {
+  if (!val) return
+  const echo = getEcho() || initEcho()
+  if (userChannelSubscribed) return
+  echo.private(`user.${val}`)
+    .listen('.MessageSent', (e: any) => {
+      const preview = e.type === 'image' ? '📷 Ảnh' : (e.content || '')
+      const conv = conversations.value.find((c: any) => c.id === e.conversation_id)
+      if (!conv) {
+        loadConversations()
+        return
+      }
+      const updates: any = {
+        last_message: e,
+        last_message_at: e.created_at,
+        _preview: preview,
+      }
+      if (activeConversation.value?.id !== e.conversation_id && e.sender_id !== myId) {
+        updates.unread_count = ((conv?.unread_count || 0) + 1)
+      }
+      updateConversationInList(e.conversation_id, updates)
+      // Ensure consistency similar to manual refresh
+      loadConversations()
+    })
+  userChannelSubscribed = true
+})
+
 onBeforeUnmount(() => {
-  if (currentChannel && activeConversation.value) {
-    const echo = getEcho()
-    if (echo) echo.leave(`private-chat.${activeConversation.value.id}`)
+  const echo = getEcho()
+  if (echo) {
+    if (currentChannel && activeConversation.value) {
+      echo.leave(`chat.${activeConversation.value.id}`)
+    }
+    // Unsubscribe from all channels
+    subscribedChannels.forEach((convoId) => {
+      echo.leave(`chat.${convoId}`)
+    })
+    subscribedChannels.clear()
   }
   if (pollTimer) window.clearInterval(pollTimer)
 })

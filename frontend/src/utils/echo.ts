@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 declare global {
@@ -28,31 +29,31 @@ export function initEcho(): Echo {
     disableStats: true,
     enabledTransports: ['ws', 'wss'],
     authorizer: (channel: any, options: any) => ({
-      authorize: (socketId: string, callback: Function) => {
-        const authStore = useAuthStore()
-        const token = authStore.token
-        if (!token) {
-          callback(true, {})
-          return
+      authorize: async (socketId: string, callback: Function) => {
+        try {
+          console.log('[Echo authorize] channel=', channel?.name, 'socket=', socketId)
+          const bearer = localStorage.getItem('auth_token')
+          const res = await api.post(
+            '/broadcasting/auth',
+            {
+              socket_id: socketId,
+              channel_name: channel.name,
+            },
+            bearer
+              ? { headers: { Authorization: `Bearer ${bearer}` } }
+              : undefined
+          )
+          callback(false, res.data)
+        } catch (err) {
+          console.error('Broadcast auth error:', err)
+          try { console.error('Broadcast auth response:', (err as any)?.response?.data) } catch {}
+          callback(true, err)
         }
-        // Call Laravel auth endpoint for private channels
-        fetch(`/api/broadcasting/auth`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            socket_id: socketId,
-            channel_name: channel.name,
-          }),
-        })
-          .then(response => response.json())
-          .then(data => callback(false, data))
-          .catch(error => callback(true, error))
       },
     }),
   })
+  // Expose globally for debugging
+  window.Echo = echoInstance
   
   return echoInstance
 }

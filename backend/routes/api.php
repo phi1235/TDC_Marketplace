@@ -132,10 +132,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat/conversations', [ChatController::class, 'myConversations']);
     Route::get('/chat/conversations/{conversation}/messages', [ChatController::class, 'messages']);
     Route::post('/chat/conversations/{conversation}/messages', [ChatController::class, 'send']);
-    
-    // Broadcasting auth endpoint for private channels
+    Route::post('/chat/conversations/{conversation}/mark-read', [ChatController::class, 'markAsRead']);
+
+    // Broadcasting auth endpoint for private channels (explicit)
     Route::post('/broadcasting/auth', function (Request $request) {
-        return \Illuminate\Support\Facades\Broadcast::auth($request);
+        \Log::info('broadcasting.auth request', [
+            'user_id' => optional($request->user())->id,
+            'channel_name' => $request->input('channel_name'),
+            'socket_id' => $request->input('socket_id'),
+            'has_bearer' => (bool) $request->bearerToken(),
+            'headers_auth' => $request->header('Authorization'),
+        ]);
+        try {
+            return \Illuminate\Support\Facades\Broadcast::auth($request);
+        } catch (\Throwable $e) {
+            \Log::warning('broadcasting.auth denied', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+            throw $e;
+        }
     });
 });
 //rbac api user

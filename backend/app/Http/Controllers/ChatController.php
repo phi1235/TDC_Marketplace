@@ -35,7 +35,24 @@ class ChatController extends Controller
         $convos = \App\Models\Conversation::whereHas('participants', fn($q)=>$q->where('user_id',$userId))
             ->with(['participants.user:id,name', 'messages' => function($q){ $q->latest()->limit(1); }])
             ->orderByDesc('last_message_at')
-            ->paginate(20);
+            ->get();
+        
+        // Calculate unread count for each conversation
+        foreach ($convos as $convo) {
+            $participant = \App\Models\ConversationParticipant::where('conversation_id', $convo->id)
+                ->where('user_id', $userId)
+                ->first();
+            
+            $lastReadId = $participant->last_read_message_id ?? 0;
+            $unreadCount = \App\Models\Message::where('conversation_id', $convo->id)
+                ->where('sender_id', '!=', $userId) // Only messages from others
+                ->where('id', '>', $lastReadId)
+                ->count();
+            
+            $convo->unread_count = $unreadCount;
+            $convo->last_message = $convo->messages->first();
+        }
+        
         return response()->json($convos);
     }
 
@@ -76,6 +93,23 @@ class ChatController extends Controller
             'meta' => $meta,
         ]);
         return response()->json($msg->load('sender:id,name'));
+    }
+
+    public function markAsRead(Conversation $conversation): JsonResponse
+    {
+        $userId = auth()->id();
+        $lastMessage = \App\Models\Message::where('conversation_id', $conversation->id)
+            ->where('sender_id', '!=', $userId)
+            ->latest('id')
+            ->first();
+        
+        if ($lastMessage) {
+            \App\Models\ConversationParticipant::where('conversation_id', $conversation->id)
+                ->where('user_id', $userId)
+                ->update(['last_read_message_id' => $lastMessage->id]);
+        }
+        
+        return response()->json(['success' => true]);
     }
 }
 

@@ -31,6 +31,10 @@ export const chatService = {
     })
     return res.data
   },
+  async markAsRead(conversationId: number) {
+    const res = await api.post(`/chat/conversations/${conversationId}/mark-read`)
+    return res.data
+  },
 }
 
 
