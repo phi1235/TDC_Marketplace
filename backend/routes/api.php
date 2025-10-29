@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::get('/my-activities', [UserController::class, 'myActivities']);
 
     // Listings management
     Route::post('/listings', [ListingController::class, 'store']);
@@ -115,6 +116,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+
+        // Audit logs
+        Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);

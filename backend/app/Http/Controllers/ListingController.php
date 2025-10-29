@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Http;
+use App\Services\AuditLogService;
 
 class ListingController extends Controller
 {
@@ -114,18 +115,21 @@ class ListingController extends Controller
                         'height' => $img->height(),
                         'is_primary' => $listing->images()->count() === 0,
                     ]);
+
+                    // audit log image uploaded
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_uploaded', null, ['path' => $path]); } catch (\Throwable $e) {}
                 }
             }
 
             // Log activity
-            // $listing->auditLogs()->create([
-            //     'user_id' => Auth::id(),
-            //     'action' => 'created',
-            //     'old_values' => null,
-            //     'new_values' => $listing->toArray(),
-            //     'ip_address' => request()->ip(),
-            //     'user_agent' => request()->userAgent(),
-            // ]);
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'created',
+                'old_values' => null,
+                'new_values' => $listing->toArray(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
 
             return response()->json([
                 'message' => 'Tin rao đã được tạo thành công và đang chờ duyệt',
@@ -168,6 +172,7 @@ class ListingController extends Controller
             if ($request->hasFile('images')) {
                 foreach ($listing->images as $image) {
                     Storage::disk('public')->delete($image->image_path);
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_deleted', ['path' => $image->image_path], null); } catch (\Throwable $e) {}
                     $image->delete();
                 }
 
@@ -197,6 +202,7 @@ class ListingController extends Controller
                         'height' => $img->height(),
                         'is_primary' => $listing->images()->count() === 0,
                     ]);
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_uploaded', null, ['path' => $path]); } catch (\Throwable $e) {}
                 }
             }
 
