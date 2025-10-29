@@ -192,6 +192,10 @@
                     Danh sách 💟 {{ wishlistStore.count }}
                   </router-link>
                 </div>
+                <router-link to="/my-reports" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Báo cáo của tôi
+                </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -400,11 +404,11 @@ const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value)
 const handleLogout = async () => {
   try {
     await auth.logout()
-    showToast('Đăng xuất thành công', 'success')
+    showToast('success', 'Đăng xuất thành công')
     router.push('/')
     showUserMenu.value = false
   } catch (error) {
-    showToast('Đăng xuất thất bại', 'error')
+    showToast('error', 'Đăng xuất thất bại')
   }
 }
 
