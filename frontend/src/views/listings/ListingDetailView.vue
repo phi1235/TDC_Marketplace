@@ -195,14 +195,45 @@
 
             <!-- Seller Info Card -->
             <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="openContactModal" />
-            <button @click="handleBuyNow"
-              class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 active:scale-95 transition-transform">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19a2 2 0 100-4H8.1M7 13L5.4 5M16 21a1 1 0 11-2 0 1 1 0 012 0z" />
-              </svg>
-              Mua ngay
-            </button>
+            <button
+  @click="handleBuyNow"
+  :disabled="buyNowLoading || !listing"
+  class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white
+         bg-green-600 hover:bg-green-700 active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
+  <svg v-if="!buyNowLoading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19a2 2 0 100-4H8.1M7 13L5.4 5M16 21a1 1 0 11-2 0 1 1 0z" />
+  </svg>
+  <svg v-else class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+  </svg>
+  {{ buyNowLoading ? 'Đang tạo đơn...' : 'Mua ngay' }}
+</button>
+
+<!-- Banner kết quả -->
+<div v-if="lastOrder" class="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+  <p class="text-sm text-green-800">
+    ✅ Đã tạo đơn hàng <span class="font-semibold">{{ lastOrder.order_number }}</span>!<br>
+    Trạng thái: <span class="font-semibold">{{ lastOrder.status }}</span>.<br>
+    Vui lòng chờ người bán xác nhận.
+  </p>
+  <div class="mt-3 flex gap-2">
+    <button @click="goToMyOrders"
+      class="px-3 py-2 rounded-md text-sm bg-green-600 text-white hover:bg-green-700">
+      Đi tới đơn hàng của tôi
+    </button>
+    <button @click="clearLastOrder"
+      class="px-3 py-2 rounded-md text-sm border border-green-300 text-green-700 hover:bg-green-100">
+      Đóng
+    </button>
+  </div>
+</div>
+
+<!-- Báo lỗi -->
+<div v-if="buyNowError" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mt-2">
+  {{ buyNowError }}
+</div>
 
             <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -291,11 +322,70 @@ import { watch } from 'vue'
 const route = useRoute()
 const router = useRouter()
 
+const buyNowLoading = ref(false)
+const buyNowError = ref('')
+const lastOrder = ref<any | null>(null)
+
 const listing = ref<Listing | null>(null)
 const loading = ref(true)
 const error = ref('')
 const showContactModal = ref(false)
 const showReportModal = ref(false)
+
+// helper lấy token
+function getBuyerToken() {
+  return (
+    localStorage.getItem('token_buyer') ||
+    localStorage.getItem('auth_token') ||
+    ''
+  )
+}
+// hàm xử lý mua hàng
+async function handleBuyNow() {
+  if (!listing.value?.id) return
+  buyNowLoading.value = true
+  buyNowError.value = ''
+  lastOrder.value = null
+
+  try {
+    const token = getBuyerToken()
+    if (!token) {
+      buyNowError.value = 'Bạn cần đăng nhập để mua hàng.'
+      return
+    }
+
+    const res = await axios.post(
+      '/api/orders',
+      { listing_id: listing.value.id },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
+        }
+      }
+    )
+
+    lastOrder.value = res.data?.order || null
+    showToast('success', 'Đã tạo đơn hàng thành công!')
+  } catch (err: any) {
+    const msg =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Không thể tạo đơn hàng. Vui lòng thử lại.'
+    buyNowError.value = msg
+    showToast('error', msg)
+  } finally {
+    buyNowLoading.value = false
+  }
+}
+
+function goToMyOrders() {
+  router.push('/orders/my')
+}
+function clearLastOrder() {
+  lastOrder.value = null
+}
+
 
 const breadcrumbItems = computed(() => {
   if (!listing.value) return []
