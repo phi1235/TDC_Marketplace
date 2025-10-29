@@ -45,33 +45,34 @@
         </div>
       </div>
 
-      <!-- Recent Activity -->
+      <!-- Recent Activity (Audit Logs) -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-xl font-semibold text-gray-900 mb-4">Hoạt động gần đây</h3>
-        <div class="space-y-4">
-          <div class="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h4 class="font-medium text-gray-900">Tin rao mới cần duyệt</h4>
-              <p class="text-sm text-gray-600">5 tin rao mới được đăng</p>
-            </div>
-            <span class="text-sm text-gray-500">2 phút trước</span>
+        <div v-if="loading" class="text-gray-500">Đang tải...</div>
+        <div v-else>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-gray-500 border-b">
+                  <th class="py-2 pr-4">Thời gian</th>
+                  <th class="py-2 pr-4">Người dùng</th>
+                  <th class="py-2 pr-4">Hành động</th>
+                  <th class="py-2 pr-4">Đối tượng</th>
+                  <th class="py-2">IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="log in logs" :key="log.id" class="border-b hover:bg-gray-50">
+                  <td class="py-2 pr-4">{{ new Date(log.created_at).toLocaleString('vi-VN') }}</td>
+                  <td class="py-2 pr-4">{{ log.user?.name || 'Hệ thống' }}</td>
+                  <td class="py-2 pr-4 font-medium">{{ log.action }}</td>
+                  <td class="py-2 pr-4">{{ log.auditable_type }}#{{ log.auditable_id }}</td>
+                  <td class="py-2">{{ log.ip_address || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          
-          <div class="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h4 class="font-medium text-gray-900">Báo cáo vi phạm</h4>
-              <p class="text-sm text-gray-600">3 báo cáo mới cần xử lý</p>
-            </div>
-            <span class="text-sm text-gray-500">15 phút trước</span>
-          </div>
-          
-          <div class="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h4 class="font-medium text-gray-900">Người dùng mới</h4>
-              <p class="text-sm text-gray-600">12 người dùng đăng ký mới</p>
-            </div>
-            <span class="text-sm text-gray-500">1 giờ trước</span>
-          </div>
+          <div v-if="!logs.length" class="text-gray-500">Chưa có hoạt động.</div>
         </div>
       </div>
     </div>
@@ -79,5 +80,19 @@
 </template>
 
 <script setup lang="ts">
-// Simple admin dashboard component
+import { onMounted, ref } from 'vue'
+import { adminListingsService } from '@/services/adminListings'
+
+const logs = ref<any[]>([])
+const loading = ref(false)
+
+onMounted(async () => {
+  try {
+    loading.value = true
+    const res = await adminListingsService.auditLogs({ per_page: 10 })
+    logs.value = res.data || []
+  } finally {
+    loading.value = false
+  }
+})
 </script>

@@ -51,6 +51,10 @@ export const adminListingsService = {
     const res = await api.post('/admin/listings/bulk-action', { action: 'delete', listing_ids: [id] })
     return res.data
   },
+  async auditLogs(params: Record<string, any> = {}) {
+    const res = await api.get('/admin/audit-logs', { params })
+    return res.data
+  },
 }
 
 
