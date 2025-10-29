@@ -194,7 +194,7 @@
             </div>
 
             <!-- Seller Info Card -->
-            <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="openContactModal" />
+            <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="contactSellerQuick" />
             <button @click="handleBuyNow"
               class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 active:scale-95 transition-transform">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,6 +287,7 @@ import ContactSellerModal from '@/components/listings/ContactSellerModal.vue'
 import ReportModal from '@/components/ReportModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 import { watch } from 'vue'
+import { chatService } from '@/services/chat'
 
 const route = useRoute()
 const router = useRouter()
@@ -448,5 +449,14 @@ const reportListing = () => {
 const handleReportSubmitted = (report: any) => {
   console.log('Report submitted:', report)
   showToast('success', 'Báo cáo đã được gửi thành công')
+}
+
+// Quick action: contact seller opens chat and navigates to chat view
+const contactSellerQuick = async () => {
+  if (!listing.value?.seller?.id) return
+  try {
+    await chatService.start(listing.value.seller.id)
+    router.push('/chat')
+  } catch (e) {}
 }
 </script>

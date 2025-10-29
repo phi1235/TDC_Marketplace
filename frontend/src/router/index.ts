@@ -10,6 +10,12 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('@/views/chat/ChatView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/search',
       name: 'search',
       component: () => import('@/components/SearchFilter.vue'),
@@ -84,6 +90,12 @@ const router = createRouter({
           path: 'audit-logs',
           name: 'dashboard-audit-logs',
           component: () => import('@/views/admin/AdminAuditLogsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'chat',
+          name: 'dashboard-chat',
+          component: () => import('@/views/chat/ChatView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
       ],

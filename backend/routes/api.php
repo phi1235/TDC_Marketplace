@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
@@ -123,6 +124,18 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
+    });
+
+    // Chat routes
+    Route::post('/chat/start', [ChatController::class, 'start']);
+    Route::post('/chat/start-support', [ChatController::class, 'startSupport']);
+    Route::get('/chat/conversations', [ChatController::class, 'myConversations']);
+    Route::get('/chat/conversations/{conversation}/messages', [ChatController::class, 'messages']);
+    Route::post('/chat/conversations/{conversation}/messages', [ChatController::class, 'send']);
+    
+    // Broadcasting auth endpoint for private channels
+    Route::post('/broadcasting/auth', function (Request $request) {
+        return \Illuminate\Support\Facades\Broadcast::auth($request);
     });
 });
 //rbac api user

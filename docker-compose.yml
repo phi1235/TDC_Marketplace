@@ -151,6 +151,21 @@ services:
     networks:
       - tdc-network
 
+  # Soketi WebSocket server (Pusher-compatible)
+  soketi:
+    image: quay.io/soketi/soketi:1.4-16-alpine
+    container_name: tdc-soketi
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    environment:
+      SOKETI_DEBUG: 1
+      SOKETI_DEFAULT_APP_ID: app-id
+      SOKETI_DEFAULT_APP_KEY: app-key
+      SOKETI_DEFAULT_APP_SECRET: app-secret
+    networks:
+      - tdc-network
+
 volumes:
   mysql_data:
   redis_data:
