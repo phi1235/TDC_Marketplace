@@ -7,6 +7,7 @@ use App\Models\Report;
 use App\Models\User;
 use App\Services\ElasticSearchService;
 use App\Services\ReportService;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,13 +16,15 @@ class AdminController extends Controller
 {
     protected $elasticSearchService;
     protected ReportService $reportService;
+    protected AuditLogService $auditLogService;
 
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService)
+    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
         $this->reportService = $reportService;
+        $this->auditLogService = $auditLogService;
     }
 
     public function dashboard(): JsonResponse
@@ -131,6 +134,13 @@ class AdminController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    public function auditLogs(Request $request): JsonResponse
+    {
+        $perPage = (int) $request->get('per_page', 20);
+        $logs = $this->auditLogService->list($request->only(['action','user_id','auditable_type','search']), $perPage);
+        return response()->json($logs);
     }
 
     public function bulkAction(Request $request): JsonResponse
@@ -428,7 +438,17 @@ class AdminController extends Controller
             'admin_notes' => 'nullable|string|max:500|required_if:action,reject',
         ]);
 
+        $old = ['status' => $report->status];
         $updated = $this->reportService->handleReportByAdmin($report, $request->action, $request->admin_notes);
+        // Audit log for handling report
+        try {
+            $this->auditLogService->log(
+                $updated,
+                'report_handled_' . $request->action,
+                $old,
+                ['status' => $updated->status, 'admin_notes' => $request->admin_notes]
+            );
+        } catch (\Throwable $e) {}
         return response()->json([
             'message' => 'Báo cáo đã được cập nhật',
             'report' => $updated,
@@ -446,7 +466,11 @@ class AdminController extends Controller
 
     public function toggleUserStatus(Request $request, User $user): JsonResponse
     {
+        $old = ['is_active' => (bool) $user->is_active];
         $user->update(['is_active' => !$user->is_active]);
+        try {
+            $this->auditLogService->log($user, 'user_status_toggled', $old, ['is_active' => (bool) $user->is_active]);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'message' => 'Trạng thái người dùng đã được cập nhật',
