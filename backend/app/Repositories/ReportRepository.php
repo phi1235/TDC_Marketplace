@@ -45,8 +45,15 @@ class ReportRepository
         }
 
         // Filter by reportable type
-        if (isset($filters['type'])) {
-            $query->where('reportable_type', $filters['type']);
+        if (isset($filters['type']) && $filters['type'] !== 'all' && $filters['type'] !== '') {
+            $type = str_replace('\\\\', '\\', (string) $filters['type']);
+            $map = [
+                'App\\Models\\Listing' => 'listing',
+                'App\\Models\\User' => 'user',
+                'App\\Models\\Review' => 'review',
+            ];
+            $normalized = $map[$type] ?? $type; // accept both class string or morph key
+            $query->where('reportable_type', $normalized);
         }
 
         // Search by reason
@@ -65,7 +72,16 @@ class ReportRepository
 
         $perPage = (int)($filters['per_page'] ?? 15);
         
-        return $query->paginate($perPage);
+        $paginator = $query->paginate($perPage);
+        $paginator->getCollection()->transform(function ($r) {
+            try {
+                $r->evidence = method_exists($r, 'getMedia') ? $r->getMedia('evidence')->map->getUrl()->all() : [];
+            } catch (\Throwable $e) {
+                $r->evidence = [];
+            }
+            return $r;
+        });
+        return $paginator;
     }
 
     /**

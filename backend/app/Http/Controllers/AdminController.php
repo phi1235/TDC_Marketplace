@@ -6,6 +6,7 @@ use App\Models\Listing;
 use App\Models\Report;
 use App\Models\User;
 use App\Services\ElasticSearchService;
+use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,12 +14,14 @@ use Illuminate\Support\Facades\Auth;
 class AdminController extends Controller
 {
     protected $elasticSearchService;
+    protected ReportService $reportService;
 
-    public function __construct(ElasticSearchService $elasticSearchService)
+    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
+        $this->reportService = $reportService;
     }
 
     public function dashboard(): JsonResponse
@@ -413,23 +416,22 @@ class AdminController extends Controller
 
     public function reports(Request $request): JsonResponse
     {
-        $reports = Report::with(['reporter', 'reportable'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
+        $reports = $this->reportService->listReportsForAdmin($request->only(['status','type','search']));
+        \Log::info('Admin reports', ['total' => $reports->total(), 'count' => count($reports->items())]);
         return response()->json($reports);
     }
 
     public function handleReport(Request $request, Report $report): JsonResponse
     {
-        $report->update([
-            'status' => $request->status,
-            'admin_notes' => $request->admin_notes,
+        $request->validate([
+            'action' => 'required|in:accept,resolve,reject',
+            'admin_notes' => 'nullable|string|max:500|required_if:action,reject',
         ]);
 
+        $updated = $this->reportService->handleReportByAdmin($report, $request->action, $request->admin_notes);
         return response()->json([
-            'message' => 'Báo cáo đã được xử lý',
-            'report' => $report,
+            'message' => 'Báo cáo đã được cập nhật',
+            'report' => $updated,
         ]);
     }
 

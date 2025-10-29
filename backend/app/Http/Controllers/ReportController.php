@@ -30,16 +30,28 @@ class ReportController extends Controller
     {
         try {
             $report = $this->reportService->createReport($request->validated());
+
+            // Optional image evidence uploads (multipart/form-data with images[])
+            if ($request->hasFile('images')) {
+                foreach ((array) $request->file('images') as $file) {
+                    try {
+                        $report->addMedia($file)->toMediaCollection('evidence');
+                    } catch (\Throwable $e) {
+                        // ignore single file error, continue
+                    }
+                }
+            }
             
             // Dispatch event để thông báo admin
             event(new ReportCreated($report));
 
             return response()->json([
                 'message' => 'Báo cáo đã được gửi thành công',
-                'report' => $report->load(['reportable']),
+                'report' => $report->load([]),
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error('Create report failed: '.$e->getMessage());
             return response()->json([
                 'message' => 'Có lỗi xảy ra khi tạo báo cáo',
                 'error' => $e->getMessage()

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class CreateReportRequest extends FormRequest
 {
@@ -27,17 +28,15 @@ class CreateReportRequest extends FormRequest
                 'required',
                 'string',
                 function ($attribute, $value, $fail) {
-                    // Accept both escaped and unescaped versions
-                    $validTypes = [
+                    // Normalize and validate strictly against allowed model classes
+                    $normalized = str_replace('\\\\', '\\', $value);
+                    $allowed = [
                         'App\\Models\\Listing',
-                        'App\\\\Models\\\\Listing',
                         'App\\Models\\User',
-                        'App\\\\Models\\\\User',
                         'App\\Models\\Review',
-                        'App\\\\Models\\\\Review'
                     ];
-                    
-                    if (!in_array($value, $validTypes)) {
+
+                    if (!in_array($normalized, $allowed, true)) {
                         $fail('Loại đối tượng báo cáo không hợp lệ.');
                     }
                 }
@@ -47,17 +46,23 @@ class CreateReportRequest extends FormRequest
                 'integer',
                 'min:1',
                 function ($attribute, $value, $fail) {
-                    $reportableType = $this->input('reportable_type');
-                    
-                    // Normalize backslashes - handle both escaped and unescaped
-                    $reportableType = str_replace('\\\\', '\\', $reportableType);
-                    
-                    if (!$reportableType || !class_exists($reportableType)) {
+                    $inputType = str_replace('\\\\', '\\', (string) $this->input('reportable_type'));
+
+                    // Use table-level validation to avoid touching Eloquent models (prevents autoload redeclare issues)
+                    $map = [
+                        'App\\Models\\Listing' => ['table' => 'listings', 'owner' => 'seller_id'],
+                        'App\\Models\\User' => ['table' => 'users', 'owner' => 'id'],
+                        'App\\Models\\Review' => ['table' => 'reviews', 'owner' => 'user_id'],
+                    ];
+
+                    if (!isset($map[$inputType])) {
                         $fail('Loại đối tượng báo cáo không hợp lệ.');
                         return;
                     }
-                    
-                    $reportable = $reportableType::find($value);
+
+                    $table = $map[$inputType]['table'];
+                    $ownerColumn = $map[$inputType]['owner'];
+                    $reportable = DB::table($table)->where('id', $value)->first();
                     if (!$reportable) {
                         $fail('Đối tượng báo cáo không tồn tại.');
                         return;
@@ -71,16 +76,16 @@ class CreateReportRequest extends FormRequest
                     }
                     
                     // Nếu đối tượng báo cáo là User, check owner
-                    if ($reportableType === 'App\\Models\\User') {
+                    if ($table === 'users') {
                         if ($reportable->id === $userId) {
                             $fail('Bạn không thể báo cáo chính mình.');
                         }
-                    } elseif ($reportableType === 'App\\Models\\Listing') {
+                    } elseif ($table === 'listings') {
                         // Nếu đối tượng báo cáo là Listing, check listing owner
-                        if ($reportable->user_id === $userId) {
+                        if ((int) ($reportable->$ownerColumn ?? 0) === (int) $userId) {
                             $fail('Bạn không thể báo cáo bài đăng của chính mình.');
                         }
-                    } elseif ($reportableType === 'App\\Models\\Review') {
+                    } elseif ($table === 'reviews') {
                         // Nếu đối tượng báo cáo là Review, check review owner
                         if ($reportable->user_id === $userId) {
                             $fail('Bạn không thể báo cáo đánh giá của chính mình.');

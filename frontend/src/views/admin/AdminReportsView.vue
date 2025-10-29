@@ -24,9 +24,9 @@
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           <option value="">Tất cả loại</option>
-          <option value="App\\Models\\Listing">Tin rao</option>
-          <option value="App\\Models\\User">Người dùng</option>
-          <option value="App\\Models\\Review">Đánh giá</option>
+          <option value="listing">Tin rao</option>
+          <option value="user">Người dùng</option>
+          <option value="review">Đánh giá</option>
         </select>
 
         <input
@@ -151,7 +151,7 @@
             </div>
           </div>
           <button
-            @click="handleReport(report)"
+            @click="openConfirm(report)"
             :class="[
               'px-4 py-2 rounded-md text-sm font-medium transition-colors',
               getActionButtonClass(report.status)
@@ -172,6 +172,23 @@
       <p class="text-gray-600 dark:text-gray-400">Chưa có báo cáo nào phù hợp với bộ lọc</p>
     </div>
   </div>
+  
+  <!-- Confirm Modal -->
+  <Teleport to="body">
+    <transition name="fade">
+      <div v-if="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" @click="closeConfirm" />
+        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Xác nhận xử lý</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">{{ confirmMessage }}</p>
+          <div class="flex justify-end gap-3">
+            <button @click="closeConfirm" class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Hủy</button>
+            <button @click="confirmHandle" class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white">Xác nhận</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -192,8 +209,9 @@ interface Report {
 
 const loading = ref(true)
 const reports = ref<Report[]>([])
+// Mặc định hiển thị các báo cáo Chờ xử lý để không chiếm diện tích bởi mục đã xử lý/từ chối
 const filters = ref({
-  status: '',
+  status: 'pending',
   type: '',
   search: ''
 })
@@ -215,7 +233,7 @@ const fetchReports = async () => {
     reports.value = response.data.data || []
     // Update stats based on fetched data
     stats.value = {
-      total: reports.value.length,
+      total: response.data.total ?? reports.value.length,
       pending: reports.value.filter(r => r.status === 'pending').length,
       resolved: reports.value.filter(r => r.status === 'resolved').length
     }
@@ -228,18 +246,40 @@ const fetchReports = async () => {
 }
 
 const handleReport = async (report: Report) => {
-  if (confirm('Bạn có chắc muốn xử lý báo cáo này?')) {
-    try {
-      await api.post(`/admin/reports/${report.id}/handle`, {
-        action: report.status === 'pending' ? 'accept' : report.status === 'reviewed' ? 'resolve' : 'reject'
-      })
-      showToast('success', 'Đã xử lý báo cáo thành công')
-      await fetchReports()
-    } catch (error) {
-      console.error('Failed to handle report:', error)
-      showToast('error', 'Không thể xử lý báo cáo')
-    }
+  try {
+    await api.post(`/admin/reports/${report.id}/handle`, {
+      action: report.status === 'pending' ? 'accept' : report.status === 'reviewed' ? 'resolve' : 'reject'
+    })
+    showToast('success', 'Đã xử lý báo cáo thành công')
+    await fetchReports()
+  } catch (error) {
+    console.error('Failed to handle report:', error)
+    showToast('error', 'Không thể xử lý báo cáo')
   }
+}
+
+// Professional confirm instead of window.confirm
+const showConfirm = ref(false)
+const confirmTarget = ref<Report | null>(null)
+const confirmMessage = ref('')
+
+const openConfirm = (report: Report) => {
+  confirmTarget.value = report
+  const nextAction = report.status === 'pending' ? 'chuyển sang Đang xem xét' : report.status === 'reviewed' ? 'đánh dấu Đã xử lý' : 'từ chối'
+  confirmMessage.value = `Bạn có chắc muốn ${nextAction} báo cáo này?`
+  showConfirm.value = true
+}
+
+const closeConfirm = () => {
+  showConfirm.value = false
+  confirmTarget.value = null
+}
+
+const confirmHandle = async () => {
+  if (!confirmTarget.value) return
+  const r = confirmTarget.value
+  showConfirm.value = false
+  await handleReport(r)
 }
 
 const getStatusLabel = (status: string) => {
@@ -266,7 +306,10 @@ const getReportableTypeLabel = (type: string) => {
   const typeMap: Record<string, string> = {
     'App\\Models\\Listing': 'Tin rao',
     'App\\Models\\User': 'Người dùng',
-    'App\\Models\\Review': 'Đánh giá'
+    'App\\Models\\Review': 'Đánh giá',
+    listing: 'Tin rao',
+    user: 'Người dùng',
+    review: 'Đánh giá'
   }
   return typeMap[type] || type
 }

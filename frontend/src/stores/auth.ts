@@ -24,7 +24,16 @@ interface RegisterData {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
+  const user = ref<User | null>(
+    (() => {
+      try {
+        const raw = localStorage.getItem('user')
+        return raw ? (JSON.parse(raw) as User) : null
+      } catch {
+        return null
+      }
+    })()
+  )
   const token = ref<string | null>(localStorage.getItem('auth_token'))
   const loading = ref(false)
 
@@ -45,6 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       
       localStorage.setItem('auth_token', token.value)
+      localStorage.setItem('user', JSON.stringify(user.value))
       ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
@@ -67,6 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data.user
       
       localStorage.setItem('auth_token', token.value)
+      localStorage.setItem('user', JSON.stringify(user.value))
       ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
       
       return { success: true }
@@ -91,6 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     token.value = null
     localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
     delete (api.defaults.headers as any).Authorization
   }
 
@@ -100,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.get('/auth/me')
       user.value = response.data
+      localStorage.setItem('user', JSON.stringify(user.value))
     } catch (error) {
       // Token might be invalid, logout
       await logout()
