@@ -255,6 +255,7 @@ import { showToast } from '@/utils/toast'
 // import axios from 'axios'
 import { getWishes } from '@/services/wishlist'
 import { useWishlistStore } from '@/stores/wishlist'
+import { fire } from '@/services/activities'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -365,6 +366,8 @@ const searchFullKeyword = () => {
   if (!q) return
   showDropdown.value = false
   router.push({ name: 'search', query: { q, engine: engine.value } })
+  // fire search event
+  fire('search_performed', { q, engine: engine.value })
 }
 
 const moveDown = () => {

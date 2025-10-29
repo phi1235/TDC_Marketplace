@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ActivityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
@@ -34,6 +35,7 @@ use App\Http\Controllers\SolrController;
 
 
 // Public routes
+Route::post('/activities', [ActivityController::class, 'store']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -119,6 +121,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Audit logs
         Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
+
+        // Analytics
+        Route::get('/analytics/overview', [AdminController::class, 'analyticsOverview']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
