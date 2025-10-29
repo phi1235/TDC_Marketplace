@@ -125,22 +125,10 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/profile/ProfileView.vue'),
-      meta: { requiresGuest: true },
-    },
-    {
-    path: '/categories',
-    name: 'Categories',
-    component: () => import('@/views/categories/CategoriesView.vue'),
-  },
-  {
-  path: "/privacy-policy",
-  name: "privacy-policy",
-  component: () => import("@/views/policy/PrivacyPolicyView.vue"),
-  meta: { title: "Chính sách bảo mật" }
-}
+      path: '/faq',
+      name: 'FAQ',
+      component: () => import('@/views/faq/faqView.vue')
+    }
 
   ],
 })
@@ -148,7 +136,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
