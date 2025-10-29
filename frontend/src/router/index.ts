@@ -10,6 +10,20 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/orders/my',
+      name: 'MyOrders',
+      component: () => import('../views/orders/MyOrders.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+  path: '/orders/:id',
+  name: 'OrderDetail',
+  component: () => import('@/views/orders/OrderDetail.vue'),
+  meta: { requiresAuth: true },
+  props: true
+},
+
+    {
       path: '/search',
       name: 'search',
       component: () => import('@/components/SearchFilter.vue'),
@@ -116,14 +130,14 @@ const router = createRouter({
       path: '/seller',
       name: 'seller',
       component: () => import('@/views/dashboard/SellerList.vue'),
-      },
-     {
+    },
+    {
       path: '/notifications',
       name: 'notifications',
       component: () => import('@/views/dashboard/NotificationsView.vue'),
       meta: { requiresAuth: true },
     },
-     {
+    {
       path: '/detailNotification/:id',//truyền id qua
       name: 'detail-notification',
       component: () => import('@/views/dashboard/DetailNotification.vue'),
@@ -166,7 +180,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
