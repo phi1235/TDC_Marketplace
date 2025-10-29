@@ -203,11 +203,6 @@
               </svg>
               Mua ngay
             </button>
-            <SellerInfoCard
-              v-if="listing.seller"
-              :seller="{ ...listing.seller, created_at: listing.created_at }"
-              @contact="openContactModal"
-            />
 
             <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
