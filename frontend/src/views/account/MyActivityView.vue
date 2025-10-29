@@ -4,7 +4,7 @@
 
     <div class="bg-white rounded-lg shadow-sm border p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
       <input v-model="filters.action" @keyup.enter="load" placeholder="Action (vd: login_success)" class="border rounded px-3 py-2" />
-      <div class="text-sm text-gray-500 md:col-span-2">Thông tin nhạy cảm đã được ẩn.</div>
+      <div class="text-sm text-gray-500 md:col-span-2">Tìm kiếm theo action.</div>
       <div class="flex justify-end">
         <button @click="load" class="bg-blue-600 text-white rounded px-5 py-2">Lọc</button>
       </div>
