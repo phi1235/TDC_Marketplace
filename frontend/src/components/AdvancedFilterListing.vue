@@ -18,15 +18,25 @@
       <div class="grid grid-cols-2 gap-4 mb-6">
         <select v-model="filters.views_count_op" class="border rounded px-3 py-2 w-full">
           <option value=">">></option>
-          <option value="<"><</option>
+          <option value="<">
+            < </option>
           <option value="=">=</option>
         </select>
-        <input
-          v-model.number="filters.views_count_value"
-          type="number"
-          class="border rounded px-3 py-2 w-full"
-        />
+        <input v-model.number="filters.views_count_value" type="number" class="border rounded px-3 py-2 w-full" />
       </div>
+
+      <!-- Price -->
+       <h2 class="text-lg font-semibold mb-3">Price</h2>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <select v-model="filters.price_op" class="border rounded px-3 py-2 w-full">
+          <option value=">">></option>
+          <option value="<">
+            <</option>
+          <option value="=">=</option>
+        </select>
+        <input type="number" v-model.number="filters.price_value" class="border rounded px-3 py-2 w-full" placeholder="Nhập giá..." />
+      </div>
+
 
       <!-- Created Date -->
       <h2 class="text-lg font-semibold mb-3">Created Date</h2>
@@ -45,7 +55,6 @@
       <!-- Actions -->
       <div class="flex justify-end gap-3">
         <button @click="reset" class="px-4 py-2 rounded bg-gray-200">Reset</button>
-        <button @click="apply" class="px-4 py-2 rounded bg-blue-500 text-white">Apply</button>
         <button @click="close" class="px-4 py-2 rounded bg-gray-400 text-white">Đóng</button>
       </div>
     </div>

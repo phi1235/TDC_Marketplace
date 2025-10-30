@@ -189,6 +189,17 @@ function filterRowsAdvanced() {
       })
     }
 
+     // --- Price ---
+    if (f.price_value != null) {
+      const val = f.price_value
+      const op = f.price_op || '='
+      list = list.filter(r => {
+        if (op === '>') return r.price > val
+        if (op === '<') return r.price < val
+        return r.price === val
+      })
+    }
+
     // Created date
     if (f.created_from) {
       const from = new Date(f.created_from)
@@ -209,7 +220,6 @@ function filterRowsAdvanced() {
       list = list.filter(r => new Date(r.updated_at) <= to)
     }
   }
-
   rows.value = list
   total.value = list.length
 }
