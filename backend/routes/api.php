@@ -49,6 +49,7 @@ Route::get('/search-solr', [SolrController::class, 'index']);
 Route::get('/search-compare', [CompareController::class, 'index']);
 
 // Listings routes (public)
+Route::get('/listings/latest', [ListingController::class, 'latest']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
