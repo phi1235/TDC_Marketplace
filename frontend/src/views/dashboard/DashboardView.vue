@@ -134,8 +134,7 @@ const filteredUsers = computed(() => {
   const f = appliedFilter.value;
   if (!f) return list;
   // trước khi return list.filter(...)
-  console.log('Applied filter:', appliedFilter.value);
-  console.log('Sample user login_counts:', users.value.slice(0, 5).map(u => ({ id: u.id, login_count: u.login_count })));
+  // console logs removed after debug
 
   return list.filter(user => {
     // Block 1: Account Status
@@ -154,10 +153,9 @@ const filteredUsers = computed(() => {
       if (f.email_verified === 'unverified' && verified) return false;
     }
 
-    //login count
-    // Block 2: Engagement
-    if (f.login_count_min !== null && f.login_count_min !== '' && !isNaN(Number(f.login_count_min))) {
-      const val = Number(f.login_count_min);
+    // Block 2: Engagement - login count
+    if (f.login_count_value !== null && f.login_count_value !== '' && !isNaN(Number(f.login_count_value))) {
+      const val = Number(f.login_count_value);
       const count = Number(user.login_count || 0);
       const op = f.login_count_op || '>'; // default >
       if (op === '>') {
@@ -170,18 +168,18 @@ const filteredUsers = computed(() => {
     }
 
     console.log('User last login:', user.last_login_at)
-    //last login
-    if (f.last_login && f.last_login !== 'all') {
+    // Block 2: last login preset
+    if (f.last_login_preset && f.last_login_preset !== 'all') {
       const now = new Date();
       const last = user.last_login_at ? new Date(user.last_login_at) : null;
 
-      if (f.last_login === 'never') {
+      if (f.last_login_preset === 'never') {
         if (last !== null) return false; // chỉ lấy user chưa login lần nào
-      } else if (f.last_login === '7d') {
+      } else if (f.last_login_preset === '7' || f.last_login_preset === '7d') {
         if (!last) return false;
         const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
         if (diffDays > 7) return false; // last login cách đây hơn 7 ngày => bỏ
-      } else if (f.last_login === '30d') {
+      } else if (f.last_login_preset === '30' || f.last_login_preset === '30d') {
         if (!last) return false;
         const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
         if (diffDays > 30) return false;
@@ -262,6 +260,7 @@ function getAdvancedFilterPayload() {
         <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
         <li class="item"><router-link to="/dashboard/reports">REPORTS</router-link></li>
         <li class="item"><router-link to="/dashboard/analytics">ANALYTICS</router-link></li>
+        <li class="item"><router-link to="/dashboard/monitoring">MONITORING</router-link></li>
         <li class="item"><router-link to="/dashboard/audit-logs">AUDIT LOGS</router-link></li>
       </ul>
     </nav>
@@ -361,19 +360,6 @@ function getAdvancedFilterPayload() {
 </template>
 
 <style scoped>
-.func {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.btn-primary {
-  background: #2563eb;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 8px;
-}
-
 .badge {
   display: inline-block;
   padding: 4px 10px;
@@ -557,11 +543,7 @@ td {
 }
 
 
-#btn_search {
-  padding: 1px 10px;
-}
-
-=======.btn-primary {
+.btn-primary {
   background: #2563eb;
   color: #fff;
   padding: 10px 14px;
