@@ -228,7 +228,7 @@ function filterRowsAdvanced() {
 
 <template>
   <!-- style="padding:24px; max-width:1200px; margin:0 auto;" -->
-  <section class="">
+  <section class="min-h-screen overflow-y-auto p-6 bg-gray-50" style="max-height: 100vh; padding-bottom: 120px;">
     <header style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
       <h1 style="font-size:22px; font-weight:700;">Quản lý tin rao</h1>
       <span style="color:#6b7280;">Tổng số: <b>{{ total }}</b></span>
