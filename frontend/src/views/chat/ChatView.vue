@@ -203,9 +203,14 @@ function startPolling() {
     const sorted = [...arr].reverse()
     const news = sorted.filter((m: any) => m.id > lastId)
     if (news.length) {
-      messages.value.push(...news)
+      // Dedupe: skip messages that already exist (can happen if send() pushed earlier)
+      const existingIds = new Set(messages.value.map((m: any) => m.id))
+      const dedupNews = news.filter((m: any) => !existingIds.has(m.id))
+      if (dedupNews.length) {
+        messages.value.push(...dedupNews)
+      }
       // Update sidebar preview for active conversation as fallback (when WS missed)
-      const latest = news[news.length - 1]
+      const latest = (dedupNews.length ? dedupNews : news)[(dedupNews.length ? dedupNews : news).length - 1]
       updateConversationInList(activeConversation.value.id, {
         last_message: latest,
         last_message_at: latest.created_at,
@@ -335,7 +340,10 @@ async function send() {
     }
     
     const msg = await chatService.send(activeConversation.value.id, payload)
-    messages.value.push(msg)
+    // Guard: avoid duplicate append if polling already fetched this message
+    if (!messages.value.find((m: any) => m.id === msg.id)) {
+      messages.value.push(msg)
+    }
     // Update conversation in list with new last message
     updateConversationInList(activeConversation.value.id, {
       last_message: msg,
