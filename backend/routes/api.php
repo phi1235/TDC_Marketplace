@@ -140,6 +140,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Analytics
         Route::get('/analytics/overview', [AdminController::class, 'analyticsOverview']);
+        // Monitoring
+        Route::get('/monitoring/overview', [AdminController::class, 'monitoring']);
+        Route::get('/monitoring/export', [AdminController::class, 'monitoringExport']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);

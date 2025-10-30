@@ -262,6 +262,7 @@ function getAdvancedFilterPayload() {
         <li class="item"><router-link to="/dashboard/pending">PENDING</router-link></li>
         <li class="item"><router-link to="/dashboard/reports">REPORTS</router-link></li>
         <li class="item"><router-link to="/dashboard/analytics">ANALYTICS</router-link></li>
+        <li class="item"><router-link to="/dashboard/monitoring">MONITORING</router-link></li>
         <li class="item"><router-link to="/dashboard/audit-logs">AUDIT LOGS</router-link></li>
       </ul>
     </nav>
