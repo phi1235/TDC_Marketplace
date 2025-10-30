@@ -69,14 +69,11 @@ class AnalyticsService
             ->limit(10)
             ->get();
 
-        // Top listings viewed
-        $topListings = DB::table('user_activities')
-            ->select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.listing_id')) as listing_id"), DB::raw('COUNT(*) as total'))
-            ->where('event_name', 'listing_view')
-            ->whereBetween('created_at', [$from, $to])
-            ->whereNotNull(DB::raw("JSON_EXTRACT(metadata, '$.listing_id')"))
-            ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.listing_id'))"))
-            ->orderByDesc('total')
+        // Top listings viewed: Lấy trực tiếp từ views_count (không phụ thuộc user_activities)
+        $topListings = DB::table('listings')
+            ->select(DB::raw('id as listing_id'), DB::raw('views_count as total'), 'title')
+            ->where('views_count', '>', 0)
+            ->orderByDesc('views_count')
             ->limit(10)
             ->get();
 
