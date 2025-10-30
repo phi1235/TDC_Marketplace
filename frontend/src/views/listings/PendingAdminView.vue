@@ -100,7 +100,8 @@ async function confirmReject() {
 </script>
 
 <template>
-  <section style="padding:24px; max-width:1200px; margin:0 auto;">
+  <!--  style="padding:24px; max-width:1200px; margin:0 auto;" -->
+  <section>
     <header style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
       <h1 style="font-size:22px; font-weight:700;">Tin chờ duyệt</h1>
       <span style="color:#6b7280;">Tổng số: <b>{{ total }}</b></span>
