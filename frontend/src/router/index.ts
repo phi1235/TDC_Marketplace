@@ -88,6 +88,18 @@ const router = createRouter({
           component: () => import('@/views/listings/PendingAdminView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
+        {
+          path: 'reports',
+          name: 'dashboard-reports',
+          component: () => import('@/views/admin/AdminReportsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'audit-logs',
+          name: 'dashboard-audit-logs',
+          component: () => import('@/views/admin/AdminAuditLogsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
       ],
     },
     {
@@ -138,9 +150,28 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/my-reports',
+      name: 'my-reports',
+      component: () => import('@/views/account/MyReportsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-activity',
+      name: 'my-activity',
+      component: () => import('@/views/account/MyActivityView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/admin/AdminDashboard.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    // legacy direct route (optional)
+    {
+      path: '/admin/audit-logs',
+      name: 'admin-audit-logs',
+      component: () => import('@/views/admin/AdminAuditLogsView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
   ],

@@ -9,6 +9,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
@@ -48,6 +49,7 @@ Route::get('/search-solr', [SolrController::class, 'index']);
 Route::get('/search-compare', [CompareController::class, 'index']);
 
 // Listings routes (public)
+Route::get('/listings/latest', [ListingController::class, 'latest']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
@@ -76,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::get('/my-activities', [UserController::class, 'myActivities']);
 
     // Listings management
     Route::post('/listings', [ListingController::class, 'store']);
@@ -101,6 +104,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/offers/{offer}/accept', [OfferController::class, 'accept']);
     Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
 
+    // Report routes
+    Route::post('/reports', [ReportController::class, 'store']);
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/{report}', [ReportController::class, 'show']);
+    Route::get('/reports-stats', [ReportController::class, 'stats']);
+    Route::get('/report-reasons', [ReportController::class, 'getReportReasons']);
+    Route::get('/reportable-types', [ReportController::class, 'getReportableTypes']);
+
     // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
@@ -116,6 +127,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+
+        // Audit logs
+        Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);

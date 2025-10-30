@@ -103,6 +103,7 @@ class Listing extends Model
     {
         return $this->hasMany(Listing::class, 'duplicate_source_id');
     }
+   
 
     public function toSearchableArray(): array
     {

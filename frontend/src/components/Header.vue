@@ -160,10 +160,7 @@
                 class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
                 Đăng tin
               </router-link>
-              <router-link to="/my-listings"
-                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Tin của tôi
-              </router-link>
+             
             </template>
 
             <!-- User menu -->
@@ -192,6 +189,19 @@
                     Đơn hàng của tôi 📦
                   </router-link>
                 </div>
+                <router-link to="/my-listings"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showUserMenu = false">
+                Tin của tôi
+              </router-link>
+                <router-link to="/my-reports" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Báo cáo của tôi
+                </router-link>
+                <router-link to="/my-activity" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Hoạt động của tôi
+                </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất
@@ -399,11 +409,11 @@ const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value)
 const handleLogout = async () => {
   try {
     await auth.logout()
-    showToast('Đăng xuất thành công', 'success')
+    showToast('success', 'Đăng xuất thành công')
     router.push('/')
     showUserMenu.value = false
   } catch (error) {
-    showToast('Đăng xuất thất bại', 'error')
+    showToast('error', 'Đăng xuất thất bại')
   }
 }
 
