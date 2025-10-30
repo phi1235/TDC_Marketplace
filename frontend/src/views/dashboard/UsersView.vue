@@ -249,17 +249,19 @@ function getAdvancedFilterPayload() {
 <template>
   <div class="w-full space-y-6">
     <!-- FUNCTION BAR -->
-        <div class="flex flex-wrap items-center gap-4 mb-5">
-          <div class="text-lg font-semibold">Tổng số: <b>{{ users.length }}</b></div>
-
-          <div class="flex">
-            <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..."
-              class="border border-gray-300 rounded-l-md px-3 py-2 outline-none focus:ring focus:ring-blue-300" />
-            <button id="btn_search" @click="search"
-              class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
+        <div class="flex flex-wrap items-center gap-4 mb-5 justify-between">
+          <div class="flex flex-wrap items-center gap-4">
+            <h2 class="text-xl font-bold ">Quản lý người dùng</h2>
+            <div class="text-lg font-semibold">Tổng số: <b>{{ users.length }}</b></div>
           </div>
-
+          
           <div class="flex items-center gap-2">
+            <div class="flex">
+              <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..."
+                class="border border-gray-300 rounded-l-md px-3 py-2 outline-none focus:ring focus:ring-blue-300" />
+              <button id="btn_search" @click="search"
+                class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
+            </div>
             <label class="font-medium">Bộ lọc:</label>
             <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
               <option value="all">Tất cả</option>
@@ -278,7 +280,6 @@ function getAdvancedFilterPayload() {
 
         <!-- INFO / TABLE -->
         <div>
-          <h2 class="text-xl font-bold mb-3">Danh sách người dùng</h2>
           <table class="w-full bg-white rounded-lg overflow-hidden border">
             <thead>
               <tr class="bg-gray-100 text-left">
