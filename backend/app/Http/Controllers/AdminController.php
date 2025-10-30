@@ -20,11 +20,15 @@ class AdminController extends Controller
     protected ReportService $reportService;
     protected AuditLogService $auditLogService;
     protected AnalyticsService $analyticsService;
-
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService, AnalyticsService $analyticsService)
     protected MonitoringService $monitoringService;
 
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService, MonitoringService $monitoringService)
+    public function __construct(
+        ElasticSearchService $elasticSearchService,
+        ReportService $reportService,
+        AuditLogService $auditLogService,
+        AnalyticsService $analyticsService,
+        MonitoringService $monitoringService
+    )
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
@@ -77,8 +81,6 @@ class AdminController extends Controller
         $perPage = (int)($request->get('per_page', 10));
         $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
         \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
-
-        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
 
         \Log::info('PendingListings result', ['count' => $listings->count(), 'data' => $listings->items()]);
 
@@ -295,7 +297,7 @@ class AdminController extends Controller
             // Xóa "(Bản sao X)" khỏi title khi duyệt tin
             $cleanTitle = preg_replace('/\s*\(Bản sao\s*\d*\)\s*$/u', '', $listing->title);
 
-            // Avoid triggering Scout indexing if not configured
+            // Update listing status (once)
             Listing::withoutSyncingToSearch(function () use ($request, $listing, $cleanTitle) {
                 $listing->update([
                     'title' => $cleanTitle,
@@ -305,13 +307,6 @@ class AdminController extends Controller
                     'approved_by' => Auth::id(),
                 ]);
             });
-            // Update listing status
-            $listing->update([
-                'status' => 'approved',
-                'admin_notes' => $request->admin_notes,
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-            ]);
 
             // Index to Elasticsearch immediately after approval
             //  Lấy ảnh đầu tiên trước khi index
