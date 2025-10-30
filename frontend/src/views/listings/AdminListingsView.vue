@@ -1,12 +1,47 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import { adminListingsService } from '@/services/adminListings'
 import { showToast } from '@/utils/toast'
 import { imageUrl } from '@/utils/image'
+import AdvancedFilterListing from '@/components/AdvancedFilterListing.vue'
 
 type ListingStatus = 'pending' | 'approved' | 'rejected' | 'all'
 
-const rows = ref<any[]>([])
+// const rows = ref<any[]>([])
+// const total = ref(0)
+// const page = ref(1)
+// const perPage = ref(10)
+// const search = ref('')
+// const status = ref<ListingStatus>('all')
+// const loading = ref(false)
+// const showReject = ref(false)
+// const rejectReason = ref('')
+// const selectedId = ref<number | null>(null)
+
+// async function fetchData() {
+//   loading.value = true
+//   try {
+//     const data = await adminListingsService.list({
+//       page: page.value,
+//       per_page: perPage.value,
+//       search: search.value || undefined,
+//       status: status.value === 'all' ? undefined : (status.value as any),
+//     })
+//     rows.value = data.data || []
+//     total.value = data.meta?.total ?? data.total ?? rows.value.length
+//   } catch (e: any) {
+//     showToast(e?.response?.data?.message || 'Tải danh sách thất bại', 'error')
+//   } finally {
+//     loading.value = false
+//   }
+// }
+
+// onMounted(fetchData)
+// watch([page, perPage, status], fetchData)
+
+
+const rows = ref<any[]>([])         // dữ liệu hiển thị
+const allRows = ref<any[]>([])      // dữ liệu gốc từ API
 const total = ref(0)
 const page = ref(1)
 const perPage = ref(10)
@@ -17,17 +52,19 @@ const showReject = ref(false)
 const rejectReason = ref('')
 const selectedId = ref<number | null>(null)
 
+// ---------- FETCH DATA LẦN ĐẦU ----------
 async function fetchData() {
   loading.value = true
   try {
     const data = await adminListingsService.list({
-      page: page.value,
-      per_page: perPage.value,
-      search: search.value || undefined,
-      status: status.value === 'all' ? undefined : (status.value as any),
+      page: 1,
+      per_page: 1000, // load tất cả dữ liệu
+      search: undefined,
+      status: undefined
     })
-    rows.value = data.data || []
-    total.value = data.meta?.total ?? data.total ?? rows.value.length
+    allRows.value = data.data || []
+    rows.value = [...allRows.value]
+    total.value = allRows.value.length
   } catch (e: any) {
     showToast(e?.response?.data?.message || 'Tải danh sách thất bại', 'error')
   } finally {
@@ -35,8 +72,30 @@ async function fetchData() {
   }
 }
 
+// ---------- CLIENT-SIDE FILTER ----------
+function applyFilter() {
+  let list = [...allRows.value]
+
+  // search
+  if (search.value) {
+    list = list.filter(r => r.title.toLowerCase().includes(search.value.toLowerCase()))
+  }
+
+  // status
+  if (status.value !== 'all') {
+    list = list.filter(r => r.status === status.value)
+  }
+
+  rows.value = list
+  total.value = list.length
+}
+
+// ---------- MOUNT & WATCH ----------
 onMounted(fetchData)
-watch([page, perPage, status], fetchData)
+watch([search, status], () => {
+  page.value = 1
+  applyFilter()
+})
 
 async function onSearch() {
   page.value = 1
@@ -92,6 +151,69 @@ async function deleteOne(id: number) {
     showToast(e?.response?.data?.message || 'Xóa thất bại', 'error')
   }
 }
+
+
+
+
+
+const appliedFilter = ref<any>(null)
+const showAdvanced = ref(false)
+
+// hàm apply filter từ modal nâng cao
+function applyAdvancedFilter(filters: any) {
+  appliedFilter.value = filters
+  page.value = 1
+  filterRowsAdvanced()
+}
+
+// filter dữ liệu client-side theo advanced filter
+function filterRowsAdvanced() {
+  let list = [...allRows.value]
+
+  if (appliedFilter.value) {
+    const f = appliedFilter.value
+
+    // Status
+    if (f.status && f.status !== 'all') {
+      list = list.filter(r => r.status === f.status)
+    }
+
+    // Views count
+    if (f.views_count_value != null) {
+      const val = f.views_count_value
+      const op = f.views_count_op || '>'
+      list = list.filter(r => {
+        if (op === '>') return r.views_count > val
+        if (op === '<') return r.views_count < val
+        return r.views_count === val
+      })
+    }
+
+    // Created date
+    if (f.created_from) {
+      const from = new Date(f.created_from)
+      list = list.filter(r => new Date(r.created_at) >= from)
+    }
+    if (f.created_to) {
+      const to = new Date(f.created_to)
+      list = list.filter(r => new Date(r.created_at) <= to)
+    }
+
+    // Updated date
+    if (f.updated_from) {
+      const from = new Date(f.updated_from)
+      list = list.filter(r => new Date(r.updated_at) >= from)
+    }
+    if (f.updated_to) {
+      const to = new Date(f.updated_to)
+      list = list.filter(r => new Date(r.updated_at) <= to)
+    }
+  }
+
+  rows.value = list
+  total.value = list.length
+}
+
 </script>
 
 <template>
@@ -113,18 +235,15 @@ async function deleteOne(id: number) {
         <button :disabled="loading" @click="onSearch"
           style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button>
       </div>
-      
+
       <!-- Filter advance -->
-      <label class="font-medium">Bộ lọc:</label>
-      <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
-        <option value="all">Tất cả</option>
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-        <option value="active">Active</option>
-      </select>
       <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
         Nâng cao
       </button>
+
+      <AdvancedFilterListing :visible="showAdvanced" @update:visible="showAdvanced = $event"
+        @filter-change="applyAdvancedFilter" />
+
     </header>
 
     <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
