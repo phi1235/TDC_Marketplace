@@ -100,31 +100,31 @@ class OrderController extends Controller
 
     public function show($id)
     {
-       $order = \App\Models\Order::with(['seller:id,name,email,phone', 'buyer:id,name,email'])
-        ->findOrFail($id);
-    return response()->json($order);
+        $order = \App\Models\Order::with(['seller:id,name,email,phone', 'buyer:id,name,email'])
+            ->findOrFail($id);
+        return response()->json($order);
     }
     public function payWithEscrow($id)
     {
         try {
             $order = Order::with('escrowAccount')->findOrFail($id);
-            
-            // ✅ Kiểm tra quyền (chỉ người mua mới được thanh toán)
+
+            // Chỉ người mua mới được thanh toán
             if (auth()->id() !== $order->buyer_id) {
                 return response()->json(['message' => 'Bạn không có quyền thanh toán đơn hàng này.'], 403);
             }
 
-            // ❌ Nếu đơn chưa được xác nhận
-            if ($order->status !== 'confirmed') {
-                return response()->json(['message' => 'Đơn hàng chưa được người bán xác nhận.'], 400);
+            //  Nếu đơn không phải pending thì không cho thanh toán lại
+            if ($order->status !== 'pending') {
+                return response()->json(['message' => 'Đơn hàng này không thể thanh toán.'], 400);
             }
 
-            // ✅ Nếu chưa có escrow thì tạo
+            // Nếu chưa có escrow thì tạo
             $escrow = $order->escrowAccount;
             if (!$escrow) {
                 $escrow = $order->escrowAccount()->create([
-                    'order_id' => $order->id,
-                    'buyer_id' => $order->buyer_id,
+                    'order_id'  => $order->id,
+                    'buyer_id'  => $order->buyer_id,
                     'seller_id' => $order->seller_id,
                     'amount'    => $order->total_amount,
                     'currency'  => $order->currency ?? 'VND',
@@ -133,7 +133,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            // ✅ Cập nhật trạng thái đơn
+            //  Cập nhật trạng thái đơn
             $order->update([
                 'status' => 'paid',
                 'paid_at' => now(),
