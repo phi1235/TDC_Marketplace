@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ElasticSearchService;
 use App\Services\ReportService;
 use App\Services\AuditLogService;
+use App\Services\AnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,14 +18,16 @@ class AdminController extends Controller
     protected $elasticSearchService;
     protected ReportService $reportService;
     protected AuditLogService $auditLogService;
+    protected AnalyticsService $analyticsService;
 
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService)
+    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService, AnalyticsService $analyticsService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
         $this->reportService = $reportService;
         $this->auditLogService = $auditLogService;
+        $this->analyticsService = $analyticsService;
     }
 
     public function dashboard(): JsonResponse
@@ -462,6 +465,12 @@ class AdminController extends Controller
             ->paginate(20);
 
         return response()->json($users);
+    }
+
+    public function analyticsOverview(Request $request): JsonResponse
+    {
+        $data = $this->analyticsService->getOverview($request->only(['from','to','group']));
+        return response()->json($data);
     }
 
     public function toggleUserStatus(Request $request, User $user): JsonResponse

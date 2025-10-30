@@ -318,6 +318,7 @@ import ContactSellerModal from '@/components/listings/ContactSellerModal.vue'
 import ReportModal from '@/components/ReportModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 import { watch } from 'vue'
+import { fire } from '@/services/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -515,6 +516,7 @@ onMounted(async () => {
   await loadListing()
   if (listing.value?.id) {
     loadRelatedListings(listing.value.id)
+    fire('listing_view', { listing_id: listing.value.id })
   }
 })
 // 🧭 Theo dõi ID thay đổi trên route

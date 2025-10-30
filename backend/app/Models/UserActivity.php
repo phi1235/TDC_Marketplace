@@ -12,14 +12,14 @@ class UserActivity extends Model
 
     protected $fillable = [
         'user_id',
-        'activity_type',
-        'activity_data',
+        'event_name',
+        'metadata',
         'ip_address',
         'user_agent',
     ];
 
     protected $casts = [
-        'activity_data' => 'array',
+        'metadata' => 'array',
     ];
 
     public function user(): BelongsTo
