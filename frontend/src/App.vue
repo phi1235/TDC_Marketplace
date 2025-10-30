@@ -26,20 +26,16 @@
 </template>
 
 <script setup lang="ts">
-<<<<<<< HEAD
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
 import Navbar from './components/Navbar.vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 
 const isDark = ref(false)
 const isLoading = ref(false)
 const router = useRouter()
-
-const auth = useAuthStore()
 
 // 🌙 Dark mode + hydrate auth on first load
 onMounted(async () => {
@@ -78,12 +74,10 @@ const toggleDark = () => {
 //   setTimeout(() => (isLoading.value = false), 600)
 // })
 
-<<<<<<< HEAD
 // // Cho phép component con bật/tắt loading nếu cần
 // const handleLoading = (val: boolean) => {
 //   isLoading.value = val
 // }
-=======
 // Cho phép component con bật/tắt loading nếu cần
 const handleLoading = (val: boolean) => {
   isLoading.value = val
