@@ -28,7 +28,8 @@
             <router-link to=""
               class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Comparision</router-link>
             <router-link to=""
-              class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Search Analytics</router-link>
+              class="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Search
+              Analytics</router-link>
           </div>
         </div>
       </nav>
@@ -38,15 +39,62 @@
     <!-- Main area -->
     <div class="flex-1 flex flex-col bg-gray-100">
       <!-- Top Header -->
-      <header class="flex items-center justify-between p-4 bg-white shadow">
+      <!-- <header class="flex items-center justify-between p-4 bg-white shadow">
         <div class="text-lg font-semibold">Search Analytics Dashboard</div>
         <div class="flex items-center gap-4">
           <input type="text" placeholder="Search..." class="border rounded px-3 py-1" />
           <button class="p-2">⚙️</button>
         </div>
+      </header> -->
+      <header class="flex items-center justify-between p-4 bg-white shadow">
+        <!-- Bọc container -->
+        <div class="flex items-center justify-between w-full ml-64 max-w-[calc(100%-64px-20px)]">
+          <!-- Search bar -->
+          <div class="flex items-center flex-1 max-w-md">
+            <input type="text" placeholder="Search..."
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button class="ml-2 text-gray-500 hover:text-gray-700">
+              🔍
+            </button>
+          </div>
+
+          <!-- Icons right -->
+          <div class="flex items-center gap-4">
+            <!-- Dark mode toggle -->
+            <button class="p-2 hover:bg-gray-100 rounded-full">
+              🌙
+            </button>
+
+            <!-- Full screen -->
+            <button class="p-2 hover:bg-gray-100 rounded-full">
+              ⛶
+            </button>
+
+            <!-- Notifications -->
+            <div class="relative">
+              <button class="p-2 hover:bg-gray-100 rounded-full">
+                🔔
+              </button>
+              <span
+                class="absolute top-0 right-0 inline-block w-4 h-4 bg-red-500 text-white text-xs rounded-full text-center leading-4">
+                5
+              </span>
+            </div>
+
+            <!-- Settings -->
+            <button class="p-2 hover:bg-gray-100 rounded-full">
+              ⚙️
+            </button>
+
+            <!-- User Avatar -->
+            <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">
+              AT
+            </div>
+          </div>
+        </div>
       </header>
-     <main class="p-6 ml-64" style="max-width: calc(100% - 64px - 20px);">
-        <router-view />  <!-- UsersView.vue sẽ hiển thị TRONG KHUNG NÀY -->
+      <main class="p-6 ml-64" style="max-width: calc(100% - 64px - 20px);">
+        <router-view /> <!-- UsersView.vue sẽ hiển thị TRONG KHUNG NÀY -->
       </main>
     </div>
   </div>
