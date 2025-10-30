@@ -64,8 +64,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/my', [OrderController::class, 'myOrders']); // Buyer xem
     Route::get('/orders/received', [OrderController::class, 'receivedOrders']); // Seller xem
     Route::get('/orders/{id}', [OrderController::class, 'show']);
-        Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
-
+    Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
+    //  Seller giao hàng
+    Route::post('/orders/{id}/ship', [OrderController::class, 'markShipped']);
+    //  Buyer xác nhận đã nhận hàng
+    Route::post('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
+    // Buyer hoàn tất đơn hàng (giải phóng escrow)
+    Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
 });
 
 // Protected routes
