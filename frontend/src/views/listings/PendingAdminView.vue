@@ -110,6 +110,17 @@ async function confirmReject() {
                style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; width:260px;" />
         <button :disabled="loading" @click="onSearch" style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button>
       </div>
+      <!-- Filter advance -->
+      <label class="font-medium">Bộ lọc:</label>
+      <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
+        <option value="all">Tất cả</option>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+        <option value="active">Active</option>
+      </select>
+      <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+        Nâng cao
+      </button>
     </header>
 
     <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">

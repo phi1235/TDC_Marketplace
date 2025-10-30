@@ -102,15 +102,29 @@ async function deleteOne(id: number) {
       <span style="color:#6b7280;">Tổng số: <b>{{ total }}</b></span>
       <div style="margin-left:auto; display:flex; gap:8px;">
         <input v-model="search" @keyup.enter="onSearch" type="search" placeholder="Tìm kiếm..."
-               style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; width:260px;" />
-        <select v-model="status" @change="onSearch" style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px;">
+          style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; width:260px;" />
+        <select v-model="status" @change="onSearch"
+          style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px;">
           <option value="all">Tất cả</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
-        <button :disabled="loading" @click="onSearch" style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button>
+        <button :disabled="loading" @click="onSearch"
+          style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button>
       </div>
+      
+      <!-- Filter advance -->
+      <label class="font-medium">Bộ lọc:</label>
+      <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
+        <option value="all">Tất cả</option>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+        <option value="active">Active</option>
+      </select>
+      <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+        Nâng cao
+      </button>
     </header>
 
     <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
@@ -129,24 +143,28 @@ async function deleteOne(id: number) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(r,i) in rows" :key="r.id" style="border-top:1px solid #f1f5f9;">
-            <td style="padding:12px;">{{ (page-1)*perPage + i + 1 }}</td>
-            <td style="padding:12px;">#{{ String(r.id).padStart(3,'0') }}</td>
+          <tr v-for="(r, i) in rows" :key="r.id" style="border-top:1px solid #f1f5f9;">
+            <td style="padding:12px;">{{ (page - 1) * perPage + i + 1 }}</td>
+            <td style="padding:12px;">#{{ String(r.id).padStart(3, '0') }}</td>
             <td style="padding:12px;">
-              <img :src="imageUrl(r.images?.[0]?.image_path || r.thumbnail) || 'https://via.placeholder.com/60'" alt="thumb"
-                   style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" />
+              <img :src="imageUrl(r.images?.[0]?.image_path || r.thumbnail) || 'https://via.placeholder.com/60'"
+                alt="thumb"
+                style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" />
             </td>
-            <td style="padding:12px; max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.title }}</td>
+            <td style="padding:12px; max-width:360px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{
+              r.title }}</td>
             <td style="padding:12px;">{{ r.seller?.name || r.user?.name || '-' }}</td>
-            <td style="padding:12px; text-align:right; font-variant-numeric: tabular-nums;">{{ r.price?.toLocaleString?.('vi-VN') || r.price }}</td>
+            <td style="padding:12px; text-align:right; font-variant-numeric: tabular-nums;">{{
+              r.price?.toLocaleString?.('vi-VN') || r.price }}</td>
             <td style="padding:12px; text-align:center;">
               <span :class="['badge', (r.status || (r.is_active ? 'active' : 'inactive'))]">
                 {{ r.status || (r.is_active ? 'active' : 'inactive') }}
               </span>
             </td>
-            <td style="padding:12px; text-align:center;">{{ (r.created_at || '').slice(0,10) }}</td>
+            <td style="padding:12px; text-align:center;">{{ (r.created_at || '').slice(0, 10) }}</td>
             <td style="padding:12px; text-align:center; display:flex; gap:8px; justify-content:center;">
-              <router-link :to="`/listings/${r.id}`" style="padding:6px 10px; border-radius:8px; background:#3b82f6; color:#fff;">Xem</router-link>
+              <router-link :to="`/listings/${r.id}`"
+                style="padding:6px 10px; border-radius:8px; background:#3b82f6; color:#fff;">Xem</router-link>
             </td>
           </tr>
           <tr v-if="!rows.length">
@@ -156,20 +174,24 @@ async function deleteOne(id: number) {
       </table>
 
       <footer style="display:flex; justify-content:center; gap:8px; padding:12px;">
-        <button :disabled="page<=1 || loading" @click="page = Math.max(1, page-1)" class="page-btn">« Trước</button>
+        <button :disabled="page <= 1 || loading" @click="page = Math.max(1, page - 1)" class="page-btn">« Trước</button>
         <span class="page-btn active">{{ page }}</span>
         <button :disabled="loading || rows.length < perPage" @click="page = page + 1" class="page-btn">Sau »</button>
       </footer>
     </div>
 
     <!-- Modal từ chối -->
-    <div v-if="showReject" style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:2000;">
+    <div v-if="showReject"
+      style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:2000;">
       <div style="background:#fff;border-radius:12px;padding:20px;width:420px;box-shadow:0 10px 30px rgba(0,0,0,.15)">
         <h3 style="margin-bottom:10px;font-weight:700;font-size:18px;">Lý do từ chối</h3>
-        <textarea v-model="rejectReason" rows="4" placeholder="Nhập lý do..." style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;"></textarea>
+        <textarea v-model="rejectReason" rows="4" placeholder="Nhập lý do..."
+          style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;"></textarea>
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-          <button @click="showReject=false" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;">Hủy</button>
-          <button @click="confirmReject" style="padding:8px 12px;border-radius:8px;background:#ef4444;color:#fff;">Xác nhận từ chối</button>
+          <button @click="showReject = false"
+            style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;">Hủy</button>
+          <button @click="confirmReject" style="padding:8px 12px;border-radius:8px;background:#ef4444;color:#fff;">Xác
+            nhận từ chối</button>
         </div>
       </div>
     </div>
@@ -177,13 +199,46 @@ async function deleteOne(id: number) {
 </template>
 
 <style scoped>
-.badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; color:#fff; }
-.badge.pending{ background:#f59e0b; }
-.badge.approved{ background:#10b981; }
-.badge.rejected{ background:#ef4444; }
-.badge.active{ background:#16a34a; }
-.badge.inactive{ background:#6b7280; }
-.page-btn{ background:#f3f4f6; border:1px solid #d1d5db; color:#374151; padding:8px 12px; border-radius:6px; }
-.page-btn.active{ background:#2563eb; color:#fff; border-color:#2563eb; }
-</style>
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
 
+.badge.pending {
+  background: #f59e0b;
+}
+
+.badge.approved {
+  background: #10b981;
+}
+
+.badge.rejected {
+  background: #ef4444;
+}
+
+.badge.active {
+  background: #16a34a;
+}
+
+.badge.inactive {
+  background: #6b7280;
+}
+
+.page-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.page-btn.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+</style>
