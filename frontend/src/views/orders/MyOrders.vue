@@ -43,6 +43,15 @@
               <span :class="getStatusClass(order.status)">
                 {{ getStatusText(order.status) }}
               </span>
+              <button v-if="order.status === 'shipped'" @click.stop="markDelivered(order.id)"
+                class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                 Tôi đã nhận hàng
+              </button>
+              <button v-if="order.status === 'delivered'" @click.stop="completeOrder(order.id)"
+                class="px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
+                 Hoàn tất đơn hàng
+              </button>
+
             </div>
           </div>
         </div>
@@ -72,6 +81,11 @@
                 class="px-3 py-2 text-sm bg-green-600/70 text-white rounded-md cursor-wait">
                 Đang xác nhận...
               </button>
+              <button v-if="order.status === 'confirmed'" @click.stop="shipOrder(order.id)"
+                class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                Đánh dấu đang giao
+              </button>
+
             </div>
           </div>
         </div>
@@ -157,6 +171,43 @@ async function loadOrders() {
     showToast('error', error.value)
   } finally {
     loading.value = false
+  }
+}
+async function shipOrder(orderId: number) {
+  try {
+    await axios.post(`/api/orders/${orderId}/ship`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' }
+    })
+    const o = sellerOrders.value.find(o => o.id === orderId)
+    if (o) o.status = 'shipped'
+    showToast('success', '📦 Đơn hàng đã được đánh dấu là đang giao hàng.')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể cập nhật trạng thái.')
+  }
+}
+async function markDelivered(orderId: number) {
+  try {
+    await axios.post(`/api/orders/${orderId}/deliver`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' }
+    })
+    const o = buyerOrders.value.find(o => o.id === orderId)
+    if (o) o.status = 'delivered'
+    showToast('success', '✅ Bạn đã xác nhận đã nhận hàng.')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể cập nhật trạng thái.')
+  }
+}
+
+async function completeOrder(orderId: number) {
+  try {
+    await axios.post(`/api/orders/${orderId}/complete`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' }
+    })
+    const o = buyerOrders.value.find(o => o.id === orderId)
+    if (o) o.status = 'completed'
+    showToast('success', '🎉 Đơn hàng đã hoàn tất! Tiền đã được chuyển cho người bán.')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể hoàn tất đơn hàng.')
   }
 }
 

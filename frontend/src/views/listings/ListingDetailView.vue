@@ -197,7 +197,7 @@
             <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="openContactModal" />
             <button
   @click="handleBuyNow"
-  :disabled="buyNowLoading || !listing"
+  :disabled="buyNowLoading || !listing || disableBuyNow"
   class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white
          bg-green-600 hover:bg-green-700 active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
   <svg v-if="!buyNowLoading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,6 +323,7 @@ const route = useRoute()
 const router = useRouter()
 
 const buyNowLoading = ref(false)
+const disableBuyNow = ref(false)
 const buyNowError = ref('')
 const lastOrder = ref<any | null>(null)
 
@@ -351,6 +352,7 @@ async function handleBuyNow() {
     const token = getBuyerToken()
     if (!token) {
       buyNowError.value = 'Bạn cần đăng nhập để mua hàng.'
+      showToast('error', buyNowError.value)
       return
     }
 
@@ -365,8 +367,23 @@ async function handleBuyNow() {
       }
     )
 
+    // 🚫 Người bán tự mua sản phẩm của mình
+    if (res.data?.success === false) {
+      buyNowError.value = res.data.message || 'Bạn không thể mua sản phẩm của chính mình.'
+      showToast('error', buyNowError.value)
+      disableBuyNow.value = true
+      return
+    }
+
+    // ✅ Cập nhật thông tin đơn hàng
     lastOrder.value = res.data?.order || null
-    showToast('success', 'Đã tạo đơn hàng thành công!')
+    showToast('success', res.data?.message || 'Đã tạo đơn hàng thành công!')
+
+    // 🔒 Nếu là đơn cũ được cập nhật (updated=true) → khóa nút “Mua ngay”
+    if (res.data?.updated) {
+      disableBuyNow.value = true
+    }
+
   } catch (err: any) {
     const msg =
       err?.response?.data?.message ||

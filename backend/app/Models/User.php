@@ -35,6 +35,11 @@ class User extends Authenticatable
         'last_login_at',
         'login_count',
         'remember_token',
+        'rating',
+        'total_ratings',
+        'total_sales',
+        'total_revenue',
+
     ];
 
     /**
@@ -132,11 +137,13 @@ class User extends Authenticatable
     }
 
     //rolers for rbac
-    public function roles() {
+    public function roles()
+    {
         return $this->belongsToMany(Role::class);
     }
 
-    public function hasRole($role) {
+    public function hasRole($role)
+    {
         return $this->roles()->where('name', $role)->exists();
     }
 
