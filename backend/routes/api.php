@@ -22,6 +22,8 @@ use App\Models\SellerProfile;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
+use App\Http\Controllers\RatingController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -71,7 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
     // Buyer hoàn tất đơn hàng (giải phóng escrow)
     Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
+    Route::post('/ratings', [RatingController::class, 'store']);
 });
+Route::get('/ratings/user/{userId}', [RatingController::class, 'userRatings']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
