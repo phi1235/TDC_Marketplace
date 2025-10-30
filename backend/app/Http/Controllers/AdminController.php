@@ -6,6 +6,8 @@ use App\Models\Listing;
 use App\Models\Report;
 use App\Models\User;
 use App\Services\ElasticSearchService;
+use App\Services\ReportService;
+use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,12 +15,16 @@ use Illuminate\Support\Facades\Auth;
 class AdminController extends Controller
 {
     protected $elasticSearchService;
+    protected ReportService $reportService;
+    protected AuditLogService $auditLogService;
 
-    public function __construct(ElasticSearchService $elasticSearchService)
+    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService)
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
+        $this->reportService = $reportService;
+        $this->auditLogService = $auditLogService;
     }
 
     public function dashboard(): JsonResponse
@@ -37,7 +43,7 @@ class AdminController extends Controller
     public function pendingListings(Request $request): JsonResponse
     {
         \Log::info('PendingListings called', ['request' => $request->all()]);
-        
+
         $query = Listing::where('status', 'pending')
             ->with(['seller', 'category', 'images']);
 
@@ -56,16 +62,16 @@ class AdminController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
         $perPage = (int)($request->get('per_page', 10));
         $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
         \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
-        
+
         $listings = $query->orderBy('created_at', 'desc')->paginate(20);
-        
+
         \Log::info('PendingListings result', ['count' => $listings->count(), 'data' => $listings->items()]);
 
         return response()->json($listings);
@@ -103,10 +109,10 @@ class AdminController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('seller', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('seller', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -128,6 +134,13 @@ class AdminController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    public function auditLogs(Request $request): JsonResponse
+    {
+        $perPage = (int) $request->get('per_page', 20);
+        $logs = $this->auditLogService->list($request->only(['action','user_id','auditable_type','search']), $perPage);
+        return response()->json($logs);
     }
 
     public function bulkAction(Request $request): JsonResponse
@@ -154,10 +167,17 @@ class AdminController extends Controller
                         'approved_at' => now(),
                         'approved_by' => Auth::id(),
                     ]);
-                    
+
                     // Index approved listings to Elasticsearch
                     $approvedListings = $listings->get();
                     foreach ($approvedListings as $listing) {
+                        $firstImage = $listing->images()->first();
+                        $imageUrl = null;
+
+                        if ($firstImage && $firstImage->image_path) {
+                            // vì cột là image_path, chứa đường dẫn tương đối
+                            $imageUrl = 'http://localhost:8001/storage/' . $firstImage->image_path;
+                        }
                         $this->elasticSearchService->indexDocument('listings', $listing->id, [
                             'title' => $listing->title,
                             'title_suggest' => [
@@ -167,6 +187,7 @@ class AdminController extends Controller
                             'description' => $listing->description,
                             'price' => (float) $listing->price,
                             'category_id' => (int) $listing->category_id,
+                            'image' => $imageUrl, // 
                             'status' => 'approved',
                         ]);
                     }
@@ -180,7 +201,7 @@ class AdminController extends Controller
                         'rejected_at' => now(),
                         'rejected_by' => Auth::id(),
                     ]);
-                    
+
                     // Remove rejected listings from Elasticsearch
                     $rejectedListings = $listings->get();
                     foreach ($rejectedListings as $listing) {
@@ -195,11 +216,26 @@ class AdminController extends Controller
                         // Avoid triggering Scout indexing if configured
                         Listing::withoutSyncingToSearch(function () use ($item) {
                             // delete relations first to avoid FK constraints
-                            try { $item->images()->delete(); } catch (\Throwable $e) {}
-                            try { $item->offers()->delete(); } catch (\Throwable $e) {}
-                            try { $item->views()->delete(); } catch (\Throwable $e) {}
-                            try { $item->wishlists()->delete(); } catch (\Throwable $e) {}
-                            try { $item->reviews()->delete(); } catch (\Throwable $e) {}
+                            try {
+                                $item->images()->delete();
+                            } catch (\Throwable $e) {
+                            }
+                            try {
+                                $item->offers()->delete();
+                            } catch (\Throwable $e) {
+                            }
+                            try {
+                                $item->views()->delete();
+                            } catch (\Throwable $e) {
+                            }
+                            try {
+                                $item->wishlists()->delete();
+                            } catch (\Throwable $e) {
+                            }
+                            try {
+                                $item->reviews()->delete();
+                            } catch (\Throwable $e) {
+                            }
                             $item->delete();
                         });
                     }
@@ -241,7 +277,7 @@ class AdminController extends Controller
             ]);
 
             $oldStatus = $listing->status;
-            
+
             if ($oldStatus !== 'pending') {
                 return response()->json([
                     'message' => 'Chỉ có thể duyệt tin đang chờ duyệt',
@@ -270,15 +306,25 @@ class AdminController extends Controller
             ]);
 
             // Index to Elasticsearch immediately after approval
+            //  Lấy ảnh đầu tiên trước khi index
+            $firstImage = $listing->images()->first();
+            $imageUrl = null;
+
+            if ($firstImage && $firstImage->image_path) {
+                // vì cột là image_path, chứa đường dẫn tương đối
+                $imageUrl = 'http://localhost:8001/storage/' . $firstImage->image_path;
+            }
             $this->elasticSearchService->indexDocument('listings', $listing->id, [
                 'title' => $listing->title,
                 'title_suggest' => [
                     'input' => explode(' ', $listing->title),
                     'weight' => 1
                 ],
+
                 'description' => $listing->description,
                 'price' => (float) $listing->price,
                 'category_id' => (int) $listing->category_id,
+                'image' => $imageUrl, // 
                 'status' => 'approved', // Ensure status is included
             ]);
 
@@ -321,7 +367,7 @@ class AdminController extends Controller
             ]);
 
             $oldStatus = $listing->status;
-            
+
             if ($oldStatus !== 'pending') {
                 return response()->json([
                     'message' => 'Chỉ có thể từ chối tin đang chờ duyệt',
@@ -346,7 +392,7 @@ class AdminController extends Controller
                 'action' => 'admin_rejected',
                 'old_values' => ['status' => $oldStatus],
                 'new_values' => [
-                    'status' => 'rejected', 
+                    'status' => 'rejected',
                     'admin_notes' => $request->admin_notes,
                     'rejection_reason' => $request->rejection_reason
                 ],
@@ -380,23 +426,32 @@ class AdminController extends Controller
 
     public function reports(Request $request): JsonResponse
     {
-        $reports = Report::with(['reporter', 'reportable'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-
+        $reports = $this->reportService->listReportsForAdmin($request->only(['status','type','search']));
+        \Log::info('Admin reports', ['total' => $reports->total(), 'count' => count($reports->items())]);
         return response()->json($reports);
     }
 
     public function handleReport(Request $request, Report $report): JsonResponse
     {
-        $report->update([
-            'status' => $request->status,
-            'admin_notes' => $request->admin_notes,
+        $request->validate([
+            'action' => 'required|in:accept,resolve,reject',
+            'admin_notes' => 'nullable|string|max:500|required_if:action,reject',
         ]);
 
+        $old = ['status' => $report->status];
+        $updated = $this->reportService->handleReportByAdmin($report, $request->action, $request->admin_notes);
+        // Audit log for handling report
+        try {
+            $this->auditLogService->log(
+                $updated,
+                'report_handled_' . $request->action,
+                $old,
+                ['status' => $updated->status, 'admin_notes' => $request->admin_notes]
+            );
+        } catch (\Throwable $e) {}
         return response()->json([
-            'message' => 'Báo cáo đã được xử lý',
-            'report' => $report,
+            'message' => 'Báo cáo đã được cập nhật',
+            'report' => $updated,
         ]);
     }
 
@@ -411,7 +466,11 @@ class AdminController extends Controller
 
     public function toggleUserStatus(Request $request, User $user): JsonResponse
     {
+        $old = ['is_active' => (bool) $user->is_active];
         $user->update(['is_active' => !$user->is_active]);
+        try {
+            $this->auditLogService->log($user, 'user_status_toggled', $old, ['is_active' => (bool) $user->is_active]);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'message' => 'Trạng thái người dùng đã được cập nhật',

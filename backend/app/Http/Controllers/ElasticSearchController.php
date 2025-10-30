@@ -41,14 +41,14 @@ class ElasticSearchController extends Controller
                         [
                             'multi_match' => [
                                 'query' => $keyword,
-                                'fields' => ['title^3', 'description'],
+                                'fields' => ['title^3'],
                                 'type' => 'bool_prefix',
                             ],
                         ],
                         [
                             'multi_match' => [
                                 'query' => $keyword,
-                                'fields' => ['title^3', 'description'],
+                                'fields' => ['title^3'],
                                 'fuzziness' => 'AUTO',
                                 'prefix_length' => 1,
                                 'minimum_should_match' => '70%',

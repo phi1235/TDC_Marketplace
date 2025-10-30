@@ -21,3 +21,8 @@ export const searchUsers = async (keyword: string): Promise<User[]> => {
   });
   return data;
 }
+
+export const fetchMyActivities = async (params: Record<string, any> = {}) => {
+  const { data } = await api.get('/my-activities', { params })
+  return data
+}
