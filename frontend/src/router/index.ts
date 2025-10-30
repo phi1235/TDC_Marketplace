@@ -10,6 +10,25 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/orders/my',
+      name: 'MyOrders',
+      component: () => import('../views/orders/MyOrders.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+  path: '/orders/:id',
+  name: 'OrderDetail',
+  component: () => import('@/views/orders/OrderDetail.vue'),
+  meta: { requiresAuth: true },
+  props: true
+},
+
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('@/components/SearchFilter.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),
@@ -53,10 +72,14 @@ const router = createRouter({
     },
     {
       path: '/dashboard',
-      name: 'dashboard',
       component: () => import('@/views/dashboard/DashboardView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
       children: [
+        {
+          path: '', // <--- DEFAULT CHILD
+          name: 'dashboard',
+          component: () => import('@/views/dashboard/DashboardHome.vue'),
+        },
         {
           path: 'listings',
           name: 'dashboard-listings',
@@ -69,6 +92,24 @@ const router = createRouter({
           component: () => import('@/views/listings/PendingAdminView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
+        {
+          path: 'users',
+          name: 'dashboard-users',
+          component: () => import('@/views/dashboard/UsersView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'reports',
+          name: 'dashboard-reports',
+          component: () => import('@/views/admin/AdminReportsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'audit-logs',
+          name: 'dashboard-audit-logs',
+          component: () => import('@/views/admin/AdminAuditLogsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
       ],
     },
     {
@@ -77,7 +118,6 @@ const router = createRouter({
       component: () => import('@/views/dashboard/ContentPanel.vue'),
       meta: { requiresAuth: true },
     },
-    ,
     {
       path: '/userpanel',
       name: 'user_panel',
@@ -97,9 +137,38 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/seller',
+      name: 'seller',
+      component: () => import('@/views/dashboard/SellerList.vue'),
+    },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/dashboard/NotificationsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/detailNotification/:id',//truyền id qua
+      name: 'detail-notification',
+      component: () => import('@/views/dashboard/DetailNotification.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-reports',
+      name: 'my-reports',
+      component: () => import('@/views/account/MyReportsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-activity',
+      name: 'my-activity',
+      component: () => import('@/views/account/MyActivityView.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -108,11 +177,12 @@ const router = createRouter({
       component: () => import('@/views/admin/AdminDashboard.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
     },
+    // legacy direct route (optional)
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/profile/ProfileView.vue'),
-      meta: { requiresGuest: true },
+      path: '/admin/audit-logs',
+      name: 'admin-audit-logs',
+      component: () => import('@/views/admin/AdminAuditLogsView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
   ],
 })
@@ -120,7 +190,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {

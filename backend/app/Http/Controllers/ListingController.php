@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Http;
+use App\Services\AuditLogService;
 
 class ListingController extends Controller
 {
@@ -48,7 +50,7 @@ class ListingController extends Controller
 
         // Sort
         $sortBy = $request->get('sort', 'created_at');
-        $sortOrder = $request->get('order', 'desc');
+        $sortOrder = $request->get('order', 'asc');
         $query->orderBy($sortBy, $sortOrder);
 
         $perPage = (int)($request->get('per_page', 10));
@@ -113,18 +115,21 @@ class ListingController extends Controller
                         'height' => $img->height(),
                         'is_primary' => $listing->images()->count() === 0,
                     ]);
+
+                    // audit log image uploaded
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_uploaded', null, ['path' => $path]); } catch (\Throwable $e) {}
                 }
             }
 
             // Log activity
-            // $listing->auditLogs()->create([
-            //     'user_id' => Auth::id(),
-            //     'action' => 'created',
-            //     'old_values' => null,
-            //     'new_values' => $listing->toArray(),
-            //     'ip_address' => request()->ip(),
-            //     'user_agent' => request()->userAgent(),
-            // ]);
+            $listing->auditLogs()->create([
+                'user_id' => Auth::id(),
+                'action' => 'created',
+                'old_values' => null,
+                'new_values' => $listing->toArray(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
 
             return response()->json([
                 'message' => 'Tin rao đã được tạo thành công và đang chờ duyệt',
@@ -167,6 +172,7 @@ class ListingController extends Controller
             if ($request->hasFile('images')) {
                 foreach ($listing->images as $image) {
                     Storage::disk('public')->delete($image->image_path);
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_deleted', ['path' => $image->image_path], null); } catch (\Throwable $e) {}
                     $image->delete();
                 }
 
@@ -196,6 +202,7 @@ class ListingController extends Controller
                         'height' => $img->height(),
                         'is_primary' => $listing->images()->count() === 0,
                     ]);
+                    try { app(AuditLogService::class)->log($listing, 'listing_image_uploaded', null, ['path' => $path]); } catch (\Throwable $e) {}
                 }
             }
 
@@ -434,4 +441,83 @@ class ListingController extends Controller
             ], 500);
         }
     }
+
+public function related(Listing $listing): JsonResponse
+{
+    try {
+        $esUrl = 'http://tdc-elasticsearch:9200/listings/_search';
+
+        // 🔍 Truy vấn Elasticsearch: tìm tin có nội dung giống + cùng category
+        $response = Http::post($esUrl, [
+            'size' => 8,
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        [
+                            'more_like_this' => [
+                                'fields' => ['title', 'description'],
+                                'like' => [
+                                    ['_id' => $listing->id]
+                                ],
+                                'min_term_freq' => 1,
+                                'max_query_terms' => 25
+                            ]
+                        ]
+                    ],
+                    'filter' => [
+                        ['term' => ['category_id' => $listing->category_id]] // 🔥 cùng danh mục
+                    ]
+                ]
+            ],
+            '_source' => ['id', 'title', 'price', 'category_id', 'status']
+        ]);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'message' => 'Không thể truy vấn Elasticsearch',
+                'error' => $response->body(),
+            ], 500);
+        }
+
+        $hits = $response->json()['hits']['hits'] ?? [];
+        $ids = collect($hits)->pluck('_source.id')->filter()->toArray();
+
+        // 🗂️ Nếu Elasticsearch không trả về gì → fallback: lấy ngẫu nhiên trong cùng danh mục
+        if (empty($ids)) {
+            $relatedListings = Listing::with(['images', 'category'])
+                ->where('category_id', $listing->category_id)
+                ->where('id', '!=', $listing->id)
+                ->where('status', 'approved')
+                ->inRandomOrder()
+                ->take(8)
+                ->get();
+        } else {
+            $relatedListings = Listing::with(['images', 'category'])
+                ->whereIn('id', $ids)
+                ->where('status', 'approved')
+                ->get();
+        }
+
+        return response()->json($relatedListings);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Lỗi khi lấy tin rao tương tự',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+public function getPublicListings()
+{
+    $listings = \App\Models\Listing::with(['images', 'category', 'seller'])
+        ->where('status', 'approved')
+        ->latest()
+        ->take(20)
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $listings,
+    ]);
+}
+
 }

@@ -16,12 +16,15 @@ class AuditLog extends Model
         'action',
         'auditable_type',
         'auditable_id',
-        'metadata',
+        'old_values',
+        'new_values',
         'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [
-        'metadata' => 'array',
+        'old_values' => 'array',
+        'new_values' => 'array',
     ];
 
     public function user(): BelongsTo

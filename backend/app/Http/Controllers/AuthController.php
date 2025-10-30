@@ -11,9 +11,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use App\Services\AuditLogService;
 
 class AuthController extends Controller
 {
+    public function __construct(private AuditLogService $auditLogService) {}
+
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create([
@@ -25,6 +28,9 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
+
+        // audit log
+        $this->auditLogService->log($user, 'user_created', null, $user->toArray());
 
         return response()->json([
             'message' => 'Đăng ký thành công',
@@ -76,6 +82,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
+        // audit log
+        $this->auditLogService->log($user, 'login_success', null, ['last_login_at' => $user->last_login_at, 'login_count' => $user->login_count]);
+
         return response()->json([
             'message' => 'Đăng nhập thành công',
             'user' => $user,
@@ -85,7 +94,9 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+        $this->auditLogService->log($user, 'logout', null, null);
 
         return response()->json([
             'message' => 'Đăng xuất thành công',

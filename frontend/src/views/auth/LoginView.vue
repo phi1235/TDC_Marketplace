@@ -113,7 +113,7 @@ const handleLogin = () => {
     .login({ email: email.value, password: password.value })
     .then((res) => {
       if (res.success) {
-        showToast("Đăng nhập thành công", "success");
+        showToast("success", "Đăng nhập thành công");
         // Redirect dựa trên role
         if (auth.isAdmin) {
           router.push("/dashboard");
