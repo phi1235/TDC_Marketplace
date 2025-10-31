@@ -23,6 +23,8 @@ use App\Models\SellerProfile;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
+//legal
+use App\Http\Controllers\LegalController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -39,6 +41,7 @@ use App\Http\Controllers\SolrController;
 Route::post('/activities', [ActivityController::class, 'store']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/legal/terms', [LegalController::class, 'terms']); // public
 
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
@@ -73,6 +76,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
     // Buyer hoàn tất đơn hàng (giải phóng escrow)
     Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
+    //điều khoản
+    Route::get('/legal/consent-status', [LegalController::class, 'consentStatus']);
+    Route::post('/legal/consent',        [LegalController::class, 'consent']);
+
+    // Ví dụ bảo vệ API cần consent:
+    // Route::middleware('terms')->group(function () {
+    //     Route::get('/orders', [OrderController::class, 'index']);
+    // });
 });
 
 // Protected routes
