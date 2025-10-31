@@ -12,12 +12,8 @@
 
       <!-- Tabs -->
       <div class="flex space-x-3 mb-6">
-        <button @click="activeTab = 'buyer'" :class="tabClass('buyer')">
-          Tôi là người mua
-        </button>
-        <button @click="activeTab = 'seller'" :class="tabClass('seller')">
-          Tôi là người bán
-        </button>
+        <button @click="activeTab = 'buyer'" :class="tabClass('buyer')">Tôi là người mua</button>
+        <button @click="activeTab = 'seller'" :class="tabClass('seller')">Tôi là người bán</button>
       </div>
 
       <!-- Loading -->
@@ -39,17 +35,27 @@
               <p class="text-sm text-gray-600">Mã đơn: {{ order.order_number }}</p>
               <p class="text-sm text-gray-600">Giá: {{ formatPrice(order.total_amount) }}</p>
             </div>
+
             <div class="mt-3 sm:mt-0 flex items-center gap-3">
               <span :class="getStatusClass(order.status)">
                 {{ getStatusText(order.status) }}
               </span>
+
               <button v-if="order.status === 'shipped'" @click.stop="markDelivered(order.id)"
                 class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
-                 Tôi đã nhận hàng
+                Tôi đã nhận hàng
               </button>
+
               <button v-if="order.status === 'delivered'" @click.stop="completeOrder(order.id)"
                 class="px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
-                 Hoàn tất đơn hàng
+                Hoàn tất đơn hàng
+              </button>
+
+              <button v-if="order.status === 'completed'" :disabled="order.has_rated"
+                @click.stop="openRateModal(order.id)" class="px-3 py-2 text-sm rounded-md transition" :class="order.has_rated
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  : 'bg-yellow-500 text-white hover:bg-yellow-600'">
+                {{ order.has_rated ? 'Đã đánh giá' : 'Đánh giá người bán' }}
               </button>
 
             </div>
@@ -59,7 +65,9 @@
 
       <!-- Seller list -->
       <div v-else>
-        <div v-if="sellerOrders.length === 0" class="text-gray-500 italic">Chưa có đơn hàng nào cần bạn xử lý.</div>
+        <div v-if="sellerOrders.length === 0" class="text-gray-500 italic">
+          Chưa có đơn hàng nào cần bạn xử lý.
+        </div>
         <div v-else class="grid gap-4">
           <div v-for="order in sellerOrders" :key="order.id"
             class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition">
@@ -69,38 +77,45 @@
               <p class="text-sm text-gray-600">Giá: {{ formatPrice(order.total_amount) }}</p>
               <p class="text-sm text-gray-600">Người mua ID: {{ order.buyer_id }}</p>
             </div>
+
             <div class="mt-3 sm:mt-0 flex items-center gap-3">
               <span :class="getStatusClass(order.status)">
                 {{ getStatusText(order.status) }}
               </span>
+
               <button v-if="order.status === 'paid' && !confirmingIds.has(order.id)" @click="confirmOrder(order.id)"
                 class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
                 Xác nhận
               </button>
+
               <button v-else-if="order.status === 'pending' && confirmingIds.has(order.id)" disabled
                 class="px-3 py-2 text-sm bg-green-600/70 text-white rounded-md cursor-wait">
                 Đang xác nhận...
               </button>
+
               <button v-if="order.status === 'confirmed'" @click.stop="shipOrder(order.id)"
                 class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
                 Đánh dấu đang giao
               </button>
-
             </div>
           </div>
         </div>
       </div>
 
+      <!-- ✅ Modal Đánh giá -->
+      <RateUserModal :is-open="showRateModal" :order-id="selectedOrderId" @close="showRateModal = false"
+        @submitted="loadOrders" />
     </div>
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { showToast } from '@/utils/toast'
 import { useRouter } from 'vue-router'
+import RateUserModal from './RateUserModal.vue'
+
 const router = useRouter()
 
 const activeTab = ref<'buyer' | 'seller'>('buyer')
@@ -109,6 +124,14 @@ const sellerOrders = ref<any[]>([])
 const loading = ref(true)
 const error = ref('')
 const confirmingIds = ref<Set<number>>(new Set())
+
+// ✅ Thêm 2 biến và hàm mở modal
+const showRateModal = ref(false)
+const selectedOrderId = ref<number | null>(null)
+function openRateModal(id: number) {
+  selectedOrderId.value = id
+  showRateModal.value = true
+}
 
 function goToDetail(orderId: number) {
   router.push(`/orders/${orderId}`)
@@ -141,10 +164,13 @@ function getStatusText(status: string) {
   }
   return map[status] || status
 }
+function handleRated() {
+  const o = buyerOrders.value.find(o => o.id === selectedOrderId.value)
+  if (o) o.has_rated = true
+}
 
 function getStatusClass(status: string) {
-  const base =
-    'px-4 py-1.5 rounded-full border shadow-sm font-medium transition-all duration-200';
+  const base = 'px-4 py-1.5 rounded-full border shadow-sm font-medium transition-all duration-200'
   const map: Record<string, string> = {
     pending: `${base} bg-yellow-50 text-yellow-700 border-yellow-200`,
     confirmed: `${base} bg-blue-50 text-blue-700 border-blue-200`,
@@ -152,9 +178,9 @@ function getStatusClass(status: string) {
     delivered: `${base} bg-green-50 text-green-700 border-green-200`,
     completed: `${base} bg-emerald-50 text-emerald-700 border-emerald-200`,
     cancelled: `${base} bg-red-50 text-red-700 border-red-200`,
-    disputed: `${base} bg-orange-50 text-orange-700 border-orange-200`,
-  };
-  return map[status] || `${base} bg-gray-50 text-gray-700 border-gray-200`;
+    disputed: `${base} bg-orange-50 text-orange-700 border-orange-200`
+  }
+  return map[status] || `${base} bg-gray-50 text-gray-700 border-gray-200`
 }
 
 async function loadOrders() {
@@ -173,6 +199,7 @@ async function loadOrders() {
     loading.value = false
   }
 }
+
 async function shipOrder(orderId: number) {
   try {
     await axios.post(`/api/orders/${orderId}/ship`, {}, {
@@ -185,6 +212,7 @@ async function shipOrder(orderId: number) {
     showToast('error', err?.response?.data?.message || 'Không thể cập nhật trạng thái.')
   }
 }
+
 async function markDelivered(orderId: number) {
   try {
     await axios.post(`/api/orders/${orderId}/deliver`, {}, {
@@ -228,6 +256,7 @@ async function confirmOrder(orderId: number) {
     confirmingIds.value.delete(orderId)
   }
 }
+
 
 onMounted(loadOrders)
 </script>

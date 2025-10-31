@@ -63,12 +63,11 @@ class ListingController extends Controller
     {
         // ⚙️ Load thêm seller kèm total_sales, total_revenue
         $listing->load([
-            'seller:id,name,email,phone,total_sales,total_revenue',
+            'seller:id,name,email,phone,total_sales,total_revenue,rating,total_ratings,created_at',
             'category',
             'images',
             'offers',
         ]);
-
         //  Tăng lượt xem
         $listing->increment('views_count');
 
