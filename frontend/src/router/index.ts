@@ -16,12 +16,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-  path: '/orders/:id',
-  name: 'OrderDetail',
-  component: () => import('@/views/orders/OrderDetail.vue'),
-  meta: { requiresAuth: true },
-  props: true
-},
+      path: '/orders/:id',
+      name: 'OrderDetail',
+      component: () => import('@/views/orders/OrderDetail.vue'),
+      meta: { requiresAuth: true },
+      props: true
+    },
 
     {
       path: '/search',
@@ -186,6 +186,11 @@ const router = createRouter({
       name: 'admin-audit-logs',
       component: () => import('@/views/admin/AdminAuditLogsView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('@/views/terms/TermsView.vue'),
     },
   ],
 })
