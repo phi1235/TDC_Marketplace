@@ -25,6 +25,8 @@ use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
 use App\Http\Controllers\RatingController;
 
+//legal
+use App\Http\Controllers\LegalController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -41,6 +43,7 @@ use App\Http\Controllers\RatingController;
 Route::post('/activities', [ActivityController::class, 'store']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/legal/terms', [LegalController::class, 'terms']); // public
 
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
@@ -76,6 +79,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Buyer hoàn tất đơn hàng (giải phóng escrow)
     Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
     Route::post('/ratings', [RatingController::class, 'store']);
+    //điều khoản
+    Route::get('/legal/consent-status', [LegalController::class, 'consentStatus']);
+    Route::post('/legal/consent',        [LegalController::class, 'consent']);
+
+    // Ví dụ bảo vệ API cần consent:
+    // Route::middleware('terms')->group(function () {
+    //     Route::get('/orders', [OrderController::class, 'index']);
+    // });
 });
 Route::get('/ratings/user/{userId}', [RatingController::class, 'userRatings']);
 
