@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ActivityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\OtpController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\SolrController;
 Route::post('/auth/send-otp',   [OtpController::class, 'send'])->middleware('throttle:3,1');
 Route::post('/auth/verify-otp', [OtpController::class, 'verify'])->middleware('throttle:10,1');
 // Public routes
+Route::post('/activities', [ActivityController::class, 'store']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -67,8 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/my', [OrderController::class, 'myOrders']); // Buyer xem
     Route::get('/orders/received', [OrderController::class, 'receivedOrders']); // Seller xem
     Route::get('/orders/{id}', [OrderController::class, 'show']);
-        Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
-
+    Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
+    //  Seller giao hàng
+    Route::post('/orders/{id}/ship', [OrderController::class, 'markShipped']);
+    //  Buyer xác nhận đã nhận hàng
+    Route::post('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
+    // Buyer hoàn tất đơn hàng (giải phóng escrow)
+    Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
 });
 
 // Protected routes
@@ -133,6 +140,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Audit logs
         Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
+
+        // Analytics
+        Route::get('/analytics/overview', [AdminController::class, 'analyticsOverview']);
+        // Monitoring
+        Route::get('/monitoring/overview', [AdminController::class, 'monitoring']);
+        Route::get('/monitoring/export', [AdminController::class, 'monitoringExport']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
