@@ -28,12 +28,8 @@
       <div v-else-if="activeTab === 'buyer'">
         <div v-if="buyerOrders.length === 0" class="text-gray-500 italic">Bạn chưa có đơn hàng nào.</div>
         <div v-else class="grid gap-4">
-          <div
-            v-for="order in buyerOrders"
-            :key="order.id"
-            @click="goToDetail(order.id)"
-            class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition cursor-pointer"
-          >
+          <div v-for="order in buyerOrders" :key="order.id" @click="goToDetail(order.id)"
+            class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition cursor-pointer">
             <div>
               <h3 class="font-semibold text-gray-900">{{ order.product_title }}</h3>
               <p class="text-sm text-gray-600">Mã đơn: {{ order.order_number }}</p>
@@ -45,30 +41,23 @@
                 {{ getStatusText(order.status) }}
               </span>
 
-              <button
-                v-if="order.status === 'shipped'"
-                @click.stop="markDelivered(order.id)"
-                class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-              >
+              <button v-if="order.status === 'shipped'" @click.stop="markDelivered(order.id)"
+                class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
                 Tôi đã nhận hàng
               </button>
 
-              <button
-                v-if="order.status === 'delivered'"
-                @click.stop="completeOrder(order.id)"
-                class="px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition"
-              >
+              <button v-if="order.status === 'delivered'" @click.stop="completeOrder(order.id)"
+                class="px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
                 Hoàn tất đơn hàng
               </button>
 
-              <!-- ✅ Nút Đánh giá người bán -->
-              <button
-                v-if="order.status === 'completed' && !order.has_rated"
-                @click.stop="openRateModal(order.id)"
-                class="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
-              >
-                Đánh giá người bán
+              <button v-if="order.status === 'completed'" :disabled="order.has_rated"
+                @click.stop="openRateModal(order.id)" class="px-3 py-2 text-sm rounded-md transition" :class="order.has_rated
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  : 'bg-yellow-500 text-white hover:bg-yellow-600'">
+                {{ order.has_rated ? 'Đã đánh giá' : 'Đánh giá người bán' }}
               </button>
+
             </div>
           </div>
         </div>
@@ -80,11 +69,8 @@
           Chưa có đơn hàng nào cần bạn xử lý.
         </div>
         <div v-else class="grid gap-4">
-          <div
-            v-for="order in sellerOrders"
-            :key="order.id"
-            class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition"
-          >
+          <div v-for="order in sellerOrders" :key="order.id"
+            class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition">
             <div class="flex-1">
               <h3 class="font-semibold text-gray-900">{{ order.product_title }}</h3>
               <p class="text-sm text-gray-600">Mã đơn: {{ order.order_number }}</p>
@@ -97,27 +83,18 @@
                 {{ getStatusText(order.status) }}
               </span>
 
-              <button
-                v-if="order.status === 'paid' && !confirmingIds.has(order.id)"
-                @click="confirmOrder(order.id)"
-                class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-              >
+              <button v-if="order.status === 'paid' && !confirmingIds.has(order.id)" @click="confirmOrder(order.id)"
+                class="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition">
                 Xác nhận
               </button>
 
-              <button
-                v-else-if="order.status === 'pending' && confirmingIds.has(order.id)"
-                disabled
-                class="px-3 py-2 text-sm bg-green-600/70 text-white rounded-md cursor-wait"
-              >
+              <button v-else-if="order.status === 'pending' && confirmingIds.has(order.id)" disabled
+                class="px-3 py-2 text-sm bg-green-600/70 text-white rounded-md cursor-wait">
                 Đang xác nhận...
               </button>
 
-              <button
-                v-if="order.status === 'confirmed'"
-                @click.stop="shipOrder(order.id)"
-                class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-              >
+              <button v-if="order.status === 'confirmed'" @click.stop="shipOrder(order.id)"
+                class="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
                 Đánh dấu đang giao
               </button>
             </div>
@@ -126,12 +103,8 @@
       </div>
 
       <!-- ✅ Modal Đánh giá -->
-      <RateUserModal
-        :is-open="showRateModal"
-        :order-id="selectedOrderId"
-        @close="showRateModal = false"
-        @submitted="loadOrders"
-      />
+      <RateUserModal :is-open="showRateModal" :order-id="selectedOrderId" @close="showRateModal = false"
+        @submitted="loadOrders" />
     </div>
   </div>
 </template>
@@ -190,6 +163,10 @@ function getStatusText(status: string) {
     disputed: 'Tranh chấp'
   }
   return map[status] || status
+}
+function handleRated() {
+  const o = buyerOrders.value.find(o => o.id === selectedOrderId.value)
+  if (o) o.has_rated = true
 }
 
 function getStatusClass(status: string) {
@@ -279,6 +256,7 @@ async function confirmOrder(orderId: number) {
     confirmingIds.value.delete(orderId)
   }
 }
+
 
 onMounted(loadOrders)
 </script>

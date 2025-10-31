@@ -13,7 +13,7 @@ class RatingController extends Controller
     {
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'score' => 'required|integer|min:1|max:5',
+            'stars' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:500',
         ]);
 
@@ -47,15 +47,15 @@ class RatingController extends Controller
             'order_id' => $order->id,
             'from_user_id' => $user->id,
             'to_user_id' => $toUserId,
-            'score' => $request->score,
+            'stars' => $request->stars,
             'comment' => $request->comment,
         ]);
-
+            $order->update(['has_rated' => true]);
         // Cập nhật tổng rating trong bảng users
         $target = User::find($toUserId);
         if ($target) {
             $target->total_ratings += 1;
-            $target->rating = Rating::where('to_user_id', $toUserId)->avg('score');
+            $target->rating = Rating::where('to_user_id', $toUserId)->avg('stars');
             $target->save();
         }
 

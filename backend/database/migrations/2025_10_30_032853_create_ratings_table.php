@@ -27,7 +27,7 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             // số sao 1-5
-            $table->unsignedTinyInteger('score')->default(5);
+            $table->unsignedTinyInteger('stars')->default(5);
 
             // nhận xét text
             $table->text('comment')->nullable();
