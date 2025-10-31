@@ -12,6 +12,7 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\OtpController;
 // rbac user api
 use App\Http\Controllers\UserController;
 // FollowSeller
@@ -33,7 +34,9 @@ use App\Http\Controllers\SolrController;
 |
 */
 
-
+// ====== OTP (PUBLIC) ======
+Route::post('/auth/send-otp',   [OtpController::class, 'send'])->middleware('throttle:3,1');
+Route::post('/auth/verify-otp', [OtpController::class, 'verify'])->middleware('throttle:10,1');
 // Public routes
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);

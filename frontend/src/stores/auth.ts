@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/services/api'
+//import api from '@/lib/api';
 
 interface User {
   id: number
@@ -21,6 +22,7 @@ interface RegisterData {
   email: string
   password: string
   password_confirmation: string
+  otp_code?: string
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -42,26 +44,26 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Set api default authorization header for current session (interceptor also handles this)
   if (token.value) {
-    ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
+    ; (api.defaults.headers as any).Authorization = `Bearer ${token.value}`
   }
 
   async function login(credentials: LoginCredentials) {
     try {
       loading.value = true
       const response = await api.post('/auth/login', credentials)
-      
+
       token.value = response.data.token
       user.value = response.data.user
-      
+
       localStorage.setItem('auth_token', token.value)
       localStorage.setItem('user', JSON.stringify(user.value))
-      ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
-      
+        ; (api.defaults.headers as any).Authorization = `Bearer ${token.value}`
+
       return { success: true }
     } catch (error: any) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Login failed'
       }
     } finally {
       loading.value = false
@@ -72,18 +74,18 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       loading.value = true
       const response = await api.post('/auth/register', data)
-      
+
       token.value = response.data.token
       user.value = response.data.user
-      
+
       localStorage.setItem('auth_token', token.value)
       localStorage.setItem('user', JSON.stringify(user.value))
-      ;(api.defaults.headers as any).Authorization = `Bearer ${token.value}`
-      
+        ; (api.defaults.headers as any).Authorization = `Bearer ${token.value}`
+
       return { success: true }
     } catch (error: any) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.response?.data?.message || 'Registration failed',
         errors: error.response?.data?.errors
       }
@@ -98,7 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       // Continue with logout even if API call fails
     }
-    
+
     user.value = null
     token.value = null
     localStorage.removeItem('auth_token')
@@ -119,6 +121,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function sendEduOtp(payload: { email: string }) {
+    try {
+      loading.value = true
+      // Gọi API gửi mã OTP đến email sinh viên
+      // Đổi URL này nếu backend của bạn khác: '/students/send-otp' ...
+      const res = await api.post('/auth/send-otp', payload)
+      return { success: true, data: res.data }
+    } catch (error: any) {
+      // Chuẩn hóa lỗi trả về để FE dễ hiển thị
+      if (error.response?.status === 422) {
+        return { success: false, errors: error.response.data?.errors }
+      }
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Gửi OTP thất bại'
+      }
+    } finally {
+      loading.value = false
+    }
+  }
   return {
     user,
     token,
@@ -129,6 +151,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     fetchUser,
+    sendEduOtp,      // <-- thêm
+    // verifyEduOtp, // <-- nếu dùng
   }
 })
 
