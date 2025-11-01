@@ -238,6 +238,32 @@ const filteredUsers = computed(() => {
   });
 });
 
+// ---------- PAGINATION ----------
+const currentPage = ref(1);
+const perPage = ref(3); // ✅ bạn có thể đổi số này tuỳ ý
+
+// Tính tổng số trang
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / perPage.value));
+
+// Tính dữ liệu hiển thị cho trang hiện tại
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  const end = start + perPage.value;
+  return filteredUsers.value.slice(start, end);
+});
+
+// Chuyển trang
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+}
+
+//Reset trang về 1 mỗi khi dữ liệu lọc thay đổi
+watch([filteredUsers], () => {
+  currentPage.value = 1;
+});
+
 // small helper to show preview count (fast)
 const previewCount = computed(() => filteredUsers.value.length);
 
@@ -249,81 +275,94 @@ function getAdvancedFilterPayload() {
 <template>
   <div class="w-full space-y-6">
     <!-- FUNCTION BAR -->
-        <div class="flex flex-wrap items-center gap-4 mb-5 justify-between">
-          <div class="flex flex-wrap items-center gap-4">
-            <h2 class="text-xl font-bold ">Quản lý người dùng</h2>
-            <div class="text-lg font-semibold">Tổng số: <b>{{ users.length }}</b></div>
-          </div>
-          
-          <div class="flex items-center gap-2">
-            <div class="flex">
-              <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..."
-                class="border border-gray-300 rounded-l-md px-3 py-2 outline-none focus:ring focus:ring-blue-300" />
-              <button id="btn_search" @click="search"
-                class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
-            </div>
-            <label class="font-medium">Bộ lọc:</label>
-            <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
-              <option value="all">Tất cả</option>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-              <option value="active">Active</option>
-            </select>
-            <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-              Nâng cao
-            </button>
-          </div>
+    <div class="flex flex-wrap items-center gap-4 mb-5 justify-between">
+      <div class="flex flex-wrap items-center gap-4">
+        <h2 class="text-xl font-bold ">Quản lý người dùng</h2>
+        <div class="text-lg font-semibold">Tổng số: <b>{{ users.length }}</b></div>
+      </div>
 
-          <AdvancedFilter :visible="showAdvanced" @update:visible="val => showAdvanced = val"
-            @filter-change="applyAdvancedFilter" />
+      <div class="flex items-center gap-2">
+        <div class="flex">
+          <input v-model="keyword" @keyup.enter="search" type="search" placeholder="Tìm kiếm..."
+            class="border border-gray-300 rounded-l-md px-3 py-2 outline-none focus:ring focus:ring-blue-300" />
+          <button id="btn_search" @click="search"
+            class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
         </div>
+        <label class="font-medium">Bộ lọc:</label>
+        <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
+          <option value="all">Tất cả</option>
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="active">Active</option>
+        </select>
+        <button @click="showAdvanced = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          Nâng cao
+        </button>
+      </div>
 
-        <!-- INFO / TABLE -->
-        <div>
-          <table class="w-full bg-white rounded-lg overflow-hidden border">
-            <thead>
-              <tr class="bg-gray-100 text-left">
-                <th class="px-3 py-2">STT</th>
-                <th class="px-3 py-2">ID</th>
-                <th class="px-3 py-2">Tên</th>
-                <th class="px-3 py-2">Email</th>
-                <th class="px-3 py-2">Role</th>
-                <th class="px-3 py-2">Phone</th>
-                <th class="px-3 py-2">Avatar</th>
-                <th class="px-3 py-2">Active</th>
-                <th class="px-3 py-2">Created At</th>
-                <th class="px-3 py-2">Last Login</th>
-                <th class="px-3 py-2">Login Count</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(user, index) in filteredUsers" :key="user.id" class="border-t">
-                <td class="px-3 py-2">{{ index + 1 }}</td>
-                <td class="px-3 py-2">{{ user.id }}</td>
-                <td class="px-3 py-2">{{ user.name }}</td>
-                <td class="px-3 py-2">{{ user.email }}</td>
-                <td class="px-3 py-2">{{ user.role }}</td>
-                <td class="px-3 py-2">{{ user.phone }}</td>
-                <td class="px-3 py-2">
-                  <img :src="user.avatar" class="w-10 h-10 rounded-full" />
-                </td>
-                <td class="px-3 py-2">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
-                <td class="px-3 py-2">{{ user.created_at }}</td>
-                <td class="px-3 py-2">{{ user.last_login_at }}</td>
-                <td class="px-3 py-2">{{ user.login_count }}</td>
-              </tr>
-            </tbody>
-          </table>
+      <AdvancedFilter :visible="showAdvanced" @update:visible="val => showAdvanced = val"
+        @filter-change="applyAdvancedFilter" />
+    </div>
 
-          <!-- Pagination -->
-          <div class="flex justify-center gap-2 mt-4">
-            <button class="px-3 py-1 rounded border bg-gray-200" disabled>« Trước</button>
-            <button class="px-3 py-1 rounded border bg-blue-600 text-white">1</button>
-            <button class="px-3 py-1 rounded border bg-white">2</button>
-            <button class="px-3 py-1 rounded border bg-white">3</button>
-            <button class="px-3 py-1 rounded border bg-gray-200">Sau »</button>
-          </div>
-        </div>
+    <!-- INFO / TABLE -->
+    <div>
+      <table class="w-full bg-white rounded-lg overflow-hidden border">
+        <thead>
+          <tr class="bg-gray-100 text-left">
+            <th class="px-3 py-2">STT</th>
+            <th class="px-3 py-2">ID</th>
+            <th class="px-3 py-2">Tên</th>
+            <th class="px-3 py-2">Email</th>
+            <th class="px-3 py-2">Role</th>
+            <th class="px-3 py-2">Phone</th>
+            <th class="px-3 py-2">Avatar</th>
+            <th class="px-3 py-2">Active</th>
+            <th class="px-3 py-2">Created At</th>
+            <th class="px-3 py-2">Last Login</th>
+            <th class="px-3 py-2">Login Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(user, index) in paginatedUsers" :key="user.id" class="border-t">
+            <td class="px-3 py-2">{{ (currentPage - 1) * perPage + index + 1 }}</td>
+            <td class="px-3 py-2">{{ user.id }}</td>
+            <td class="px-3 py-2">{{ user.name }}</td>
+            <td class="px-3 py-2">{{ user.email }}</td>
+            <td class="px-3 py-2">{{ user.role }}</td>
+            <td class="px-3 py-2">{{ user.phone }}</td>
+            <td class="px-3 py-2">
+              <img :src="user.avatar" class="w-10 h-10 rounded-full" />
+            </td>
+            <td class="px-3 py-2">{{ user.is_active ? 'Active' : 'Inactive' }}</td>
+            <td class="px-3 py-2">{{ user.created_at }}</td>
+            <td class="px-3 py-2">{{ user.last_login_at }}</td>
+            <td class="px-3 py-2">{{ user.login_count }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="flex justify-center gap-2 mt-4 items-center">
+        <button @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+          class="px-3 py-1 rounded border bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
+          « Trước
+        </button>
+
+        <button v-for="page in totalPages" :key="page" @click="goToPage(page)" :class="[
+          'px-3 py-1 rounded border',
+          page === currentPage
+            ? 'bg-blue-600 text-white'
+            : 'bg-white hover:bg-gray-100'
+        ]">
+          {{ page }}
+        </button>
+
+        <button @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded border bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
+          Sau »
+        </button>
+      </div>
+    </div>
   </div>
 
 </template>
