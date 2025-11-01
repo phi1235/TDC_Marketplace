@@ -177,8 +177,8 @@ async function confirmReject() {
       <div style="margin-left:auto; display:flex; gap:8px;">
         <input v-model="search" @keyup.enter="onSearch" type="search" placeholder="Tìm kiếm..."
           style="padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; width:260px;" />
-        <button :disabled="loading" @click="onSearch"
-          style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button>
+        <!-- <button :disabled="loading" @click="onSearch"
+          style="padding:8px 12px; border-radius:8px; background:#2563eb; color:#fff;">Lọc</button> -->
       </div>
       <!-- Filter advance -->
       <label class="font-medium">Bộ lọc:</label>

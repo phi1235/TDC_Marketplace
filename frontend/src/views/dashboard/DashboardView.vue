@@ -16,3 +16,4 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore();
 const isAdmin = computed(() => auth.isAdmin)
+</script>

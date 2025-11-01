@@ -289,7 +289,7 @@ function getAdvancedFilterPayload() {
             class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Tìm</button>
         </div>
         <label class="font-medium">Bộ lọc:</label>
-        <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2">
+        <select id="role" v-model="selectedRole" class="border rounded-md px-3 py-2 pr-6">
           <option value="all">Tất cả</option>
           <option value="user">User</option>
           <option value="admin">Admin</option>
