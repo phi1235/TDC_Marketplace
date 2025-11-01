@@ -2,38 +2,26 @@
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
       <h1 class="text-3xl font-bold text-gray-900 mb-8">🛍️ Danh sách tin rao</h1>
-      
+
       <!-- Bộ lọc và tìm kiếm -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Tìm kiếm tin rao..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <input v-model="searchQuery" type="text" placeholder="Tìm kiếm tin rao..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div class="flex gap-2">
-            <select
-              v-model="selectedCategory"
-              class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <select v-model="selectedCategory"
+              class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tất cả danh mục</option>
-              <option
-                v-for="cat in categories"
-                :key="cat.id"
-                :value="cat.id"
-              >
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
                 {{ cat.icon ? cat.icon + ' ' : '' }}{{ cat.name }}
               </option>
             </select>
 
-            <button
-              @click="searchListings"
-              class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <button @click="searchListings"
+              class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               🔍 Tìm kiếm
             </button>
           </div>
@@ -41,23 +29,25 @@
       </div>
 
       <!-- Danh sách tin -->
-      <div
-        v-if="!loading"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      >
-        <div
-          v-for="listing in listings"
-          :key="listing.id"
+      <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="listing in listings" :key="listing.id"
           class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-          @click="goToDetail(listing.id)"
-        >
-          <div class="h-48 bg-gray-200 flex items-center justify-center">
-            <img
-              v-if="listing.images && listing.images.length"
-              :src="imageUrl(listing.images[0].image_path)"
-              class="object-cover w-full h-full"
-            />
+          @click="goToDetail(listing.id)">
+          <div class="h-48 bg-gray-200 flex relative items-center justify-center">
+            <img v-if="listing.images && listing.images.length" :src="imageUrl(listing.images[0].image_path)"
+              class="object-cover w-full h-full" />
             <span v-else class="text-gray-500">Không có ảnh</span>
+
+            <!-- Favorite -->
+            <button @click.stop="toggleFavorite(listing)"
+              class="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md flex flex-col items-center">
+              <span class="text-xl" :class="listing.is_favorite ? 'text-red-500' : 'text-gray-400'">
+                {{ listing.is_favorite ? '♥️' : '🤍' }}
+              </span>
+              <!-- <span class="text-xs font-medium" :class="listing.is_favorite ? 'text-red-500' : 'text-gray-500'">
+                {{ listing.is_favorite ? 'Đã yêu thích' : 'Chưa yêu thích' }}
+              </span> -->
+            </button>
           </div>
 
           <div class="p-4">
@@ -75,6 +65,7 @@
                 {{ getConditionText(listing.condition) }}
               </span>
             </div>
+
           </div>
         </div>
       </div>
@@ -97,6 +88,9 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { imageUrl } from '@/utils/image' // nếu có
+//listwish
+import { wishlistService } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 const router = useRouter()
 
@@ -155,10 +149,45 @@ const searchListings = () => {
 
 const goToDetail = (id: number) => router.push(`/listings/${id}`)
 
-onMounted(() => {
-  loadCategories()
-  loadListings()
+onMounted(async () => {
+  await loadCategories()
+  await loadListings()
+  await loadWishlistStatus()
 })
+
+
+
+//Favorite
+
+const wishlistStore = useWishlistStore()
+
+const toggleFavorite = async (item: any) => {
+  try {
+    const res = await wishlistService.toggleWishlist(item.id)
+
+    // cập nhật số lượng tổng wishlist
+    wishlistStore.setCount(res.total ?? wishlistStore.count + (res.is_favorited ? 1 : -1))
+
+    // cập nhật trạng thái tim trên UI
+    item.is_favorite = res.is_favorited
+  } catch (err) {
+    console.error('Lỗi toggle wishlist:', err)
+  }
+}
+
+const loadWishlistStatus = async () => {
+  const res = await wishlistService.getWishlist()
+  const wishlistData = Array.isArray(res) ? res : res.data
+
+  wishlistStore.setCount(wishlistData.length)
+
+  listings.value.forEach(l => {
+    l.is_favorite = wishlistData.some((w: any) => w.listing_id === l.id)
+  })
+}
+console.log(toggleFavorite);
+
+
 </script>
 
 <style scoped>
