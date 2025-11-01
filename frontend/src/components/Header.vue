@@ -1,6 +1,6 @@
 <template>
   <header class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-10 relative">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center">
@@ -18,28 +18,24 @@
             class="w-full pl-10 pr-40 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="handleInput" @keydown.down.prevent="moveDown" @keydown.up.prevent="moveUp"
             @keydown.enter.prevent="handleEnter" @focus="handleFocus" @blur="hideDropdown" />
-       <!-- 🔽 Dropdown chọn Engine + Nút tìm kiếm (liền khối) -->
-<div class="absolute right-0 top-0 bottom-0 flex items-center">
-  <!-- Select Engine -->
-  <select
-  v-model="engine"
-  class="h-full border-l border-gray-300 bg-gray-50 text-sm text-gray-700 px-5 pr-6 rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white transition appearance-none"
-  style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'><path fill=\'%23666\' d=\'M0 0l5 6 5-6z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.6rem center; background-size: 10px;"
->
-  <option value="es">Elasticsearch</option>
-  <option value="solr">Solr</option>
-  <option value="compare">So sánh</option>
-</select>
+          <!-- 🔽 Dropdown chọn Engine + Nút tìm kiếm (liền khối) -->
+          <div class="absolute right-0 top-0 bottom-0 flex items-center">
+            <!-- Select Engine -->
+            <select v-model="engine"
+              class="h-full border-l border-gray-300 bg-gray-50 text-sm text-gray-700 px-5 pr-6 rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white transition appearance-none"
+              style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'><path fill=\'%23666\' d=\'M0 0l5 6 5-6z\'/></svg>'); background-repeat: no-repeat; background-position: right 0.6rem center; background-size: 10px;">
+              <option value="es">Elasticsearch</option>
+              <option value="solr">Solr</option>
+              <option value="compare">So sánh</option>
+            </select>
 
-  <!-- Button Search -->
-  <button
-    @click="searchFullKeyword"
-    class="h-full bg-blue-600 text-white px-4 rounded-r-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
-    title="Tìm kiếm"
-  >
-    🔍
-  </button>
-</div>
+            <!-- Button Search -->
+            <button @click="searchFullKeyword"
+              class="h-full bg-blue-600 text-white px-4 rounded-r-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+              title="Tìm kiếm">
+              🔍
+            </button>
+          </div>
 
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,6 +128,10 @@
                 @click="showTestMenu = false">
                 Listing Card page
               </router-link>
+              <router-link to="/notifications" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showTestMenu = false">
+                News
+              </router-link>
             </div>
           </div>
 
@@ -160,10 +160,7 @@
                 class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
                 Đăng tin
               </router-link>
-              <router-link to="/my-listings"
-                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                Tin của tôi
-              </router-link>
+             
             </template>
 
             <!-- User menu -->
@@ -182,9 +179,28 @@
                   @click="showUserMenu = false">
                   Hồ sơ
                 </router-link>
-                <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                <div v-if="isAuthenticated && !auth.isAdmin">
+                  <router-link to="/listwish" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Danh sách 💟 {{ wishlistStore.count }}
+                  </router-link>
+                  <router-link to="/orders/my" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Đơn hàng của tôi 📦
+                  </router-link>
+                </div>
+                <router-link to="/my-listings"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click="showUserMenu = false">
+                Tin của tôi
+              </router-link>
+                <router-link to="/my-reports" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="showUserMenu = false">
-                  Danh sách 💟 {{ wishlistStore.count }}
+                  Báo cáo của tôi
+                </router-link>
+                <router-link to="/my-activity" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Hoạt động của tôi
                 </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -192,6 +208,29 @@
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- Anounce for user -->
+          <div v-if="!auth.isAdmin" class="flex items-center space-x-2 relative bell">
+            <div v-if="isAuthenticated">
+              <button @click="isOpen = !isOpen">
+                🔔
+                <span v-if="unreadCount > 0"
+                  class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                  {{ unreadCount }}
+                </span>
+              </button>
+            </div>
+            <transition name="fade-slide">
+              <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
+                <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
+                  <p> {{ value.title }} </p>
+                </div>
+                <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100">
+                  Xem tất cả thông báo
+                </router-link>
+              </div>
+            </transition>
           </div>
 
           <!-- Dark Mode -->
@@ -208,13 +247,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { showToast } from '@/utils/toast'
 // import axios from 'axios'
 import { getWishes } from '@/services/wishlist'
 import { useWishlistStore } from '@/stores/wishlist'
+import { fire } from '@/services/activities'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -325,6 +365,8 @@ const searchFullKeyword = () => {
   if (!q) return
   showDropdown.value = false
   router.push({ name: 'search', query: { q, engine: engine.value } })
+  // fire search event
+  fire('search_performed', { q, engine: engine.value })
 }
 
 const moveDown = () => {
@@ -370,11 +412,11 @@ const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value)
 const handleLogout = async () => {
   try {
     await auth.logout()
-    showToast('Đăng xuất thành công', 'success')
+    showToast('success', 'Đăng xuất thành công')
     router.push('/')
     showUserMenu.value = false
   } catch (error) {
-    showToast('Đăng xuất thất bại', 'error')
+    showToast('error', 'Đăng xuất thất bại')
   }
 }
 
@@ -396,10 +438,21 @@ const handleClickOutside = (event: Event) => {
 //wishlist
 const wishlistStore = useWishlistStore()
 
+// ✅ Log real-time
+watch(
+  () => wishlistStore.count,
+  (newVal) => {
+    console.log("🎯 Wishlist Count (real-time):", newVal)
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
+  await auth.checkAuthStatus?.()
+  if (!auth.isAuthenticated) return
+
   try {
     const res = await getWishes()
-    // res là array wishlist
     wishlistStore.setCount(Array.isArray(res) ? res.length : 0)
   } catch (err) {
     console.error('Lỗi lấy wishlist:', err)
@@ -428,6 +481,26 @@ watch(isDark, (val) => {
 
 const toggleDark = () => (isDark.value = !isDark.value)
 
+//Anounce for user
+const isOpen = ref(false); //trạng thái để mở thông báo
+const unreadCount = ref(4); //tin chưa đọc
+const notifications = ref([
+  { title: 'Bạn có đơn hàng mới' },
+  { title: 'Tin nhắn mới từ admin' },
+  { title: 'Khuyến mãi siêu hot' },
+  { title: 'Notification thứ 4' },
+]) //hiện tạm thời, khi nào có api thì truyền vô
+//đóng khi click ra ngoài
+const closeNotificationIfOutside = (e) => {
+  const bell = document.querySelector('.bell')
+  if (bell && !bell.contains(e.target)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', closeNotificationIfOutside))
+onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside))
+
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
@@ -435,5 +508,20 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 mark {
   background-color: #fef08a;
   color: inherit;
+}
+
+/* style announce */
+.fade-slide-enter-active {
+  transition: all 0.2s ease;
+}
+
+.fade-slide-leave-active {
+  transition: all 0.2s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
 }
 </style>

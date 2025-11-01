@@ -9,6 +9,8 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ActivityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 // rbac user api
@@ -17,9 +19,14 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FollowSellerController;
 //SellerProfile
 use App\Models\SellerProfile;
-
+//payment
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
+use App\Http\Controllers\RatingController;
+
+//legal
+use App\Http\Controllers\LegalController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -33,8 +40,10 @@ use App\Http\Controllers\SolrController;
 
 
 // Public routes
+Route::post('/activities', [ActivityController::class, 'store']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/legal/terms', [LegalController::class, 'terms']); // public
 
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
@@ -47,13 +56,39 @@ Route::get('/search-solr', [SolrController::class, 'index']);
 Route::get('/search-compare', [CompareController::class, 'index']);
 
 // Listings routes (public)
+Route::get('/listings/latest', [ListingController::class, 'latest']);
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
-
+Route::get('/public-listings', [ListingController::class, 'getPublicListings']);
 // Categories routes (public)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']); // Buyer tạo đơn
+    Route::post('/orders/{id}/confirm', [OrderController::class, 'confirm']); // Seller xác nhận
+    Route::get('/orders/my', [OrderController::class, 'myOrders']); // Buyer xem
+    Route::get('/orders/received', [OrderController::class, 'receivedOrders']); // Seller xem
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders/{id}/escrow-pay', [OrderController::class, 'payWithEscrow']);
+    //  Seller giao hàng
+    Route::post('/orders/{id}/ship', [OrderController::class, 'markShipped']);
+    //  Buyer xác nhận đã nhận hàng
+    Route::post('/orders/{id}/deliver', [OrderController::class, 'markDelivered']);
+    // Buyer hoàn tất đơn hàng (giải phóng escrow)
+    Route::post('/orders/{id}/complete', [OrderController::class, 'completeOrder']);
+    Route::post('/ratings', [RatingController::class, 'store']);
+    //điều khoản
+    Route::get('/legal/consent-status', [LegalController::class, 'consentStatus']);
+    Route::post('/legal/consent',        [LegalController::class, 'consent']);
+
+    // Ví dụ bảo vệ API cần consent:
+    // Route::middleware('terms')->group(function () {
+    //     Route::get('/orders', [OrderController::class, 'index']);
+    // });
+});
+Route::get('/ratings/user/{userId}', [RatingController::class, 'userRatings']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -65,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::get('/my-activities', [UserController::class, 'myActivities']);
 
     // Listings management
     Route::post('/listings', [ListingController::class, 'store']);
@@ -90,6 +126,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/offers/{offer}/accept', [OfferController::class, 'accept']);
     Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
 
+    // Report routes
+    Route::post('/reports', [ReportController::class, 'store']);
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/{report}', [ReportController::class, 'show']);
+    Route::get('/reports-stats', [ReportController::class, 'stats']);
+    Route::get('/report-reasons', [ReportController::class, 'getReportReasons']);
+    Route::get('/reportable-types', [ReportController::class, 'getReportableTypes']);
+
     // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
@@ -105,6 +149,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+
+        // Audit logs
+        Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
+
+        // Analytics
+        Route::get('/analytics/overview', [AdminController::class, 'analyticsOverview']);
+        // Monitoring
+        Route::get('/monitoring/overview', [AdminController::class, 'monitoring']);
+        Route::get('/monitoring/export', [AdminController::class, 'monitoringExport']);
 
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
@@ -154,6 +207,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 //SellerProfile
-Route::get('/sellers', function() {
+Route::get('/sellers', function () {
     return SellerProfile::all();
 });
