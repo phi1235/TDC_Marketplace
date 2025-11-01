@@ -16,12 +16,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-  path: '/orders/:id',
-  name: 'OrderDetail',
-  component: () => import('@/views/orders/OrderDetail.vue'),
-  meta: { requiresAuth: true },
-  props: true
-},
+      path: '/orders/:id',
+      name: 'OrderDetail',
+      component: () => import('@/views/orders/OrderDetail.vue'),
+      meta: { requiresAuth: true },
+      props: true
+    },
 
     {
       path: '/search',
@@ -105,6 +105,19 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresAdmin: true },
         },
         {
+
+          path: 'analytics',
+          name: 'dashboard-analytics',
+          component: () => import('@/views/admin/AdminAnalyticsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'monitoring',
+          name: 'dashboard-monitoring',
+          component: () => import('@/views/admin/AdminMonitoringView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
           path: 'audit-logs',
           name: 'dashboard-audit-logs',
           component: () => import('@/views/admin/AdminAuditLogsView.vue'),
@@ -183,6 +196,11 @@ const router = createRouter({
       name: 'admin-audit-logs',
       component: () => import('@/views/admin/AdminAuditLogsView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('@/views/terms/TermsView.vue'),
     },
   ],
 })
