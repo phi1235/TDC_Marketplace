@@ -90,6 +90,18 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::get('/ratings/user/{userId}', [RatingController::class, 'userRatings']);
 
+    //moderation keyword
+Route::middleware(['auth:sanctum', 'moderate.keywords'])->group(function () {
+    //  Người bán đăng hoặc chỉnh sửa sản phẩm
+    Route::post('/listings', [ListingController::class, 'store']);
+    Route::put('/listings/{listing}', [ListingController::class, 'update']);
+
+    //  Người mua gửi đánh giá
+    Route::post('/ratings', [RatingController::class, 'store']);
+
+    //  Người dùng gửi báo cáo
+    Route::post('/reports', [ReportController::class, 'store']);
+});
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
@@ -103,8 +115,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-activities', [UserController::class, 'myActivities']);
 
     // Listings management
-    Route::post('/listings', [ListingController::class, 'store']);
-    Route::put('/listings/{listing}', [ListingController::class, 'update']);
     Route::delete('/listings/{listing}', [ListingController::class, 'destroy']);
     Route::get('/my-listings', [ListingController::class, 'myListings']);
     Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
@@ -127,7 +137,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
 
     // Report routes
-    Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/reports/{report}', [ReportController::class, 'show']);
     Route::get('/reports-stats', [ReportController::class, 'stats']);
