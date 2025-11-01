@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             //
             FollowSellersSeeder::class,
             WishlistSeeder::class,
+            //diem giao dich
+            PickupPointSeeder::class,    // bảng mới API đang dùng
         ]);
     }
 }
