@@ -350,21 +350,30 @@ const submitForm = async () => {
     showToast('success', 'Đăng tin thành công! Tin rao đang chờ duyệt.')
     router.push('/my-listings')
     
-  } catch (error) {
+ } catch (error: any) {
     console.error('❌ Error creating listing:', error)
-    
+
+    // 🧩 Nếu backend trả về lỗi moderation (400 hoặc 403)
+    if (error.response?.status === 400 || error.response?.status === 403) {
+      const message = error.response?.data?.message || 'Nội dung không hợp lệ.'
+      showToast('error', message)
+      return
+    }
+
+    // 🧾 Nếu validation lỗi (422)
     if (error.response?.status === 422) {
       errors.value = error.response.data.errors
       showToast('error', 'Vui lòng kiểm tra lại thông tin')
-    } else {
-      showToast('error', 'Có lỗi xảy ra khi đăng tin. Vui lòng thử lại.')
+      return
     }
+
+    // ⚙️ Các lỗi khác (mạng, server,...)
+    showToast('error', 'Có lỗi xảy ra khi đăng tin. Vui lòng thử lại.')
   } finally {
     isSubmitting.value = false
   }
 }
-
 onMounted(() => {
   loadCategories()
-})
+})  
 </script>
