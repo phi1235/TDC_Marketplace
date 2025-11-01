@@ -12,6 +12,10 @@
           Listings</router-link>
         <router-link to="/dashboard/pending" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
           Pending</router-link>
+        <router-link to="/dashboard/analytics" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
+          Analytics</router-link>
+        <router-link to="/dashboard/monitoring" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
+          Monitoring</router-link>
         <div class="relative">
           <!-- Button / Link chính -->
           <button @click="open = !open"
@@ -46,7 +50,7 @@
           <button class="p-2">⚙️</button>
         </div>
       </header> -->
-      <header class="flex items-center justify-between p-4 bg-white shadow">
+      <header class="flex items-center justify-between p-4 bg-white shadow flex-shrink-0">
         <!-- Bọc container -->
         <div class="flex items-center justify-between w-full ml-64 max-w-[calc(100%-64px-20px)]">
           <!-- Search bar -->
@@ -111,7 +115,7 @@
           </div>
         </div>
       </header>
-      <main class="p-6 ml-64" style="max-width: calc(100% - 64px - 20px);">
+      <main class="p-6 ml-64 overflow-y-auto flex-1" style="max-width: calc(100% - 64px - 20px);">
         <router-view /> <!-- UsersView.vue sẽ hiển thị TRONG KHUNG NÀY -->
       </main>
     </div>
