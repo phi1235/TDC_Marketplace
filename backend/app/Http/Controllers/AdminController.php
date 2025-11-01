@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Services\ElasticSearchService;
 use App\Services\ReportService;
 use App\Services\AuditLogService;
+use App\Services\AnalyticsService;
+use App\Services\MonitoringService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,14 +19,24 @@ class AdminController extends Controller
     protected $elasticSearchService;
     protected ReportService $reportService;
     protected AuditLogService $auditLogService;
+    protected AnalyticsService $analyticsService;
+    protected MonitoringService $monitoringService;
 
-    public function __construct(ElasticSearchService $elasticSearchService, ReportService $reportService, AuditLogService $auditLogService)
+    public function __construct(
+        ElasticSearchService $elasticSearchService,
+        ReportService $reportService,
+        AuditLogService $auditLogService,
+        AnalyticsService $analyticsService,
+        MonitoringService $monitoringService
+    )
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
         $this->reportService = $reportService;
         $this->auditLogService = $auditLogService;
+        $this->analyticsService = $analyticsService;
+        $this->monitoringService = $monitoringService;
     }
 
     public function dashboard(): JsonResponse
@@ -69,8 +81,6 @@ class AdminController extends Controller
         $perPage = (int)($request->get('per_page', 10));
         $listings = $query->orderBy('created_at', 'desc')->paginate($perPage);
         \Log::info('SQL Query', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
-
-        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
 
         \Log::info('PendingListings result', ['count' => $listings->count(), 'data' => $listings->items()]);
 
@@ -287,7 +297,7 @@ class AdminController extends Controller
             // Xóa "(Bản sao X)" khỏi title khi duyệt tin
             $cleanTitle = preg_replace('/\s*\(Bản sao\s*\d*\)\s*$/u', '', $listing->title);
 
-            // Avoid triggering Scout indexing if not configured
+            // Update listing status (once)
             Listing::withoutSyncingToSearch(function () use ($request, $listing, $cleanTitle) {
                 $listing->update([
                     'title' => $cleanTitle,
@@ -297,13 +307,6 @@ class AdminController extends Controller
                     'approved_by' => Auth::id(),
                 ]);
             });
-            // Update listing status
-            $listing->update([
-                'status' => 'approved',
-                'admin_notes' => $request->admin_notes,
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-            ]);
 
             // Index to Elasticsearch immediately after approval
             //  Lấy ảnh đầu tiên trước khi index
@@ -462,6 +465,33 @@ class AdminController extends Controller
             ->paginate(20);
 
         return response()->json($users);
+    }
+
+    public function analyticsOverview(Request $request): JsonResponse
+    {
+        $data = $this->analyticsService->getOverview($request->only(['from','to','group']));
+        return response()->json($data);
+    }
+
+    public function monitoring(Request $request): JsonResponse
+    {
+        $hours = (int) $request->input('hours', 24);
+        $endpoint = $request->input('endpoint');
+        $status = $request->filled('status') ? (int) $request->input('status') : null;
+        $data = $this->monitoringService->getOverview($hours, $endpoint, $status);
+        return response()->json($data);
+    }
+
+    public function monitoringExport(Request $request)
+    {
+        $hours = (int) $request->input('hours', 24);
+        $endpoint = $request->input('endpoint');
+        $status = $request->filled('status') ? (int) $request->input('status') : null;
+        $csv = $this->monitoringService->exportCsv($hours, $endpoint, $status);
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="monitoring.csv"'
+        ]);
     }
 
     public function toggleUserStatus(Request $request, User $user): JsonResponse

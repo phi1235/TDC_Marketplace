@@ -32,6 +32,7 @@ import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import Header from '@/components/Header.vue'
 import Navbar from './components/Navbar.vue'
 import { useRouter } from 'vue-router'
+import { fire } from '@/services/activities'
 
 const isDark = ref(false)
 const isLoading = ref(false)
@@ -49,6 +50,9 @@ onMounted(async () => {
   if (auth.token && !auth.user) {
     await auth.fetchUser()
   }
+
+  // Fire page view event
+  fire('page_view', { path: window.location.pathname })
 })
 
 watch(isDark, (val) => {

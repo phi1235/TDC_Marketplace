@@ -21,6 +21,7 @@ class Order extends Model
         'product_price',
         'quantity',
         'total_amount',
+        'has_rated', 
         'currency',
         'status',
         'pickup_point_id',
@@ -82,8 +83,8 @@ class Order extends Model
     {
         return $this->hasMany(OrderConfirmation::class);
     }
-   public function escrowAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
-{
-    return $this->hasOne(EscrowAccount::class, 'order_id', 'id');
-}
+    public function escrowAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EscrowAccount::class, 'order_id', 'id');
+    }
 }
