@@ -103,7 +103,7 @@ class Listing extends Model
     {
         return $this->hasMany(Listing::class, 'duplicate_source_id');
     }
-   
+
 
     public function toSearchableArray(): array
     {
@@ -116,5 +116,9 @@ class Listing extends Model
             'status' => $this->status,
             'category_name' => $this->category->name ?? '',
         ];
+    }
+    public function pickupPoints()
+    {
+        return $this->belongsToMany(\App\Models\PickupPoint::class);
     }
 }
