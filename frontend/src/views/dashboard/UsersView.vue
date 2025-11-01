@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, reactive, onMounted, computed } from 'vue'
-import { getAllUsers, searchUsers } from '@/services/user';
+import { getAllUsers, searchUsers, toggleUserStatus } from '@/services/user';
 import AdvancedFilter from '@/components/AdvancedFilterUsers.vue'
+// import { Lock, Unlock } from 'lucide-vue-next' // icon khóa / mở khóa
 
 //AdvancedFilter
 function applyAdvancedFilter(newFilters: any) {
@@ -271,6 +272,22 @@ const previewCount = computed(() => filteredUsers.value.length);
 function getAdvancedFilterPayload() {
   return appliedFilter.value ? JSON.parse(JSON.stringify(appliedFilter.value)) : null;
 }
+
+//Toggle block and unblock is_active
+const toggleStatus = async (user: any) => {
+  const action = user.is_active ? 'khóa' : 'mở khóa'
+  if (!confirm(`Bạn có chắc muốn ${action} tài khoản ${user.name}?`)) return
+
+  try {
+    const res = await toggleUserStatus(user.id)
+    user.is_active = res.is_active
+    alert(res.message || 'Cập nhật thành công!')
+  } catch (error) {
+    console.error(error)
+    alert('Có lỗi khi thay đổi trạng thái người dùng.')
+  }
+}
+
 </script>
 <template>
   <div class="w-full space-y-6">
@@ -320,6 +337,7 @@ function getAdvancedFilterPayload() {
             <th class="px-3 py-2">Created At</th>
             <th class="px-3 py-2">Last Login</th>
             <th class="px-3 py-2">Login Count</th>
+            <th class="px-3 py-2 text-center">Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -337,6 +355,16 @@ function getAdvancedFilterPayload() {
             <td class="px-3 py-2">{{ user.created_at }}</td>
             <td class="px-3 py-2">{{ user.last_login_at }}</td>
             <td class="px-3 py-2">{{ user.login_count }}</td>
+            <td class="px-3 py-2 text-center">
+              <button @click="toggleStatus(user)" :class="[
+                'px-3 py-1 rounded flex items-center justify-center gap-1 mx-auto transition',
+                user.is_active
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              ]">
+                <span>{{ user.is_active ? '🔒 Khóa' : '🔓 Mở khóa' }}</span>
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
