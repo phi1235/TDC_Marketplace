@@ -44,7 +44,11 @@
     <!-- Chat window -->
     <div class="bg-white border rounded md:col-span-2 flex flex-col h-[75vh]">
       <div class="p-3 border-b font-semibold flex items-center justify-between">
-        <div>Hộp thoại {{ activeConversation ? '#' + activeConversation.id : '' }}</div>
+        <div>         
+          <span v-if="activeConversation">
+            {{ activeConversation.participants?.find((p:any) => p.user?.id !== myId)?.user?.name || ('#' + activeConversation.id) }}
+          </span>
+        </div>
         <div class="text-sm text-gray-500" v-if="activeConversation && activeConversation.participants">
           {{ activeConversation.participants.map((p:any)=>p.user?.name).join(', ') }}
         </div>

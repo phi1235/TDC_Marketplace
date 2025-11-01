@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\User;
 use App\Services\ChatService;
+use App\Http\Requests\StartConversationRequest;
+use App\Http\Requests\SendMessageRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,13 +15,14 @@ class ChatController extends Controller
 {
     public function __construct(private ChatService $chatService) {}
 
-    public function start(Request $request): JsonResponse
+    public function start(StartConversationRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-            'is_support' => 'sometimes|boolean',
-        ]);
-        $convo = $this->chatService->startConversation((int)$data['user_id'], (bool)($data['is_support'] ?? false));
+        $data = $request->validated();
+        $convo = $this->chatService->startConversation(
+            (int) $data['user_id'],
+            (bool) ($data['is_support'] ?? false)
+        );
+        
         return response()->json($convo->load('participants.user:id,name'));
     }
 
@@ -26,32 +30,13 @@ class ChatController extends Controller
     {
         $perPage = (int) ($request->input('per_page', 20));
         $messages = $this->chatService->listMessages($conversation, $perPage);
+        
         return response()->json($messages);
     }
 
     public function myConversations(): JsonResponse
     {
-        $userId = auth()->id();
-        $convos = \App\Models\Conversation::whereHas('participants', fn($q)=>$q->where('user_id',$userId))
-            ->with(['participants.user:id,name', 'messages' => function($q){ $q->latest()->limit(1); }])
-            ->orderByDesc('last_message_at')
-            ->get();
-        
-        // Calculate unread count for each conversation
-        foreach ($convos as $convo) {
-            $participant = \App\Models\ConversationParticipant::where('conversation_id', $convo->id)
-                ->where('user_id', $userId)
-                ->first();
-            
-            $lastReadId = $participant->last_read_message_id ?? 0;
-            $unreadCount = \App\Models\Message::where('conversation_id', $convo->id)
-                ->where('sender_id', '!=', $userId) // Only messages from others
-                ->where('id', '>', $lastReadId)
-                ->count();
-            
-            $convo->unread_count = $unreadCount;
-            $convo->last_message = $convo->messages->first();
-        }
+        $convos = $this->chatService->getUserConversations();
         
         return response()->json($convos);
     }
@@ -59,23 +44,19 @@ class ChatController extends Controller
     public function startSupport(): JsonResponse
     {
         // Tìm admin bất kỳ (ưu tiên đầu tiên)
-        $admin = \App\Models\User::role('admin')->first();
+        $admin = User::role('admin')->first();
         abort_unless($admin, 404, 'No admin available');
+        
         $convo = $this->chatService->startConversation($admin->id, true);
+        
         return response()->json($convo->load('participants.user:id,name'));
     }
 
-    public function send(Request $request, Conversation $conversation): JsonResponse
+    public function send(SendMessageRequest $request, Conversation $conversation): JsonResponse
     {
-        $data = $request->validate([
-            'type' => 'sometimes|string|in:text,image',
-            'content' => 'nullable|string',
-            'meta' => 'nullable|array',
-            'image' => 'nullable|image|max:5120', // 5MB max
-        ]);
-
-        $type = $data['type'] ?? 'text';
+        $data = $request->validated();
         $meta = $data['meta'] ?? [];
+        $type = $data['type'] ?? 'text';
 
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -92,22 +73,13 @@ class ChatController extends Controller
             'content' => $data['content'] ?? null,
             'meta' => $meta,
         ]);
+        
         return response()->json($msg->load('sender:id,name'));
     }
 
     public function markAsRead(Conversation $conversation): JsonResponse
     {
-        $userId = auth()->id();
-        $lastMessage = \App\Models\Message::where('conversation_id', $conversation->id)
-            ->where('sender_id', '!=', $userId)
-            ->latest('id')
-            ->first();
-        
-        if ($lastMessage) {
-            \App\Models\ConversationParticipant::where('conversation_id', $conversation->id)
-                ->where('user_id', $userId)
-                ->update(['last_read_message_id' => $lastMessage->id]);
-        }
+        $this->chatService->markConversationAsRead($conversation->id);
         
         return response()->json(['success' => true]);
     }
