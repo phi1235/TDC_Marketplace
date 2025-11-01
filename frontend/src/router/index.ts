@@ -202,6 +202,12 @@ const router = createRouter({
       name: 'terms',
       component: () => import('@/views/terms/TermsView.vue'),
     },
+    {
+      path: '/faq',
+      name: 'faq',
+      component: () => import('@/views/faq/faqView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
