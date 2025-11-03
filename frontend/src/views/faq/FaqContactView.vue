@@ -43,9 +43,7 @@
       </div>
 
       <!-- 💌 Liên hệ hỗ trợ -->
-      <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center space-y-6 border-t border-gray-200 dark:border-gray-700"
-      >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center space-y-6 border-t border-gray-200 dark:border-gray-700">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
           📞 Cần hỗ trợ thêm?
         </h2>
@@ -53,18 +51,19 @@
           Nếu bạn không tìm thấy câu trả lời phù hợp, hãy gửi yêu cầu hỗ trợ cho chúng tôi.
         </p>
 
-        <form
-          @submit.prevent="sendSupportRequest"
-          class="max-w-md mx-auto space-y-4 text-left"
-        >
+        <form @submit.prevent="sendSupportRequest" class="max-w-md mx-auto space-y-4 text-left">
+          <!-- Honeypot chống spam -->
+          <input v-model="contactForm._hp" type="text" class="hidden" tabindex="-1" autocomplete="off" />
+
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Họ và tên
             </label>
             <input
-              v-model="contactForm.name"
+              v-model.trim="contactForm.name"
               type="text"
               required
+              :disabled="loading"
               class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -74,11 +73,29 @@
               Email
             </label>
             <input
-              v-model="contactForm.email"
+              v-model.trim="contactForm.email"
               type="email"
               required
+              :disabled="loading"
               class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Chủ đề (tuỳ chọn)
+            </label>
+            <select
+              v-model="contactForm.topic"
+              :disabled="loading"
+              class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Chọn chủ đề --</option>
+              <option value="listing">Vấn đề về tin rao</option>
+              <option value="account">Tài khoản & đăng nhập</option>
+              <option value="payment">Thanh toán/Đơn hàng</option>
+              <option value="other">Khác</option>
+            </select>
           </div>
 
           <div>
@@ -86,23 +103,33 @@
               Nội dung cần hỗ trợ
             </label>
             <textarea
-              v-model="contactForm.message"
+              v-model.trim="contactForm.message"
               required
               rows="4"
+              :disabled="loading"
               class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
             ></textarea>
+            <p class="mt-1 text-xs text-gray-500">Tối thiểu 10 ký tự.</p>
           </div>
 
           <button
             type="submit"
-            class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
+            :disabled="loading"
+            class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            📧 Gửi yêu cầu
+            <svg v-if="loading" class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+            </svg>
+            <span>{{ loading ? 'Đang gửi...' : '📧 Gửi yêu cầu' }}</span>
           </button>
         </form>
 
         <p v-if="formSent" class="text-green-600 dark:text-green-400 font-medium mt-4">
           ✅ Yêu cầu của bạn đã được gửi! Chúng tôi sẽ phản hồi sớm nhất có thể.
+        </p>
+        <p v-if="errorText" class="text-red-600 dark:text-red-400 font-medium mt-4">
+          ❌ {{ errorText }}
         </p>
       </div>
     </div>
@@ -116,52 +143,62 @@
 
 <script setup>
 import { ref } from "vue";
+import api from "@/services/api"; // axios instance của bạn
 
 const activeIndex = ref(null);
 const formSent = ref(false);
+const loading = ref(false);
+const errorText = ref("");
 
 const faqs = ref([
-  {
-    question: "Làm sao để đăng tin rao mới?",
-    answer:
-      "Bạn có thể đăng nhập, sau đó vào trang Dashboard và chọn 'Đăng tin mới'. Điền đầy đủ thông tin rồi nhấn 'Đăng'.",
-  },
-  {
-    question: "Tôi có thể chỉnh sửa tin rao không?",
-    answer:
-      "Có. Sau khi đăng, bạn có thể vào mục 'Tin của tôi' trong Dashboard để chỉnh sửa thông tin hoặc hình ảnh.",
-  },
-  {
-    question: "Làm sao để bật chế độ tối (Dark Mode)?",
-    answer:
-      "Bạn có thể bật/tắt Dark Mode bằng nút 🌙 / ☀️ ở góc trên bên phải trang web.",
-  },
-  {
-    question: "Tin rao của tôi bị từ chối, phải làm sao?",
-    answer:
-      "Nếu tin bị từ chối, bạn có thể xem lý do trong Dashboard và chỉnh sửa lại cho phù hợp với quy định.",
-  },
-  {
-    question: "Tôi muốn liên hệ với quản trị viên?",
-    answer:
-      "Bạn có thể gửi email đến support@tdc-marketplace.vn hoặc liên hệ qua form hỗ trợ ở bên dưới.",
-  },
+  { question: "Làm sao để đăng tin rao mới?", answer: "Đăng nhập → chọn 'Đăng tin rao' → điền thông tin → 'Đăng'." },
+  { question: "Tôi có thể chỉnh sửa tin rao không?", answer: "Vào 'Tin của tôi' để sửa nội dung hoặc hình ảnh." },
+  { question: "Làm sao bật chế độ tối (Dark Mode)?", answer: "Bật/tắt ở nút 🌙/☀️ trên giao diện." },
+  { question: "Tin rao bị từ chối thì sao?", answer: "Xem lý do trong Dashboard, sửa lại cho phù hợp quy định." },
+  { question: "Liên hệ quản trị viên?", answer: "Gửi form hỗ trợ bên dưới hoặc email support@tdc-marketplace.vn." },
 ]);
 
 const contactForm = ref({
   name: "",
   email: "",
+  topic: "",
   message: "",
+  _hp: "", // honeypot
 });
 
 const toggle = (index) => {
   activeIndex.value = activeIndex.value === index ? null : index;
 };
 
-const sendSupportRequest = () => {
-  formSent.value = true;
-  contactForm.value = { name: "", email: "", message: "" };
-  setTimeout(() => (formSent.value = false), 4000);
+const sendSupportRequest = async () => {
+  errorText.value = "";
+  formSent.value = false;
+
+  if (contactForm.value._hp) return; // spam bot
+
+  if (!contactForm.value.message || contactForm.value.message.length < 10) {
+    errorText.value = "Nội dung hỗ trợ tối thiểu 10 ký tự.";
+    return;
+  }
+
+  try {
+    loading.value = true;
+    await api.post("/support/contact", {
+      name: contactForm.value.name,
+      email: contactForm.value.email,
+      topic: contactForm.value.topic || null,
+      message: contactForm.value.message,
+    });
+
+    formSent.value = true;
+    contactForm.value = { name: "", email: "", topic: "", message: "", _hp: "" };
+    setTimeout(() => (formSent.value = false), 5000);
+  } catch (err) {
+    errorText.value =
+      err?.response?.data?.message || "Không gửi được yêu cầu. Vui lòng thử lại.";
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
