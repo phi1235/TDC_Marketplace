@@ -24,7 +24,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
 use App\Http\Controllers\RatingController;
-
+//Notification
+use App\Http\Controllers\Api\NotificationController;
 //legal
 use App\Http\Controllers\LegalController;
 //pickup point
@@ -237,4 +238,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // set điểm cho đơn hàng
     Route::post('/orders/{id}/pickup', [\App\Http\Controllers\OrderController::class, 'setPickup']);
+});
+
+//Notification
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications', [NotificationController::class, 'store']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 });

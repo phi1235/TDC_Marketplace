@@ -33,6 +33,7 @@ async function fetchData() {
     })
     allRows.value = data.data || []
     applyFilter() // gọi lại hàm lọc
+    console.log('haha ', allRows.value);
   } catch (e: any) {
     showToast(e?.response?.data?.message || 'Tải danh sách thất bại', 'error')
   } finally {
