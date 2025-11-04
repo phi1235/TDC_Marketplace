@@ -150,13 +150,13 @@ class OrderController extends Controller
             $escrow = $order->escrowAccount;
             if (!$escrow) {
                 $escrow = $order->escrowAccount()->create([
-                    'order_id'  => $order->id,
-                    'buyer_id'  => $order->buyer_id,
+                    'order_id' => $order->id,
+                    'buyer_id' => $order->buyer_id,
                     'seller_id' => $order->seller_id,
-                    'amount'    => $order->total_amount,
-                    'currency'  => $order->currency ?? 'VND',
-                    'status'    => 'holding',
-                    'held_at'   => now(),
+                    'amount' => $order->total_amount,
+                    'currency' => $order->currency ?? 'VND',
+                    'status' => 'holding',
+                    'held_at' => now(),
                 ]);
             }
 
@@ -169,8 +169,8 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => '💳 Thanh toán thành công! Tiền đang được giữ trong tài khoản trung gian.',
-                'order'   => $order,
-                'escrow'  => $escrow,
+                'order' => $order,
+                'escrow' => $escrow,
             ]);
         } catch (\Exception $e) {
             \Log::error('Lỗi thanh toán escrow: ' . $e->getMessage(), [
@@ -291,4 +291,28 @@ class OrderController extends Controller
             'order' => $order
         ]);
     }
+    //người bán chọn địa điểm
+    public function setPickup(\Illuminate\Http\Request $r, $id)
+    {
+        $order = \App\Models\Order::findOrFail($id);
+        // Option: $this->authorize('update', $order);
+
+        $data = $r->validate([
+            'pickup_point_id' => 'required|exists:pickup_points,id',
+            'pickup_scheduled_at' => 'nullable|date',
+            'pickup_note' => 'nullable|string|max:255',
+        ]);
+
+        // (Khuyến nghị) kiểm tra điểm có thuộc listing của order
+        if ($order->listing_id) {
+            $ok = \App\Models\Listing::find($order->listing_id)
+                ->pickupPoints()->whereKey($data['pickup_point_id'])->exists();
+            if (!$ok)
+                return response()->json(['message' => 'Điểm giao dịch không thuộc listing'], 422);
+        }
+
+        $order->update($data);
+        return response()->json(['message' => 'pickup set', 'order' => $order->load('pickupPoint')]);
+    }
+
 }

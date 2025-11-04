@@ -21,7 +21,7 @@ class Order extends Model
         'product_price',
         'quantity',
         'total_amount',
-        'has_rated', 
+        'has_rated',
         'currency',
         'status',
         'pickup_point_id',
