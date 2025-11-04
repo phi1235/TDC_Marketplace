@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ActivityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminReportController;
 // rbac user api
 use App\Http\Controllers\UserController;
 // FollowSeller
@@ -162,6 +163,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+        Route::get('/reports/export', [AdminReportController::class, 'export']);
 
         // Audit logs
         Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
