@@ -16,6 +16,8 @@
           Analytics</router-link>
         <router-link to="/dashboard/monitoring" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
           Monitoring</router-link>
+            <router-link to="/dashboard/reports" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
+          Reports</router-link>
         <div class="relative">
           <!-- Button / Link chính -->
           <button @click="open = !open"
