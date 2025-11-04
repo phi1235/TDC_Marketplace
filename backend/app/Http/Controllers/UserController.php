@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class UserController extends Controller
 {
@@ -48,5 +50,23 @@ class UserController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+
+    public function myActivities(Request $request)
+    {
+        $userId = Auth::id();
+        $perPage = (int) $request->get('per_page', 20);
+        $query = AuditLog::where('auditable_type', 'user')
+            ->where('auditable_id', $userId);
+        if ($request->filled('action')) {
+            $query->where('action', $request->string('action'));
+        }
+        $logs = $query->orderByDesc('created_at')->paginate($perPage);
+        // Ẩn bớt thông tin nhạy cảm cho phía user
+        $logs->getCollection()->transform(function ($log) {
+            unset($log->user_agent);
+            return $log;
+        });
+        return response()->json($logs);
     }
 }

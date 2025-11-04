@@ -103,6 +103,24 @@ const engineLabel = computed(() => {
       return ''
   }
 })
+// 🌐 Xác định base URL tự động (không cần sửa Dockerfile)
+let API_BASE = import.meta.env.VITE_API_BASE_URL
+if (!API_BASE) {
+  const host = window.location.hostname
+
+  if (host.includes('localhost')) {
+    // Đang chạy ngoài Docker
+    API_BASE = 'http://localhost:8001/api'
+  } else if (host.includes('vue') || host.includes('tdc-vue')) {
+    // Đang chạy trong Docker network
+    API_BASE = 'http://laravel:8000/api'
+  } else {
+    // Production (deploy thực tế)
+    API_BASE = '/api'
+  }
+}
+console.log('[DEBUG] Đang dùng API_BASE:', API_BASE)
+
 
 // 🔍 Gọi API phù hợp engine
 const searchProducts = async () => {
@@ -117,14 +135,12 @@ const searchProducts = async () => {
 
   loading.value = true
   try {
-    let url = ''
-    if (engine.value === 'compare') {
-      url = `http://localhost:8001/api/search-compare?q=${encodeURIComponent(q)}`
-    } else if (engine.value === 'solr') {
-      url = `http://localhost:8001/api/search-solr?q=${encodeURIComponent(q)}`
-    } else {
-      url = `http://localhost:8001/api/search-es?q=${encodeURIComponent(q)}`
-    }
+   let endpoint = ''
+if (engine.value === 'compare') endpoint = 'search-compare'
+else if (engine.value === 'solr') endpoint = 'search-solr'
+else endpoint = 'search-es'
+
+const url = `${API_BASE}/${endpoint}?q=${encodeURIComponent(q)}`
 
     const res = await fetch(url)
     const data = await res.json()
