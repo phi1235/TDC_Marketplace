@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\FollowSeller;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,6 +20,13 @@ class DatabaseSeeder extends Seeder
             CampusPickupSeeder::class,
             UserSeeder::class,
             ListingSeeder::class,
+            //
+            FollowSellersSeeder::class,
+            WishlistSeeder::class,
+            //diem giao dich
+            PickupPointSeeder::class,    // bảng mới API đang dùng
+            //
+            AdminNotificationSeeder::class,
         ]);
     }
 }

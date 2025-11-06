@@ -1,55 +1,61 @@
 <template>
   <div class="p-6 bg-gray-50 min-h-screen">
-    <h1 class="text-2xl font-bold mb-6 text-gray-800">Danh sách yêu thích</h1>
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Danh sách Listings</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <div
-        v-for="wish in wishes.data"
-        :key="wish.id"
-        class="bg-white shadow rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition"
-      >
+    <!-- Loading state -->
+    <div v-if="loading" class="text-center py-10">Loading...</div>
+
+    <!-- Listings grid -->
+    <div v-else-if="listing.data && listing.data.length > 0"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-for="list in listing.data" :key="list.id"
+        class="bg-white shadow rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition">
         <div>
-          <h3 class="text-lg font-semibold mb-2">Wishlist #{{ wish.id }}</h3>
-          <p class="text-gray-500 text-sm">Ngày tạo: {{ formatDate(wish.created_at) }}</p>
-          <p class="text-gray-500 text-sm">Cập nhật: {{ formatDate(wish.updated_at) }}</p>
+          <h3 class="text-lg font-semibold mb-2">Listing #{{ list.id }}</h3>
+          <p class="text-gray-500 text-sm">Ngày tạo: {{ formatDate(list.created_at) }}</p>
+          <p class="text-gray-500 text-sm">Cập nhật: {{ formatDate(list.updated_at) }}</p>
         </div>
 
         <div class="mt-4 flex justify-end items-center">
-          <button
-            @click="toggleFavorite(wish)"
-            class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition"
-          >
-            <span v-if="wish.isFavorited">❤️</span>
+          <button @click="toggleFavorite(list)"
+            class="flex items-center gap-1 px-3 py-1 border rounded hover:bg-gray-100 transition">
+            <!-- Icon ❤️ nếu đã thích, 🤍 nếu chưa -->
+            <span v-if="list.isFavorited">❤️</span>
             <span v-else>🤍</span>
-            {{ wish.favoriteCount }}
+
+            <!-- Số lượt yêu thích -->
+            <span>{{ list.favoriteCount }}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <div class="mt-6 flex justify-center space-x-2">
-      <button
-        v-for="link in wishes.links"
-        :key="link.label"
-        :disabled="!link.url"
-        class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        @click="getWishes(link.url)"
-      >
-        <span v-html="link.label"></span>
-      </button>
+    <!-- Empty state -->
+    <div v-else class="text-center text-gray-500 py-10">
+      Chưa có listings nào 😢
     </div>
 
-    <div v-if="wishes.data.length === 0" class="mt-6 text-center text-gray-400">
-      Chưa có sản phẩm yêu thích
+    <!-- Pagination -->
+    <div v-if="listing.links && listing.links.length > 0" class="mt-6 flex justify-center space-x-2">
+      <button v-for="link in listing.links" :key="link.label" :disabled="!link.url"
+        class="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        @click="getListings(link.label === 'Next' ? listing.current_page + 1
+          : link.label === 'Previous' ? listing.current_page - 1
+            : parseInt(link.label))">
+        <span v-html="link.label"></span>
+      </button>
     </div>
   </div>
 </template>
 
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { listingsService } from '@/services/listings'
+import { wishlistService } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
-interface Wish {
+interface Listing {
   id: number
   created_at: string
   updated_at: string
@@ -58,31 +64,26 @@ interface Wish {
 }
 
 interface Pagination {
-  data: Wish[]
+  data: Listing[]
   links: any[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
 }
 
-const wishes = ref<Pagination>({ data: [], links: [] })
+// Dữ liệu
+const listing = ref<Pagination>({
+  data: [],
+  links: [],
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
+})
 
-// Lấy dữ liệu wishlist
-const getWishes = async (url = 'http://localhost:8001/api/wishes') => {
-  try {
-    const res = await axios.get(url.startsWith('http') ? url : `http://localhost:8001${url}`)
-    // Mặc định isFavorited = false, favoriteCount = 0
-    wishes.value = {
-      ...res.data,
-      data: res.data.data.map((w: Wish) => ({ ...w, isFavorited: false, favoriteCount: 0 }))
-    }
-  } catch (error) {
-    console.error('Error fetching wishes:', error)
-  }
-}
-
-// Toggle yêu thích (demo, không gọi API thực)
-const toggleFavorite = (wish: Wish) => {
-  wish.isFavorited = !wish.isFavorited
-  wish.favoriteCount = (wish.favoriteCount || 0) + (wish.isFavorited ? 1 : -1)
-}
+const loading = ref(false)
+const wishlistStore = useWishlistStore() // tổng wishlist của user
 
 // Format ngày
 const formatDate = (dateStr: string) => {
@@ -90,10 +91,61 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(() => {
-  getWishes()
-})
+// Lấy dữ liệu listings
+const getListings = async (page?: number) => {
+  loading.value = true
+  try {
+    const res = await listingsService.getListings({ per_page: 5, page: page || listing.value.current_page })
+    listing.value = {
+      ...res,
+      data: res.data.sort((a, b) => a.id - b.id)
+    }
+    await loadWishlistStatus()
+  } finally {
+    loading.value = false
+  }
+}
+
+// Lấy wishlist của user để đánh dấu isFavorited
+// Lấy wishlist của user
+const loadWishlistStatus = async () => {
+  const res = await wishlistService.getWishlist()
+  
+  const wishlistData = Array.isArray(res) ? res : res.data
+  
+  wishlistStore.setCount(wishlistData.length)
+
+  listing.value.data.forEach(l => {
+    l.isFavorited = wishlistData.some((w: any) => w.listing_id === l.id)
+    l.favoriteCount = l.isFavorited ? 1 : 0
+  })
+}
+
+// Toggle wishlist
+const toggleFavorite = async (item: Listing) => {
+  try {
+    const res = await wishlistService.toggleWishlist(item.id)
+
+    // Cập nhật store tổng wishlist
+    wishlistStore.setCount(res.total ?? wishlistStore.count + (res.is_favorited ? 1 : -1))
+
+    // Cập nhật item trong danh sách
+    listing.value.data = listing.value.data.map(l =>
+      l.id === item.id
+        ? { ...l, isFavorited: res.is_favorited, favoriteCount: res.is_favorited ? 1 : 0 }
+        : l
+    )
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+
+// Load lần đầu
+onMounted(() => getListings())
 </script>
+
+
 
 <style scoped>
 /* Card hover effect đã dùng Tailwind, không cần CSS thêm */
