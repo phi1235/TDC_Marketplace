@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\Dispute;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
             'user' => \App\Models\User::class,
             'review' => \App\Models\Review::class,
             'report' => \App\Models\Report::class,
+                    'dispute' => Dispute::class,
+
         ]);
     }
 }
