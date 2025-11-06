@@ -59,4 +59,17 @@ class AdminNotificationController extends Controller
             'data' => $notification
         ], 201);
     }
+
+    public function destroy($id)
+    {
+        $notification = AdminNotification::find($id);
+        if (!$notification) {
+            return response()->json(['message' => 'Không tìm thấy thông báo'], 404);
+        }
+
+        $notification->delete();
+
+        return response()->json(['message' => 'Xóa thông báo thành công']);
+    }
+
 }

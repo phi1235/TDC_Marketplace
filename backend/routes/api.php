@@ -248,7 +248,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // Route để user xem thông báo
 // Route::middleware('auth:sanctum')->get('/user/notifications', [AdminNotificationController::class, 'index']);
 
-Route::prefix('dashboard')->group(function () {
-    Route::middleware(['auth:sanctum', 'role:admin'])->post('/notifications', [AdminNotificationController::class, 'store']);
-    Route::middleware('auth:sanctum')->get('/notifications', [AdminNotificationController::class, 'index']);
+Route::prefix('dashboard')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/notifications', [AdminNotificationController::class, 'store']);
+    Route::get('/notifications', [AdminNotificationController::class, 'index']);
+    Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']);
 });
+

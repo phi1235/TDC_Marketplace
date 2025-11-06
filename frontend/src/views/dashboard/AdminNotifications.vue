@@ -135,5 +135,19 @@ function formatDate(dateString) {
     minute: '2-digit'
   })
 }
+
+async function deleteNotification(id) {
+  if (!confirm('Bạn có chắc muốn xóa thông báo này?')) return
+
+  try {
+    await adminNotificationsService.delete(id)
+    showToast('Đã xóa thông báo', 'success')
+    await fetchNotifications()
+  } catch (e) {
+    showToast('Xóa thất bại', 'error')
+  }
+}
+
+
  
 </script>

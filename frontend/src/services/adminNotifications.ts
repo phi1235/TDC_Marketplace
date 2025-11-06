@@ -11,4 +11,10 @@ export const adminNotificationsService = {
     const res = await api.post('/dashboard/notifications', data)
     return res.data
   },
+
+  async delete(id) {
+    const res = await api.delete(`/dashboard/notifications/${id}`)
+    return res.data
+  },
+
 }
