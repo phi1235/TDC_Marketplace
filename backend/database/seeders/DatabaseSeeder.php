@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             WishlistSeeder::class,
             //diem giao dich
             PickupPointSeeder::class,    // bảng mới API đang dùng
+            //
+            AdminNotificationSeeder::class,
         ]);
     }
 }

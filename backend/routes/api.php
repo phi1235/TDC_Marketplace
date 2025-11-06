@@ -25,7 +25,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
 use App\Http\Controllers\RatingController;
-
+//admin push
+use App\Http\Controllers\AdminNotificationController;
 //legal
 use App\Http\Controllers\LegalController;
 //pickup point
@@ -240,3 +241,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // set điểm cho đơn hàng
     Route::post('/orders/{id}/pickup', [\App\Http\Controllers\OrderController::class, 'setPickup']);
 });
+//admin push
+Route::prefix('dashboard')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/notifications', [AdminNotificationController::class, 'store']);
+    Route::get('/notifications', [AdminNotificationController::class, 'index']);
+    Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']);
+});
+
+//user xem thông báo hệ thống
+Route::middleware('auth:sanctum')->get('/notifications', [AdminNotificationController::class, 'userNotifications']);
