@@ -32,6 +32,9 @@ use App\Http\Controllers\LegalController;
 //pickup point
 use App\Http\Controllers\PickupPointController;
 use App\Http\Controllers\ListingPickupController;
+
+//dispute
+use App\Http\Controllers\DisputeController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -88,6 +91,11 @@ Route::middleware('auth:sanctum')->group(function () {
     //điều khoản
     Route::get('/legal/consent-status', [LegalController::class, 'consentStatus']);
     Route::post('/legal/consent', [LegalController::class, 'consent']);
+
+    Route::post('/disputes', [DisputeController::class, 'store']);
+    Route::get('/disputes', [DisputeController::class, 'index']);
+    Route::get('/disputes/{id}', [DisputeController::class, 'show']);
+    Route::post('/disputes/{id}/close', [DisputeController::class, 'close']);
 
     // Ví dụ bảo vệ API cần consent:
     // Route::middleware('terms')->group(function () {
@@ -178,6 +186,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
+
+        //admin dispute
+        Route::get('/disputes', [DisputeController::class, 'adminIndex']);
+        Route::get('/disputes/{id}', [DisputeController::class, 'adminShow']);
+        Route::put('/disputes/{id}', [DisputeController::class, 'adminUpdate']);
     });
 });
 //rbac api user
