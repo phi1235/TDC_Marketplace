@@ -16,41 +16,38 @@
         </select>
       </div>
 
-      <!-- Ẩn ô nhập loại, vì mặc định là "system" -->
-      <input type="hidden" v-model="form.type" />
+      <div class="mb-3">
+        <label class="block text-gray-700 mb-1">Loại thông báo</label>
+        <input v-model="form.type" type="text" class="border rounded px-3 py-2 w-full"
+               placeholder="VD: system, listing_approved..." />
+      </div>
 
       <div class="mb-3">
         <label class="block text-gray-700 mb-1">Tiêu đề</label>
-        <input
-          v-model="form.title"
-          type="text"
-          class="border rounded px-3 py-2 w-full"
-          placeholder="Nhập tiêu đề"
-        />
+        <input v-model="form.title" type="text" class="border rounded px-3 py-2 w-full"
+               placeholder="Nhập tiêu đề" />
       </div>
 
       <div class="mb-3">
-        <label class="block text-gray-700 mb-1">Nội dung thông báo</label>
-        <textarea
-          v-model="form.message"
-          class="border rounded px-3 py-2 w-full"
-          rows="3"
-          placeholder="Nhập nội dung"
-        ></textarea>
+        <label class="block text-gray-700 mb-1">Nội dung</label>
+        <textarea v-model="form.message" class="border rounded px-3 py-2 w-full" rows="3"
+                  placeholder="Nhập nội dung"></textarea>
       </div>
 
-      <button
-        type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
-        :disabled="loading"
-      >
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+              :disabled="loading">
         {{ loading ? 'Đang gửi...' : 'Gửi thông báo' }}
       </button>
     </form>
 
     <!-- Danh sách thông báo -->
     <div class="bg-white p-4 rounded-lg shadow-md">
-      <h2 class="text-lg font-semibold mb-3">Danh sách thông báo đã gửi</h2>
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">Danh sách thông báo đã gửi</h2>
+        <button @click="fetchNotifications" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm">
+          🔄 Tải lại
+        </button>
+      </div>
 
       <div v-if="loadingList">Đang tải...</div>
 
@@ -62,6 +59,7 @@
             <th class="p-2 border">Tiêu đề</th>
             <th class="p-2 border">Nội dung</th>
             <th class="p-2 border">Thời gian</th>
+            <th class="p-2 border text-center">Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -70,8 +68,11 @@
             <td class="p-2 border">{{ n.user?.name || 'User ' + n.user_id }}</td>
             <td class="p-2 border">{{ n.title }}</td>
             <td class="p-2 border">{{ n.message }}</td>
-            <td class="p-2 border text-sm text-gray-500">
-              {{ formatDate(n.created_at) }}
+            <td class="p-2 border text-sm text-gray-500">{{ formatDate(n.created_at) }}</td>
+            <td class="p-2 border text-center">
+              <button @click="deleteNotification(n.id)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                Xóa
+              </button>
             </td>
           </tr>
         </tbody>
@@ -107,7 +108,13 @@ async function createNotification() {
     showToast('Tạo thông báo thành công', 'success')
     await fetchNotifications()
 
-    
+    // ✅ Reset form sau khi gửi xong
+    form.value = {
+        user_id: '',
+        type: 'system', // giữ mặc định system
+        title: '',
+        message: '',
+    }
 }
 const users = ref([])
 
