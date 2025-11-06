@@ -213,6 +213,10 @@
                   @click="showUserMenu = false">
                   Hoạt động của tôi
                 </router-link>
+                <router-link to="/my-disputes" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Khiếu nại của tôi ⚖️
+                </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                   Đăng xuất

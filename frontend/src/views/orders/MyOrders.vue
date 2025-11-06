@@ -69,7 +69,7 @@
           Chưa có đơn hàng nào cần bạn xử lý.
         </div>
         <div v-else class="grid gap-4">
-          <div v-for="order in sellerOrders" :key="order.id"
+          <div v-for="order in sellerOrders" :key="order.id"  @click="goToDetail(order.id)"
             class="bg-white border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:shadow-md hover:bg-gray-50 transition">
             <div class="flex-1">
               <h3 class="font-semibold text-gray-900">{{ order.product_title }}</h3>
@@ -134,7 +134,10 @@ function openRateModal(id: number) {
 }
 
 function goToDetail(orderId: number) {
-  router.push(`/orders/${orderId}`)
+  router.push({
+    path: `/orders/${orderId}`,
+    query: { role: activeTab.value } // 👈 thêm dòng này
+  })
 }
 function getToken() {
   return localStorage.getItem('token_buyer') || localStorage.getItem('auth_token') || ''

@@ -20,6 +20,11 @@
           Reports</router-link>
         <router-link to="/dashboard/notifications" class="block px-3 py-2 rounded hover:bg-gray-700">🔔
           Notifications</router-link>
+        <router-link to="/dashboard/audit-logs" class="block px-3 py-2 rounded hover:bg-gray-700">🔔
+          Audit Logs</router-link>
+        <router-link to="/dashboard/disputes" class="block px-3 py-2 rounded hover:bg-gray-700">
+          ⚖️ Disputes
+        </router-link>
         <div class="relative">
           <!-- Button / Link chính -->
           <button @click="open = !open"
