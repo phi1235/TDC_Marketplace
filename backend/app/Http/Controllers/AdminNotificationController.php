@@ -7,39 +7,56 @@ use Illuminate\Http\Request;
 
 class AdminNotificationController extends Controller
 {
-    // Tạo mới 1 thông báo
+    // 🔹 Lấy danh sách thông báo admin
+    public function index()
+    {
+        $notifications = AdminNotification::latest()->get();
+
+        return response()->json([
+            'data' => $notifications
+        ]);
+    }
+
+    // 🔹 Tạo mới 1 thông báo
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'type' => 'nullable|string|max:255',
             'title' => 'required|string|max:255',
             'message' => 'required|string',
-            'data' => 'nullable|array',
+            'type' => 'nullable|string',
+            'user_id' => 'nullable|integer', // nếu null => gửi cho tất cả user
         ]);
 
-        $notification = AdminNotification::create([
-            'user_id' => $validated['user_id'],
-            'type' => $validated['type'] ?? 'system',
-            'title' => $validated['title'],
-            'message' => $validated['message'],
-            'data' => $validated['data'] ?? null,
-        ]);
+        // Lưu thông báo admin
+        $notification = AdminNotification::create($validated);
+
+        // Nếu user_id == null => gửi cho tất cả user
+        if (empty($validated['user_id'])) {
+            // Gửi đến tất cả user
+            $users = \App\Models\User::all();
+            foreach ($users as $user) {
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => $validated['type'] ?? 'admin_broadcast',
+                    'title' => $validated['title'],
+                    'message' => $validated['message'],
+                    'data' => json_encode(['admin_notification_id' => $notification->id]),
+                ]);
+            }
+        } else {
+            // Gửi cho user cụ thể
+            \App\Models\Notification::create([
+                'user_id' => $validated['user_id'],
+                'type' => $validated['type'] ?? 'admin_direct',
+                'title' => $validated['title'],
+                'message' => $validated['message'],
+                'data' => json_encode(['admin_notification_id' => $notification->id]),
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Tạo thông báo thành công',
+            'message' => 'Notification created successfully',
             'data' => $notification
         ], 201);
-    }
-
-    // Lấy danh sách thông báo của user
-    public function index(Request $request)
-    {
-        $user = $request->user();
-        $notifications = AdminNotification::where('user_id', $user->id)
-            ->orderByDesc('created_at')
-            ->get();
-
-        return response()->json($notifications);
     }
 }

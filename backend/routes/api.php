@@ -243,7 +243,12 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 //admin push
 // Route để admin gửi thông báo
-Route::middleware(['auth:sanctum', 'is_admin'])->post('/admin/notifications', [AdminNotificationController::class, 'store']);
+// Route::middleware(['auth:sanctum', 'is_admin'])->post('/admin/notifications', [AdminNotificationController::class, 'store']);
 
 // Route để user xem thông báo
-Route::middleware('auth:sanctum')->get('/user/notifications', [AdminNotificationController::class, 'index']);
+// Route::middleware('auth:sanctum')->get('/user/notifications', [AdminNotificationController::class, 'index']);
+
+Route::prefix('dashboard')->group(function () {
+    Route::middleware(['auth:sanctum', 'role:admin'])->post('/notifications', [AdminNotificationController::class, 'store']);
+    Route::middleware('auth:sanctum')->get('/notifications', [AdminNotificationController::class, 'index']);
+});
