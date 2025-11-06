@@ -518,26 +518,55 @@ onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfO
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 //user notification
+// user notification
 async function fetchNotificationCount() {
   try {
+    console.log('🔹 Bắt đầu gọi API thông báo...')
+    console.log('🚀 Gọi fetchNotificationCount()')
     const res = await userNotificationsService.list()
-    console.log(res);
+    console.log('🔹 API trả về:', res)
 
-    // res.data là { data: [...] }
-    const notifications = res.data || [] // lấy mảng thông báo từ res.data
-    // nếu chỉ muốn hệ thống:
+    // Kiểm tra đúng cấu trúc dữ liệu
+    const notifications = Array.isArray(res.data)
+      ? res.data
+      : res.data?.data || []
+
+    // Lọc loại system
     const systemNotifications = notifications.filter(n => n.type === 'system')
     notificationCount.value = systemNotifications.length
-    console.log('notificationCount:', notificationCount.value)
+
+    console.log('🔹 notificationCount:', notificationCount.value)
   } catch (err) {
-    console.error(err)
+    console.error('❌ Lỗi khi lấy thông báo:', err)
     notificationCount.value = 0
   }
 }
 
 onMounted(() => {
+  console.log('🔹 Header mounted')
+  const token = localStorage.getItem('token')
+  console.log('🔹 Token:', token)
+
+  // Nếu không có token => không gọi API
+  if (!token) return
+
   fetchNotificationCount()
 })
+
+watch(
+  () => auth.token,
+  (newToken) => {
+    console.log("🔑 Token thay đổi:", newToken)
+    if (newToken) {
+      fetchNotificationCount()
+    } else {
+      notificationCount.value = 0
+    }
+  },
+  { immediate: true }
+)
+
+
 </script>
 
 <style scoped>
