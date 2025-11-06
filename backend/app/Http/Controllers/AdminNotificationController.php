@@ -72,4 +72,17 @@ class AdminNotificationController extends Controller
         return response()->json(['message' => 'Xóa thông báo thành công']);
     }
 
+    public function userNotifications(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $notifications = \App\Models\AdminNotification::whereNull('user_id')
+            ->orWhere('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $notifications,
+        ]);
+    }
 }

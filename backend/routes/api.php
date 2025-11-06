@@ -242,15 +242,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{id}/pickup', [\App\Http\Controllers\OrderController::class, 'setPickup']);
 });
 //admin push
-// Route để admin gửi thông báo
-// Route::middleware(['auth:sanctum', 'is_admin'])->post('/admin/notifications', [AdminNotificationController::class, 'store']);
-
-// Route để user xem thông báo
-// Route::middleware('auth:sanctum')->get('/user/notifications', [AdminNotificationController::class, 'index']);
-
 Route::prefix('dashboard')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/notifications', [AdminNotificationController::class, 'store']);
     Route::get('/notifications', [AdminNotificationController::class, 'index']);
     Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']);
 });
 
+//user xem thông báo hệ thống
+Route::middleware('auth:sanctum')->get('/notifications', [AdminNotificationController::class, 'userNotifications']);
