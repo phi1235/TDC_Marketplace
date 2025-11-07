@@ -114,7 +114,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { showToast } from '@/utils/toast'
 import { useRouter } from 'vue-router'
-import RateUserModal from './RateUserModal.vue'
+import RateUserModal from '@/components/orders/RateUserModal.vue'
 
 const router = useRouter()
 
