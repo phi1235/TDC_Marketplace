@@ -127,7 +127,7 @@ class OrderController extends Controller
 
    public function show($id)
 {
-    $order = \App\Models\Order::with([
+   $order = \App\Models\Order::with([
         'seller:id,name,email,phone,total_sales,total_revenue,rating,total_ratings',
         'buyer:id,name,email,phone',
         'listing' => function ($q) {
@@ -136,6 +136,7 @@ class OrderController extends Controller
                 'images:id,listing_id,image_path,is_primary',
             ]);
         },
+        'escrowAccount', // 👈 THÊM DÒNG NÀY
     ])->findOrFail($id);
 
     if ($order->listing && $order->listing->images) {
