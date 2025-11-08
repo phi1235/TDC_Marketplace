@@ -135,6 +135,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-listings', [ListingController::class, 'myListings']);
     Route::post('/listings/{listing}/duplicate', [ListingController::class, 'duplicate']);
     Route::post('/listings/{listing}/toggle-status', [ListingController::class, 'toggleStatus']);
+    // Lấy chỉ listing pending
+    Route::get('/my-listings/pending', [ListingController::class, 'checkPending']);
     //New: Recommended / related listings
 
     // Media upload

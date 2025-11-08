@@ -230,18 +230,28 @@
             <div v-if="isAuthenticated">
               <button @click="isOpen = !isOpen">
                 🔔
-                <span v-if="unreadCount > 0"
+                <span v-if="notificationUser.count > 0"
                   class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
-                  {{ unreadCount }}
+                  {{ notificationUser.count }}
                 </span>
               </button>
             </div>
             <transition name="fade-slide">
               <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
-                <div v-for="value in notifications" key="index" class="p-3 hover:bg-gray-100 cursor-pointer border">
-                  <p> {{ value.title }} </p>
+                <div v-if="notificationUser.count === 0" class="p-3 text-gray-500 text-center">
+                  Không có thông báo
                 </div>
-                <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100">
+                <div v-else class="p-3 hover:bg-gray-100 cursor-pointer border-b">
+                  <p>
+                    {{ 'Bạn đang có ' + notificationUser.listings.length + ' tin chờ duyệt'}}
+                  </p>
+                </div>
+                <!-- <div v-else v-for="listing in notificationUser.listings" :key="listing.id"
+                  class="p-3 hover:bg-gray-100 cursor-pointer border-b">
+                  <p>{{ listing.title + ' đang chờ duyệt !!!' }}</p>
+                </div> -->
+
+                <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100 border-t">
                   Xem tất cả thông báo
                 </router-link>
               </div>
@@ -276,6 +286,11 @@ import { userNotificationsService } from '@/services/userNotifications'
 const router = useRouter()
 const auth = useAuthStore()
 const notificationCount = ref(0)
+const notificationUser = ref({
+  count: 0,
+  listings: [],
+  message: ''
+})
 
 const searchQuery = ref('')
 const engine = ref('es') // 
@@ -570,6 +585,38 @@ watch(
   { immediate: true }
 )
 
+async function fetchNotificationUser() {
+  try {
+    const res = await userNotificationsService.listPending()
+    notificationUser.value = res
+
+    if (res.count > 0) {
+      showToast('info', res.message) // "Bạn có tin đang chờ duyệt."
+      console.log('thong báo', notificationUser.value);
+      
+    }
+  } catch (err) {
+    console.error('❌ Lỗi khi lấy thông báo:', err)
+    notificationUser.value = 0
+  }
+}
+
+// Khi component mount
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  if (!token) return
+  fetchNotificationUser()
+})
+
+// Khi token thay đổi
+watch(
+  () => auth.token,
+  (newToken) => {
+    if (newToken) fetchNotificationUser()
+    else notificationUser.value = 0
+  },
+  { immediate: true }
+)
 
 </script>
 

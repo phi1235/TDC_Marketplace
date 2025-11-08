@@ -538,4 +538,22 @@ class ListingController extends Controller
             'data' => $listings,
         ]);
     }
+
+    // Lấy listing pending của user
+    public function checkPending(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $pendingListings = Listing::where('seller_id', $userId)
+            ->where('status', 'pending')
+            ->get();
+
+        return response()->json([
+            'count' => $pendingListings->count(),
+            'listings' => $pendingListings,
+            'message' => $pendingListings->count()
+                ? 'Bạn có tin đang chờ duyệt.'
+                : 'Không có tin nào đang chờ duyệt.'
+        ]);
+    }
 }
