@@ -1,42 +1,33 @@
 <?php
-// app/Http/Controllers/SupportController.php
+
 namespace App\Http\Controllers;
 
-use App\Mail\SupportContactMail;
-use App\Models\SupportRequest;
+use App\Mail\ContactMessageMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\ValidationException;
 
-class SupportController extends Controller
+class ContactController extends Controller
 {
     public function contact(Request $request)
     {
         $data = $request->validate([
-            'name'    => ['required','string','max:255'],
-            'email'   => ['required','email','max:255'],
-            'topic'   => ['nullable','string','max:50'],
-            'message' => ['required','string','min:10','max:5000'],
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'required|string|min:10',
         ]);
 
-        // lưu DB (tuỳ chọn)
-        $support = SupportRequest::create([
-            'user_id' => optional($request->user())->id,
-            'name'    => $data['name'],
-            'email'   => $data['email'],
-            'topic'   => $data['topic'] ?? null,
-            'message' => $data['message'],
-            'status'  => 'open',
-        ]);
+        $to = config('mail.support_to', env('MAIL_SUPPORT_TO', 'support@tdc-marketplace.vn'));
 
-        // Gửi mail đến support (Mailpit trong Sail)
-        // chỉnh lại địa chỉ nhận nếu cần
-        $to = config('mail.support_to', 'support@tdc-marketplace.vn');
-        Mail::to($to)->send(new SupportContactMail($data));
+        \Mail::send('emails.contact_message', [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'subject' => $data['subject'] ?? null,
+            'messageContent' => $data['message'],
+        ], function ($m) use ($to, $data) {
+            $m->to($to)->subject('[TDC Marketplace] Liên hệ: ' . ($data['subject'] ?? 'Không có chủ đề'));
+        });
 
-        return response()->json([
-            'message' => 'Gửi yêu cầu hỗ trợ thành công.',
-            'id'      => $support->id,
-        ], 201);
+        return response()->json(['message' => 'Đã gửi email liên hệ'], 200);
     }
 }

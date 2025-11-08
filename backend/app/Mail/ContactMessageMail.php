@@ -1,13 +1,12 @@
 <?php
 
-// app/Mail/SupportContactMail.php
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class SupportContactMail extends Mailable
+class ContactMessageMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -20,8 +19,8 @@ class SupportContactMail extends Mailable
 
     public function build()
     {
-        return $this->subject('[TDC Marketplace] Yêu cầu hỗ trợ mới')
-            ->view('emails.support_contact'); // tạo view bên dưới
+        $subject = '[TDC Contact] ' . ($this->payload['subject'] ?? 'Liên hệ mới');
+        return $this->subject($subject)
+            ->markdown('emails.contact_message');
     }
 }
-

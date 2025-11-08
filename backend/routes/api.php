@@ -32,6 +32,8 @@ use App\Http\Controllers\PickupPointController;
 use App\Http\Controllers\ListingPickupController;
 //support
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\SupportRequestController;
+use App\Http\Controllers\ContactController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -50,9 +52,7 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/legal/terms', [LegalController::class, 'terms']); // public
 Route::get('/pickup-points', [PickupPointController::class, 'index']);
-Route::post('/support/contact', [SupportController::class, 'contact'])
-    ->middleware('throttle:10,1');
-
+Route::post('/support/contact', [ContactController::class, 'contact']); // public
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
 Route::get('/search/suggestions', [SearchController::class, 'suggestions']);

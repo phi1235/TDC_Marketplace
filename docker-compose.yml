@@ -1,6 +1,20 @@
 # version: '3.8'
 
 services:
+laravel.test:
+    # ...
+    depends_on:
+      - mysql
+      - mailpit
+
+  mailpit:
+    image: axllent/mailpit:latest
+  restart: unless-stopped
+  ports:
+    - "8025:8025"
+    - "1025:1025"
+  networks:
+    - tdc-network
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -35,6 +49,7 @@ services:
     depends_on:
       - mysql
       - elasticsearch
+      - mailpit
     environment:
       DB_CONNECTION: mysql
       DB_HOST: mysql
