@@ -17,7 +17,7 @@
           <SellerInfoCard :seller="order.seller" />
           <OrderActions :order="order" :is-buyer="isBuyer" :is-seller="isSeller" :action-loading="actionLoading"
             @open-pay="showPayModal = true" @confirm="confirmOrder" @ship="markShipped" @delivered="markDelivered"
-            @complete="completeOrder" @rate="openRateModal" />
+            @complete="completeOrder" @rate="openRateModal" @confirm-free="confirmFreeOrder"/>
 
           <!-- Khiếu nại -->
           <div v-if="order.status === 'delivered' || order.status === 'completed'"
@@ -174,6 +174,17 @@ async function completeOrder() {
     showToast('error', err?.response?.data?.message || 'Không thể hoàn tất đơn hàng.')
   } finally {
     actionLoading.value = false
+  }
+}
+async function confirmFreeOrder() {
+  try {
+    const res = await axios.post(`/api/orders/${order.value.id}/confirm-free`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order)
+    showToast('success', res.data.message || 'Đơn hàng 0đ đã được xác nhận!')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể xác nhận đơn miễn phí.')
   }
 }
 function openRateModal(id: number) {
