@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ActivityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminReportController;
 // rbac user api
 use App\Http\Controllers\UserController;
 // FollowSeller
@@ -24,6 +25,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ElasticSearchController;
 use App\Http\Controllers\SolrController;
 use App\Http\Controllers\RatingController;
+//admin push
+use App\Http\Controllers\AdminNotificationController;
 //Notification
 use App\Http\Controllers\Api\NotificationController;
 //legal
@@ -31,6 +34,9 @@ use App\Http\Controllers\LegalController;
 //pickup point
 use App\Http\Controllers\PickupPointController;
 use App\Http\Controllers\ListingPickupController;
+
+//dispute
+use App\Http\Controllers\DisputeController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -87,6 +93,11 @@ Route::middleware('auth:sanctum')->group(function () {
     //điều khoản
     Route::get('/legal/consent-status', [LegalController::class, 'consentStatus']);
     Route::post('/legal/consent', [LegalController::class, 'consent']);
+
+    Route::post('/disputes', [DisputeController::class, 'store']);
+    Route::get('/disputes', [DisputeController::class, 'index']);
+    Route::get('/disputes/{id}', [DisputeController::class, 'show']);
+    Route::post('/disputes/{id}/close', [DisputeController::class, 'close']);
 
     // Ví dụ bảo vệ API cần consent:
     // Route::middleware('terms')->group(function () {
@@ -163,6 +174,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports management
         Route::get('/reports', [AdminController::class, 'reports']);
         Route::post('/reports/{report}/handle', [AdminController::class, 'handleReport']);
+        Route::get('/reports/export', [AdminReportController::class, 'export']);
 
         // Audit logs
         Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
@@ -176,6 +188,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users management
         Route::get('/users', [AdminController::class, 'users']);
         Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus']);
+
+        //admin dispute
+        Route::get('/disputes', [DisputeController::class, 'adminIndex']);
+        Route::get('/disputes/{id}', [DisputeController::class, 'adminShow']);
+        Route::put('/disputes/{id}', [DisputeController::class, 'adminUpdate']);
     });
 });
 //rbac api user
@@ -246,3 +263,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications', [NotificationController::class, 'store']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 });
+//admin push
+Route::prefix('dashboard')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/notifications', [AdminNotificationController::class, 'store']);
+    Route::get('/notifications', [AdminNotificationController::class, 'index']);
+    Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy']);
+});
+
+//user xem thông báo hệ thống
+Route::middleware('auth:sanctum')->get('/notifications', [AdminNotificationController::class, 'userNotifications']);

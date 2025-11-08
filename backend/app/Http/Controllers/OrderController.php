@@ -125,12 +125,32 @@ class OrderController extends Controller
         return response()->json($orders);
     }
 
-    public function show($id)
-    {
-        $order = \App\Models\Order::with(['seller:id,name,email,phone', 'buyer:id,name,email'])
-            ->findOrFail($id);
-        return response()->json($order);
+   public function show($id)
+{
+   $order = \App\Models\Order::with([
+        'seller:id,name,email,phone,total_sales,total_revenue,rating,total_ratings',
+        'buyer:id,name,email,phone',
+        'listing' => function ($q) {
+            $q->with([
+                'category:id,name',
+                'images:id,listing_id,image_path,is_primary',
+            ]);
+        },
+        'escrowAccount', // 👈 THÊM DÒNG NÀY
+    ])->findOrFail($id);
+
+    if ($order->listing && $order->listing->images) {
+        $order->listing->images->transform(function ($img) {
+            $img->full_url = asset('storage/' . $img->image_path);
+            return $img;
+        });
     }
+
+    return response()->json([
+        'success' => true,
+        'order' => $order
+    ]);
+}
     public function payWithEscrow($id)
     {
         try {

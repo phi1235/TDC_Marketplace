@@ -1,146 +1,195 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-10">
-    <div
-      class="container mx-auto px-4 max-w-3xl bg-white rounded-lg shadow-sm border border-gray-200 p-6 transition-all duration-300"
-      :class="{ 'opacity-50 pointer-events-none': paying }">
-      <h1 class="text-2xl font-bold text-gray-900 mb-4">Chi tiết đơn hàng</h1>
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8 border-b pb-3">Chi tiết đơn hàng</h1>
 
-      <div v-if="loading" class="text-gray-500 italic">Đang tải thông tin...</div>
-      <div v-else-if="error" class="text-red-600">{{ error }}</div>
+      <!-- Loading -->
+      <div v-if="loading" class="text-gray-500 italic text-center py-10">
+        Đang tải thông tin đơn hàng...
+      </div>
+      <div v-else-if="error" class="text-red-600 text-center py-10">{{ error }}</div>
 
-      <div v-else-if="order" class="space-y-2">
-        <p><strong>Mã đơn:</strong> {{ order.order_number }}</p>
-        <p><strong>Sản phẩm:</strong> {{ order.product_title }}</p>
-        <div class="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 mt-4 shadow-sm">
-          <h2 class="font-semibold text-green-700 mb-2 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Thông tin người bán
-          </h2>
+      <!-- Content -->
+      <div v-else-if="order" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <OrderSummary :order="order" />
 
-          <p><strong>Tên:</strong> {{ order.seller?.name || 'Không có dữ liệu' }}</p>
-          <p><strong>Email:</strong> {{ order.seller?.email || 'Không có dữ liệu' }}</p>
-          <p><strong>Số điện thoại:</strong> {{ order.seller?.phone || 'Không có dữ liệu' }}</p>
-        </div>
-        <p><strong>Giá:</strong> {{ formatPrice(order.total_amount) }}</p>
-        <p><strong>Trạng thái:</strong> {{ getStatusText(order.status) }}</p>
+        <div class="space-y-6">
+          <SellerInfoCard :seller="order.seller" />
+          <OrderActions :order="order" :is-buyer="isBuyer" :is-seller="isSeller" :action-loading="actionLoading"
+            @open-pay="showPayModal = true" @confirm="confirmOrder" @ship="markShipped" @delivered="markDelivered"
+            @complete="completeOrder" @rate="openRateModal" />
 
-        <div class="mt-6">
-          <!-- Nút thanh toán -->
-          <button v-if="order.status === 'pending'" @click="payOrder" :disabled="paying"
-            class="relative px-6 py-3 text-white rounded-lg transition-all duration-300 ease-in-out shadow-md focus:outline-none"
-            :class="[
-              paying
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 active:scale-95'
-            ]">
-            <span v-if="!paying" class="flex items-center justify-center gap-2">
-              💳 Thanh toán ngay
-            </span>
-
-            <!-- Loading spinner -->
-            <span v-else class="flex items-center justify-center gap-2">
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
-              Đang xử lý...
-            </span>
-          </button>
-
-          <!-- Đã thanh toán -->
-          <transition name="fade">
-            <p v-if="order.status === 'paid'" class="text-green-700 font-semibold mt-3 flex items-center gap-2">
-              ✅ <span>Thanh toán thành công! Tiền đang được giữ an toàn.</span>
+          <!-- Khiếu nại -->
+          <div v-if="order.status === 'delivered' || order.status === 'completed'"
+            class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">⚠️ Khiếu nại giao dịch</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Nếu bạn gặp sự cố trong giao dịch này, hãy gửi khiếu nại để được hỗ trợ bởi ban quản trị.
             </p>
-          </transition>
+            <button @click="showModal = true"
+              class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all">
+              🧾 Gửi khiếu nại
+            </button>
+          </div>
+          <div v-else class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 text-gray-500 italic text-xs">
+            ⚠️ Khiếu nại chỉ khả dụng sau khi đơn hàng được giao hoặc hoàn tất.
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Modals -->
+    <DisputeModal v-if="showModal" :order="order" @close="showModal = false" @submitted="handleDisputeSubmitted" />
+    <PayEscrowModal v-if="showPayModal" :order="order" :loading="paying"
+      qr-url="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://google.com"
+      @close="showPayModal = false" @confirm="payOrder" />
+    <RateUserModal :is-open="showRateModal" :order-id="selectedOrderId" @close="showRateModal = false"
+      @submitted="handleRated" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { showToast } from '@/utils/toast'
+
+import OrderSummary from '@/components/orders/OrderSummary.vue'
+import SellerInfoCard from '@/components/orders/SellerInfoCard.vue'
+import OrderActions from '@/components/orders/OrderActions.vue'
+import PayEscrowModal from '@/components/orders/PayEscrowModal.vue'
+import DisputeModal from '@/components/orders/DisputeModal.vue'
+import RateUserModal from '@/components/orders/RateUserModal.vue'
 
 const route = useRoute()
 const order = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
-const paying = ref(false) // trạng thái loading khi thanh toán
+const paying = ref(false)
+const actionLoading = ref(false)
+const showModal = ref(false)
+const showPayModal = ref(false)
+const currentUser = ref<any>(null)
+const showRateModal = ref(false)
+const selectedOrderId = ref<number | null>(null)
 
 function getToken() {
-  return localStorage.getItem('auth_token') || ''
+  return localStorage.getItem('token_buyer') || localStorage.getItem('auth_token') || ''
 }
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(price || 0))
-}
-
-function getStatusText(status: string) {
-  const map: Record<string, string> = {
-    pending: 'Chờ thanh toán',
-    confirmed: 'Đã xác nhận',
-    paid: 'Đã thanh toán',
-    shipped: 'Đang giao',
-    delivered: 'Đã giao',
-    completed: 'Hoàn tất',
+function getCurrentUser() {
+  try {
+    return JSON.parse(localStorage.getItem('auth_user') || localStorage.getItem('user') || 'null')
+  } catch {
+    return null
   }
-  return map[status] || status
 }
+
+const isBuyer = computed(() => currentUser.value && order.value && currentUser.value.id === order.value.buyer_id)
+const isSeller = computed(() => currentUser.value && order.value && currentUser.value.id === order.value.seller_id)
 
 async function loadOrder() {
   loading.value = true
   try {
     const res = await axios.get(`/api/orders/${route.params.id}`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
+      headers: { Authorization: `Bearer ${getToken()}` }
     })
-    order.value = res.data
+    order.value = res.data.order || res.data
   } catch (err: any) {
-    error.value = err?.response?.data?.message || 'Không thể tải thông tin đơn hàng'
+    error.value = err?.response?.data?.message || 'Không thể tải đơn hàng'
   } finally {
     loading.value = false
   }
 }
 
 async function payOrder() {
-  if (!order.value) return
   paying.value = true
   try {
-    const res = await axios.post(
-      `/api/orders/${route.params.id}/escrow-pay`,
-      {},
-      { headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' } }
-    )
-    order.value.status = 'paid'
-    showToast('success', res.data.message || 'Thanh toán thành công!')
+    const res = await axios.post(`/api/orders/${order.value.id}/escrow-pay`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order);
+    showPayModal.value = false
+    showToast('success', res.data.message || 'Thanh toán thành công! Tiền đang được giữ an toàn.')
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Không thể thanh toán đơn hàng.'
-    showToast('error', msg)
-    console.error('Thanh toán thất bại:', err?.response || err)
+    showToast('error', err?.response?.data?.message || 'Không thể xác nhận thanh toán.')
   } finally {
     paying.value = false
   }
 }
 
-onMounted(loadOrder)
+async function confirmOrder() {
+  actionLoading.value = true
+  try {
+    const res = await axios.post(`/api/orders/${order.value.id}/confirm`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order);
+    showToast('success', res.data.message || 'Đã xác nhận đơn hàng.')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể xác nhận đơn hàng.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function markShipped() {
+  actionLoading.value = true
+  try {
+    const res = await axios.post(`/api/orders/${order.value.id}/ship`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order);
+    showToast('success', res.data.message)
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể cập nhật trạng thái.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function markDelivered() {
+  actionLoading.value = true
+  try {
+    const res = await axios.post(`/api/orders/${order.value.id}/deliver`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order);
+    showToast('success', res.data.message)
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể cập nhật trạng thái.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function completeOrder() {
+  actionLoading.value = true
+  try {
+    const res = await axios.post(`/api/orders/${order.value.id}/complete`, {}, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    })
+    Object.assign(order.value, res.data.order);
+    showToast('success', res.data.message)
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || 'Không thể hoàn tất đơn hàng.')
+  } finally {
+    actionLoading.value = false
+  }
+}
+function openRateModal(id: number) {
+  selectedOrderId.value = id
+  showRateModal.value = true
+}
+function handleRated() {
+  if (order.value) order.value.has_rated = true
+}
+function handleDisputeSubmitted() {
+  showToast('success', '🎫 Khiếu nại đã được gửi thành công!')
+  showModal.value = false
+}
+
+onMounted(async () => {
+  currentUser.value = getCurrentUser()
+  await loadOrder()
+})
 </script>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>

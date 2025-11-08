@@ -160,7 +160,7 @@
                 class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
                 Đăng tin
               </router-link>
-             
+
             </template>
 
             <!-- User menu -->
@@ -175,6 +175,18 @@
 
               <div v-if="showUserMenu"
                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                <div class="relative">
+                  <router-link to="/notifications"
+                    class="relative block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="showUserMenu = false">
+                    Thông báo hệ thống
+                    <span v-if="notificationCount > 0"
+                      class="absolute top-1 right-4 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                      {{ notificationCount }}
+                    </span>
+                  </router-link>
+                </div>
+
                 <router-link to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="showUserMenu = false">
                   Hồ sơ
@@ -189,11 +201,10 @@
                     Đơn hàng của tôi 📦
                   </router-link>
                 </div>
-                <router-link to="/my-listings"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click="showUserMenu = false">
-                Tin của tôi
-              </router-link>
+                <router-link to="/my-listings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Tin của tôi
+                </router-link>
                 <router-link to="/my-reports" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="showUserMenu = false">
                   Báo cáo của tôi
@@ -201,6 +212,10 @@
                 <router-link to="/my-activity" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   @click="showUserMenu = false">
                   Hoạt động của tôi
+                </router-link>
+                <router-link to="/my-disputes" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="showUserMenu = false">
+                  Khiếu nại của tôi ⚖️
                 </router-link>
                 <button @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -255,9 +270,12 @@ import { showToast } from '@/utils/toast'
 import { getWishes } from '@/services/wishlist'
 import { useWishlistStore } from '@/stores/wishlist'
 import { fire } from '@/services/activities'
+//notifications user
+import { userNotificationsService } from '@/services/userNotifications'
 
 const router = useRouter()
 const auth = useAuthStore()
+const notificationCount = ref(0)
 
 const searchQuery = ref('')
 const engine = ref('es') // 
@@ -502,6 +520,57 @@ onMounted(() => document.addEventListener('click', closeNotificationIfOutside))
 onBeforeUnmount(() => document.removeEventListener('click', closeNotificationIfOutside))
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+
+//user notification
+// user notification
+async function fetchNotificationCount() {
+  try {
+    console.log('🔹 Bắt đầu gọi API thông báo...')
+    console.log('🚀 Gọi fetchNotificationCount()')
+    const res = await userNotificationsService.list()
+    console.log('🔹 API trả về:', res)
+
+    // Kiểm tra đúng cấu trúc dữ liệu
+    const notifications = Array.isArray(res.data)
+      ? res.data
+      : res.data?.data || []
+
+    // Lọc loại system
+    const systemNotifications = notifications.filter(n => n.type === 'system')
+    notificationCount.value = systemNotifications.length
+
+    console.log('🔹 notificationCount:', notificationCount.value)
+  } catch (err) {
+    console.error('❌ Lỗi khi lấy thông báo:', err)
+    notificationCount.value = 0
+  }
+}
+
+onMounted(() => {
+  console.log('🔹 Header mounted')
+  const token = localStorage.getItem('token')
+  console.log('🔹 Token:', token)
+
+  // Nếu không có token => không gọi API
+  if (!token) return
+
+  fetchNotificationCount()
+})
+
+watch(
+  () => auth.token,
+  (newToken) => {
+    console.log("🔑 Token thay đổi:", newToken)
+    if (newToken) {
+      fetchNotificationCount()
+    } else {
+      notificationCount.value = 0
+    }
+  },
+  { immediate: true }
+)
+
+
 </script>
 
 <style scoped>

@@ -10,6 +10,19 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
     },
     {
+      path: '/my-disputes',
+      name: 'my-disputes',
+      component: () => import('@/views/disputes/MyDisputes.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/my-disputes/:id',
+      name: 'my-disputes-detail',
+      component: () => import('@/views/disputes/DisputeDetail.vue'),
+      meta: { requiresAuth: true },
+      props: true,
+    },
+    {
       path: '/orders/my',
       name: 'MyOrders',
       component: () => import('../views/orders/MyOrders.vue'),
@@ -123,6 +136,24 @@ const router = createRouter({
           component: () => import('@/views/admin/AdminAuditLogsView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
+        {
+          path: 'disputes',
+          name: 'dashboard-disputes',
+          component: () => import('@/views/admin/AdminDisputes.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'disputes/:id',
+          name: 'dashboard-dispute-detail',
+          component: () => import('@/views/admin/AdminDisputeDetail.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'notifications',
+          name: 'AdminNotifications',
+          component: () => import('@/views/dashboard/AdminNotifications.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
       ],
     },
     {
@@ -206,6 +237,12 @@ const router = createRouter({
       path: '/faq',
       name: 'faq',
       component: () => import('@/views/faq/faqView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/notifications',
+      name: 'UserNotifications',
+      component: () => import('@/views/dashboard/UserNotifications.vue'),
       meta: { requiresAuth: true },
     },
   ],

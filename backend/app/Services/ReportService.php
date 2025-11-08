@@ -7,6 +7,8 @@ use App\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportService
 {
@@ -40,7 +42,7 @@ class ReportService
         ]);
 
         $this->logReportCreation($report, $data);
-        
+
         return $report;
     }
 
@@ -134,7 +136,7 @@ class ReportService
             $s = trim((string) $filters['search']);
             $query->where(function ($q) use ($s) {
                 $q->where('reason', 'like', "%$s%")
-                  ->orWhere('description', 'like', "%$s%");
+                    ->orWhere('description', 'like', "%$s%");
             });
         }
 
@@ -146,7 +148,7 @@ class ReportService
             $id = $r->reportable_id;
             $r->reportable_title = null;
             if ($type === 'listing') {
-                $listing = DB::table('listings')->select('title','status','seller_id')->where('id', $id)->first();
+                $listing = DB::table('listings')->select('title', 'status', 'seller_id')->where('id', $id)->first();
                 if ($listing) {
                     $r->reportable_title = $listing->title;
                     $r->reportable_status = $listing->status;
@@ -237,4 +239,155 @@ class ReportService
             default => 'Cập nhật trạng thái báo cáo',
         };
     }
+   public function exportCsv($reports): string
+{
+    $output = fopen('php://temp', 'r+');
+
+    // ✨ Tiêu đề cột tiếng Việt
+    fputcsv($output, [
+        'ID',
+        'Người báo cáo',
+        'Loại đối tượng',
+        'Tiêu đề',
+        'Lý do',
+        'Mô tả',
+        'Trạng thái',
+        'Ngày tạo'
+    ]);
+
+    // Map lý do & trạng thái giống Vue
+    $reasonMap = [
+        'fraud' => 'Lừa đảo',
+        'fake_product' => 'Hàng giả',
+        'spam' => 'Spam',
+        'inappropriate_content' => 'Nội dung không phù hợp',
+        'price_manipulation' => 'Thao túng giá',
+        'fake_reviews' => 'Đánh giá giả',
+        'harassment' => 'Quấy rối',
+        'copyright_violation' => 'Vi phạm bản quyền',
+        'other' => 'Khác',
+    ];
+    $statusMap = [
+        'pending' => 'Chờ xử lý',
+        'reviewed' => 'Đang xem xét',
+        'resolved' => 'Đã xử lý',
+        'dismissed' => 'Bị từ chối',
+    ];
+    $typeMap = [
+        'listing' => 'Tin rao',
+        'user' => 'Người dùng',
+        'review' => 'Đánh giá',
+        'App\\Models\\Listing' => 'Tin rao',
+        'App\\Models\\User' => 'Người dùng',
+        'App\\Models\\Review' => 'Đánh giá',
+    ];
+
+    foreach ($reports as $r) {
+        $reporterName = \App\Models\User::where('id', $r->reporter_id)->value('name') ?? 'Không rõ';
+        $reasonLabel = $reasonMap[$r->reason] ?? $r->reason;
+        $statusLabel = $statusMap[$r->status] ?? $r->status;
+        $typeLabel = $typeMap[$r->reportable_type] ?? $r->reportable_type;
+
+        // Lấy tiêu đề và link (nếu có)
+        $title = $r->reportable_title ?? '';
+        $link = $r->report_link ?? '';
+
+        fputcsv($output, [
+            $r->id,
+            $reporterName,
+            $typeLabel,
+            $title,
+            $reasonLabel,
+            $r->description,
+            $statusLabel,
+            optional($r->created_at)->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    rewind($output);
+    $csv = stream_get_contents($output);
+    fclose($output);
+
+    // 💡 Thêm BOM để Excel đọc tiếng Việt đúng
+    $csv = "\xEF\xBB\xBF" . $csv;
+
+    return $csv;
+}
+
+
+public function exportXlsx($reports): string
+{
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    $sheet->fromArray([
+        'ID',
+        'Người báo cáo',
+        'Loại đối tượng',
+        'Tiêu đề',
+        'Lý do',
+        'Mô tả',
+        'Trạng thái',
+        'Ngày tạo'
+    ], null, 'A1');
+
+    $reasonMap = [
+        'fraud' => 'Lừa đảo',
+        'fake_product' => 'Hàng giả',
+        'spam' => 'Spam',
+        'inappropriate_content' => 'Nội dung không phù hợp',
+        'price_manipulation' => 'Thao túng giá',
+        'fake_reviews' => 'Đánh giá giả',
+        'harassment' => 'Quấy rối',
+        'copyright_violation' => 'Vi phạm bản quyền',
+        'other' => 'Khác',
+    ];
+    $statusMap = [
+        'pending' => 'Chờ xử lý',
+        'reviewed' => 'Đang xem xét',
+        'resolved' => 'Đã xử lý',
+        'dismissed' => 'Bị từ chối',
+    ];
+    $typeMap = [
+        'listing' => 'Tin rao',
+        'user' => 'Người dùng',
+        'review' => 'Đánh giá',
+        'App\\Models\\Listing' => 'Tin rao',
+        'App\\Models\\User' => 'Người dùng',
+        'App\\Models\\Review' => 'Đánh giá',
+    ];
+
+    $row = 2;
+    foreach ($reports as $r) {
+        $reporterName = \App\Models\User::where('id', $r->reporter_id)->value('name') ?? 'Không rõ';
+        $reasonLabel = $reasonMap[$r->reason] ?? $r->reason;
+        $statusLabel = $statusMap[$r->status] ?? $r->status;
+        $typeLabel = $typeMap[$r->reportable_type] ?? $r->reportable_type;
+
+        $title = $r->reportable_title ?? '';
+        $sheet->fromArray([
+            $r->id,
+            $reporterName,
+            $typeLabel,
+            $title,
+            $reasonLabel,
+            $r->description,
+            $statusLabel,
+            optional($r->created_at)->format('Y-m-d H:i:s'),
+        ], null, "A{$row}");
+        $row++;
+    }
+
+    // ✅ Auto-fit tất cả cột
+    foreach (range('A','I') as $col) {
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+    }
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $temp = tmpfile();
+    $path = stream_get_meta_data($temp)['uri'];
+    $writer->save($path);
+    return file_get_contents($path);
+}
+
 }
