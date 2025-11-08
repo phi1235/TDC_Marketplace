@@ -238,17 +238,15 @@
             </div>
             <transition name="fade-slide">
               <div v-if="isOpen" class="absolute right-0 top-9 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
-                <div v-if="notificationUser.count === 0" class="p-3 text-gray-500 text-center">
+                <!-- Khi không có thông báo -->
+                <div v-if="notificationStore.notificationUser.count === 0" class="p-3 text-gray-500 text-center">
                   Không có thông báo
                 </div>
-                <!-- <div v-else class="p-3 hover:bg-gray-100 cursor-pointer border-b">
-                  <p>
-                    {{ 'Bạn đang có ' + notificationUser.listings.length + ' tin chờ duyệt'}}
-                  </p>
-                </div> -->
-                <div v-else v-for="listing in notificationUser.listings" :key="listing.id"
+
+                <!-- Khi có thông báo -->
+                <div v-else v-for="listing in notificationStore.notificationUser.listings" :key="listing.id"
                   class="p-3 hover:bg-gray-100 cursor-pointer border-b">
-                  <p>{{ listing.title + ' đang chờ duyệt !!!' }}</p>
+                  <p>{{ listing.title }} đang chờ duyệt !!!</p>
                 </div>
 
                 <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100 border-t">
@@ -256,6 +254,7 @@
                 </router-link>
               </div>
             </transition>
+
           </div>
 
           <!-- Dark Mode -->
