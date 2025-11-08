@@ -241,15 +241,15 @@
                 <div v-if="notificationUser.count === 0" class="p-3 text-gray-500 text-center">
                   Không có thông báo
                 </div>
-                <div v-else class="p-3 hover:bg-gray-100 cursor-pointer border-b">
+                <!-- <div v-else class="p-3 hover:bg-gray-100 cursor-pointer border-b">
                   <p>
                     {{ 'Bạn đang có ' + notificationUser.listings.length + ' tin chờ duyệt'}}
                   </p>
-                </div>
-                <!-- <div v-else v-for="listing in notificationUser.listings" :key="listing.id"
+                </div> -->
+                <div v-else v-for="listing in notificationUser.listings" :key="listing.id"
                   class="p-3 hover:bg-gray-100 cursor-pointer border-b">
                   <p>{{ listing.title + ' đang chờ duyệt !!!' }}</p>
-                </div> -->
+                </div>
 
                 <router-link to="/notifications" class="block text-center py-2 hover:bg-gray-100 border-t">
                   Xem tất cả thông báo

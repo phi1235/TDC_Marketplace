@@ -546,6 +546,7 @@ class ListingController extends Controller
 
         $pendingListings = Listing::where('seller_id', $userId)
             ->where('status', 'pending')
+            ->orderBy('created_at', 'desc') 
             ->get();
 
         return response()->json([
