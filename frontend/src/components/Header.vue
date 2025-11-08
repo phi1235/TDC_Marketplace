@@ -230,9 +230,9 @@
             <div v-if="isAuthenticated">
               <button @click="isOpen = !isOpen">
                 🔔
-                <span v-if="notificationUser.count > 0"
+                <span v-if="notificationStore.notificationUser.count > 0"
                   class="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded-full">
-                  {{ notificationUser.count }}
+                  {{ notificationStore.notificationUser.count }}
                 </span>
               </button>
             </div>
@@ -282,6 +282,8 @@ import { useWishlistStore } from '@/stores/wishlist'
 import { fire } from '@/services/activities'
 //notifications user
 import { userNotificationsService } from '@/services/userNotifications'
+import { useNotificationStore } from '@/stores/notification'
+
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -291,6 +293,7 @@ const notificationUser = ref({
   listings: [],
   message: ''
 })
+const notificationStore = useNotificationStore()
 
 const searchQuery = ref('')
 const engine = ref('es') // 
@@ -585,39 +588,20 @@ watch(
   { immediate: true }
 )
 
-async function fetchNotificationUser() {
-  try {
-    const res = await userNotificationsService.listPending()
-    notificationUser.value = res
-
-    if (res.count > 0) {
-      showToast('info', res.message) // "Bạn có tin đang chờ duyệt."
-      console.log('thong báo', notificationUser.value);
-      
-    }
-  } catch (err) {
-    console.error('❌ Lỗi khi lấy thông báo:', err)
-    notificationUser.value = 0
-  }
-}
-
 // Khi component mount
 onMounted(() => {
-  const token = localStorage.getItem('token')
-  if (!token) return
-  fetchNotificationUser()
+  if (auth.isAuthenticated) notificationStore.fetchNotificationUser()
 })
 
-// Khi token thay đổi
+// Khi token thay đổi (login/logout)
 watch(
   () => auth.token,
-  (newToken) => {
-    if (newToken) fetchNotificationUser()
-    else notificationUser.value = 0
+  (token) => {
+    if (token) notificationStore.fetchNotificationUser()
+    else notificationStore.notificationUser = { count: 0, listings: [], message: '' }
   },
   { immediate: true }
 )
-
 </script>
 
 <style scoped>

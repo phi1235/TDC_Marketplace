@@ -188,8 +188,11 @@ import { categoriesService } from '@/services/categories'
 import { showToast } from '@/utils/toast'
 import PickupPointSelector from '@/components/pickup/PickupPointSelector.vue'
 import { pickupApi } from '@/services/pickup'
+//api thong bao
+import { useNotificationStore } from '@/stores/notification'
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 // Form data
 const form = reactive({
@@ -317,6 +320,7 @@ const submitForm = async () => {
     }
     //console.log('✅ Listing created successfully:', response)
     showToast('success', 'Đăng tin thành công! Tin rao đang chờ duyệt.')
+    await notificationStore.fetchNotificationUser()
     router.push('/my-listings')
 
   } catch (error: any) {
