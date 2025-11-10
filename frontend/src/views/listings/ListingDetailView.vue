@@ -50,11 +50,19 @@
         <Breadcrumb :items="breadcrumbItems" />
 
         <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
           <!-- Left Column: Images & Details -->
-          <div class="lg:col-span-2 space-y-6">
+          <div class="lg:col-span-2 space-y-6 relative">
+            
             <!-- Image Gallery -->
             <ImageGallery :images="listing.images || []" :alt-text="listing.title" />
+            <!-- Lishwish icon -->
+             <button @click.stop="toggleFavorite(listing)"
+              class="absolute -top-4 right-2 z-20 bg-white rounded-full p-1 shadow-md flex flex-col items-center">
+              <span class="text-xl" :class="listing.is_favorite ? 'text-red-500' : 'text-gray-400'">
+                {{ listing.is_favorite ? '♥️' : '🤍' }}
+              </span>
+            </button>
 
             <!-- Listing Details Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -195,45 +203,43 @@
 
             <!-- Seller Info Card -->
             <SellerInfoCard v-if="listing.seller" :seller="listing.seller" @contact="openContactModal" />
-            <button
-  @click="handleBuyNow"
-  :disabled="buyNowLoading || !listing || disableBuyNow"
-  class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white
+            <button @click="handleBuyNow" :disabled="buyNowLoading || !listing || disableBuyNow"
+              class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white
          bg-green-600 hover:bg-green-700 active:scale-95 transition-transform disabled:opacity-60 disabled:cursor-not-allowed">
-  <svg v-if="!buyNowLoading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19a2 2 0 100-4H8.1M7 13L5.4 5M16 21a1 1 0 11-2 0 1 1 0z" />
-  </svg>
-  <svg v-else class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" viewBox="0 0 24 24">
-    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-  </svg>
-  {{ buyNowLoading ? 'Đang tạo đơn...' : 'Mua ngay' }}
-</button>
+              <svg v-if="!buyNowLoading" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19a2 2 0 100-4H8.1M7 13L5.4 5M16 21a1 1 0 11-2 0 1 1 0z" />
+              </svg>
+              <svg v-else class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              {{ buyNowLoading ? 'Đang tạo đơn...' : 'Mua ngay' }}
+            </button>
 
-<!-- Banner kết quả -->
-<div v-if="lastOrder" class="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
-  <p class="text-sm text-green-800">
-    ✅ Đã tạo đơn hàng <span class="font-semibold">{{ lastOrder.order_number }}</span>!<br>
-    Trạng thái: <span class="font-semibold">{{ lastOrder.status }}</span>.<br>
-    Vui lòng chờ người bán xác nhận.
-  </p>
-  <div class="mt-3 flex gap-2">
-    <button @click="goToMyOrders"
-      class="px-3 py-2 rounded-md text-sm bg-green-600 text-white hover:bg-green-700">
-      Đi tới đơn hàng của tôi
-    </button>
-    <button @click="clearLastOrder"
-      class="px-3 py-2 rounded-md text-sm border border-green-300 text-green-700 hover:bg-green-100">
-      Đóng
-    </button>
-  </div>
-</div>
+            <!-- Banner kết quả -->
+            <div v-if="lastOrder" class="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+              <p class="text-sm text-green-800">
+                ✅ Đã tạo đơn hàng <span class="font-semibold">{{ lastOrder.order_number }}</span>!<br>
+                Trạng thái: <span class="font-semibold">{{ lastOrder.status }}</span>.<br>
+                Vui lòng chờ người bán xác nhận.
+              </p>
+              <div class="mt-3 flex gap-2">
+                <button @click="goToMyOrders"
+                  class="px-3 py-2 rounded-md text-sm bg-green-600 text-white hover:bg-green-700">
+                  Đi tới đơn hàng của tôi
+                </button>
+                <button @click="clearLastOrder"
+                  class="px-3 py-2 rounded-md text-sm border border-green-300 text-green-700 hover:bg-green-100">
+                  Đóng
+                </button>
+              </div>
+            </div>
 
-<!-- Báo lỗi -->
-<div v-if="buyNowError" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mt-2">
-  {{ buyNowError }}
-</div>
+            <!-- Báo lỗi -->
+            <div v-if="buyNowError" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mt-2">
+              {{ buyNowError }}
+            </div>
 
             <!-- Quick Actions Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -284,25 +290,13 @@
     </div> <!-- /main content -->
 
     <!-- Contact Seller Modal -->
-    <ContactSellerModal
-      v-if="listing && listing.seller"
-      :is-open="showContactModal"
-      :listing="listing"
-      :seller="listing.seller"
-      @close="showContactModal = false"
-      @send="handleSendMessage"
-    />
+    <ContactSellerModal v-if="listing && listing.seller" :is-open="showContactModal" :listing="listing"
+      :seller="listing.seller" @close="showContactModal = false" @send="handleSendMessage" />
 
     <!-- Report Modal -->
-    <ReportModal
-      v-if="listing"
-      :is-open="showReportModal"
-      reportable-type="App\\Models\\Listing"
-      :reportable-id="listing.id"
-      :reportable-title="listing.title"
-      @close="showReportModal = false"
-      @submitted="handleReportSubmitted"
-    />
+    <ReportModal v-if="listing" :is-open="showReportModal" reportable-type="App\\Models\\Listing"
+      :reportable-id="listing.id" :reportable-title="listing.title" @close="showReportModal = false"
+      @submitted="handleReportSubmitted" />
   </div>
 </template>
 
@@ -319,6 +313,9 @@ import ReportModal from '@/components/ReportModal.vue'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 import { watch } from 'vue'
 import { fire } from '@/services/activities'
+//listwish
+import { wishlistService } from '@/services/wishlist'
+import { useWishlistStore } from '@/stores/wishlist'
 
 const route = useRoute()
 const router = useRouter()
@@ -333,6 +330,9 @@ const loading = ref(true)
 const error = ref('')
 const showContactModal = ref(false)
 const showReportModal = ref(false)
+
+//listing wishlist
+// const listings = ref<any[]>([])
 
 // helper lấy token
 function getBuyerToken() {
@@ -518,6 +518,7 @@ onMounted(async () => {
     loadRelatedListings(listing.value.id)
     fire('listing_view', { listing_id: listing.value.id })
   }
+  await loadWishlistStatus()
 })
 // 🧭 Theo dõi ID thay đổi trên route
 watch(
@@ -558,4 +559,38 @@ const handleReportSubmitted = (report: any) => {
   console.log('Report submitted:', report)
   showToast('success', 'Báo cáo đã được gửi thành công')
 }
+
+
+//Favorite
+
+const wishlistStore = useWishlistStore()
+
+const toggleFavorite = async (item: any) => {
+  try {
+    const res = await wishlistService.toggleWishlist(item.id)
+
+    // cập nhật số lượng tổng wishlist
+    wishlistStore.setCount(res.total ?? wishlistStore.count + (res.is_favorited ? 1 : -1))
+
+    // cập nhật trạng thái tim trên UI
+    item.is_favorite = res.is_favorited
+  } catch (err) {
+    console.error('Lỗi toggle wishlist:', err)
+  }
+}
+
+const loadWishlistStatus = async () => {
+  const res = await wishlistService.getWishlist()
+  const wishlistData = Array.isArray(res) ? res : res.data
+
+  wishlistStore.setCount(wishlistData.length)
+
+  if (listing.value) {
+    listing.value.is_favorite = wishlistData.some(
+      (w: any) => w.listing_id === listing.value.id
+    )
+  }
+}
+console.log(toggleFavorite);
+
 </script>

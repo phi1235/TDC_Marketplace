@@ -44,9 +44,6 @@
               <span class="text-xl" :class="listing.is_favorite ? 'text-red-500' : 'text-gray-400'">
                 {{ listing.is_favorite ? '♥️' : '🤍' }}
               </span>
-              <!-- <span class="text-xs font-medium" :class="listing.is_favorite ? 'text-red-500' : 'text-gray-500'">
-                {{ listing.is_favorite ? 'Đã yêu thích' : 'Chưa yêu thích' }}
-              </span> -->
             </button>
           </div>
 
