@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/disputes', [DisputeController::class, 'index']);
     Route::get('/disputes/{id}', [DisputeController::class, 'show']);
     Route::post('/disputes/{id}/close', [DisputeController::class, 'close']);
+    Route::post('/orders/{id}/confirm-free', [OrderController::class, 'confirmFree']);
 
     // Ví dụ bảo vệ API cần consent:
     // Route::middleware('terms')->group(function () {

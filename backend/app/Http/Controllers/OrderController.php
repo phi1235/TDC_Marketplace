@@ -311,6 +311,23 @@ class OrderController extends Controller
             'order' => $order
         ]);
     }
+    public function confirmFree($id)
+{
+    $order = Order::findOrFail($id);
+
+    if ($order->total_amount > 0) {
+        return response()->json(['message' => 'Chỉ áp dụng cho đơn hàng 0đ'], 400);
+    }
+
+    $order->status = 'paid'; // hoặc 'completed' nếu bạn muốn bỏ qua hết các bước
+    $order->save();
+
+    return response()->json([
+        'message' => 'Đơn hàng 0đ đã được xác nhận thành công!',
+        'order' => $order
+    ]);
+}
+
     //người bán chọn địa điểm
     public function setPickup(\Illuminate\Http\Request $r, $id)
     {
@@ -334,5 +351,6 @@ class OrderController extends Controller
         $order->update($data);
         return response()->json(['message' => 'pickup set', 'order' => $order->load('pickupPoint')]);
     }
+    
 
 }
