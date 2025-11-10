@@ -97,16 +97,16 @@
 
           <!-- Test pages -->
           <div class="relative test-menu-container">
-            <button @click="showTestMenu = !showTestMenu"
+            <!-- <button @click="showTestMenu = !showTestMenu"
               class="flex items-center space-x-1 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
               <span>Test Pages</span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
               </svg>
-            </button>
+            </button> -->
 
             <!-- Test pages dropdown -->
-            <div v-if="showTestMenu"
+            <!-- <div v-if="showTestMenu"
               class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
               <router-link to="/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 @click="showTestMenu = false">
@@ -132,7 +132,7 @@
                 @click="showTestMenu = false">
                 News
               </router-link>
-            </div>
+            </div> -->
           </div>
 
           <!-- Auth -->
