@@ -52,6 +52,12 @@
           class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
           <!-- Ảnh -->
           <div class="relative overflow-hidden">
+            <button @click="toggleFavorite(item)" class="absolute top-2 right-2">
+                <span class="text-2xl transition-all duration-200 select-none"
+                  :class="item.is_favorite ? 'text-red-500' : 'text-gray-500'">
+                  {{ item.is_favorite ? '♥️' : '🤍' }}
+                </span>
+              </button>
             <img v-if="item.images?.length" :src="imageUrl(item.images[0].image_path)" :alt="item.title"
               class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
             <div v-else class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
@@ -85,7 +91,7 @@
                 👁 {{ item.views_count }} lượt xem
               </div>
 
-              <button @click="toggleFavorite(item)">
+              <!-- <button @click="toggleFavorite(item)">
                 <span class="text-2xl transition-all duration-200 select-none"
                   :class="item.is_favorite ? 'text-red-500' : 'text-gray-500'">
                   {{ item.is_favorite ? '♥️' : '🤍' }}
@@ -93,7 +99,7 @@
                 <span class="text-xs font-medium" :class="item.is_favorite ? 'text-red-500' : 'text-gray-500'">
                   {{ item.is_favorite ? 'Đã yêu thích' : 'Chưa yêu thích' }}
                 </span>
-              </button>
+              </button> -->
             </div>
 
             <router-link :to="`/listings/${item.id}`"
