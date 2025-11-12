@@ -5,7 +5,7 @@
 Thêm dòng sau vào file `backend/.env` (sử dụng OpenRouter API key):
 
 ```env
-OPENAI_API_KEY=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
+OPENAI_API_KEY=
 ```
 
 **Lưu ý:** Biến `OPENAI_API_KEY` được dùng để lưu OpenRouter API key (tương thích với OpenAI format).
