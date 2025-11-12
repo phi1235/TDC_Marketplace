@@ -47,9 +47,9 @@ services:
       DB_DATABASE: tdc_marketplace
       DB_USERNAME: laravel
       DB_PASSWORD: password
-      OPENAI_API_KEY: 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
-      OPENAI_BASE_URL: https://openrouter.ai/api
-      OPENAI_MODEL: openrouter/polaris-alpha
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://openrouter.ai/api}
+      OPENAI_MODEL: ${OPENAI_MODEL:-openrouter/polaris-alpha}
       # Optional: ensure logs don’t break if file channel fails (can be removed if not desired)
       LOG_CHANNEL: stack
     networks:
