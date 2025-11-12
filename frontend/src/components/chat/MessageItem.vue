@@ -1,8 +1,13 @@
 <template>
   <div
     class="w-fit max-w-[80%] p-2 rounded break-words"
-    :class="isMine ? 'ml-auto bg-blue-600 text-white' : 'bg-gray-100'"
+    :class="getMessageClasses()"
   >
+    <!-- AI Badge -->
+    <div v-if="message.is_ai" class="flex items-center gap-1 mb-1">
+      <span class="text-xs font-semibold text-blue-600">🤖 AI Assistant</span>
+    </div>
+    
     <!-- Image message -->
     <div v-if="message.type === 'image' && message.meta?.image_url" class="mb-1">
       <img
@@ -23,12 +28,13 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   message: {
     id: number
     type: string
     content?: string
     created_at: string
+    is_ai?: boolean
     meta?: {
       image_url?: string
       image_name?: string
@@ -36,6 +42,13 @@ defineProps<{
   }
   isMine: boolean
 }>()
+
+function getMessageClasses(): string {
+  if (props.message.is_ai) {
+    return 'bg-blue-50 border border-blue-200 text-gray-800'
+  }
+  return props.isMine ? 'ml-auto bg-blue-600 text-white' : 'bg-gray-100'
+}
 
 defineEmits<{
   'image-click': [url: string]

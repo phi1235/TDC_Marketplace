@@ -50,6 +50,7 @@ class MessageSent implements ShouldBroadcastNow
             'type' => $this->message->type,
             'content' => $this->message->content,
             'meta' => $this->message->meta,
+            'is_ai' => $this->message->is_ai ?? false,
             'created_at' => (string) $this->message->created_at,
         ];
     }

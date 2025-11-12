@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             CampusPickupSeeder::class,
             UserSeeder::class,
+            AISupportSeeder::class,
             ListingSeeder::class,
             //
             FollowSellersSeeder::class,

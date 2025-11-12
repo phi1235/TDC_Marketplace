@@ -33,9 +33,10 @@ export interface Conversation {
 export interface Message {
   id: number
   conversation_id: number
-  sender_id: number
+  sender_id: number | null
   type: 'text' | 'image'
   content?: string | null
+  is_ai?: boolean
   meta?: {
     image_url?: string
     image_name?: string
@@ -51,9 +52,10 @@ export interface Message {
 export interface ChatEvent {
   id: number
   conversation_id: number
-  sender_id: number
+  sender_id: number | null
   type: 'text' | 'image'
   content?: string | null
+  is_ai?: boolean
   meta?: Record<string, any> | null
   created_at: string
 }

@@ -29,7 +29,12 @@ services:
     working_dir: /var/www
     volumes:
       - ./backend:/var/www
+      # Keep public storage bind for assets
       - ./backend/storage/app/public:/var/www/storage/app/public
+      # Use container-managed volumes for writable runtime paths to avoid host bind permission issues
+      - laravel_logs:/var/www/storage/logs
+      - laravel_framework:/var/www/storage/framework
+      - laravel_cache:/var/www/bootstrap/cache
     ports:
       - "8001:8000"
     depends_on:
@@ -42,6 +47,11 @@ services:
       DB_DATABASE: tdc_marketplace
       DB_USERNAME: laravel
       DB_PASSWORD: password
+      OPENAI_API_KEY: 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
+      OPENAI_BASE_URL: https://openrouter.ai/api
+      OPENAI_MODEL: openrouter/polaris-alpha
+      # Optional: ensure logs don’t break if file channel fails (can be removed if not desired)
+      LOG_CHANNEL: stack
     networks:
       - tdc-network
 
@@ -172,6 +182,9 @@ volumes:
   meilisearch_data:
   es_data:
   solr_data:
+  laravel_logs:
+  laravel_framework:
+  laravel_cache:
 
 networks:
   tdc-network:

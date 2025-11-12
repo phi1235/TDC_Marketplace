@@ -88,7 +88,10 @@ class ChatRepository
             $lastReadId = $participant->last_read_message_id ?? 0;
             $unreadCount = $this->messageModel
                 ->where('conversation_id', $convo->id)
-                ->where('sender_id', '!=', $userId)
+                ->where(function($q) use ($userId) {
+                    $q->where('sender_id', '!=', $userId)
+                      ->orWhereNull('sender_id'); // Include AI messages
+                })
                 ->where('id', '>', $lastReadId)
                 ->count();
 
@@ -118,7 +121,10 @@ class ChatRepository
     {
         return $this->messageModel
             ->where('conversation_id', $conversationId)
-            ->where('sender_id', '!=', $userId)
+            ->where(function($q) use ($userId) {
+                $q->where('sender_id', '!=', $userId)
+                  ->orWhereNull('sender_id'); // Include AI messages
+            })
             ->latest('id')
             ->first();
     }
