@@ -35,6 +35,7 @@ services:
       - laravel_logs:/var/www/storage/logs
       - laravel_framework:/var/www/storage/framework
       - laravel_cache:/var/www/bootstrap/cache
+      - laravel_vendor:/var/www/vendor
     ports:
       - "8001:8000"
     depends_on:
@@ -66,7 +67,6 @@ services:
       - "5174:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
     networks:
@@ -185,6 +185,7 @@ volumes:
   laravel_logs:
   laravel_framework:
   laravel_cache:
+  laravel_vendor:
 
 networks:
   tdc-network:
