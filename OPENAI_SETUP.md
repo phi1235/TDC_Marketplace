@@ -38,9 +38,10 @@ docker compose restart laravel
 - AI bot chỉ hoạt động trong **support conversations** (`is_support = true`)
 - Khi user gửi text message trong support chat, hệ thống sẽ:
   1. Lưu user message
-  2. Gọi OpenAI API với conversation history
-  3. Tạo AI response message với `is_ai = true`
-  4. Broadcast cả 2 messages qua WebSocket
+  2. Thu thập dữ liệu sản phẩm/danh mục liên quan (tối đa 5 listing + 5 category)
+  3. Gọi OpenAI API với conversation history và context nội bộ
+  4. Tạo AI response message với `is_ai = true`
+  5. Broadcast cả 2 messages qua WebSocket
 
 ## 6. Troubleshooting
 

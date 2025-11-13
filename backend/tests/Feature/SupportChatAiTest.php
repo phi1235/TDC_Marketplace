@@ -46,16 +46,18 @@ class SupportChatAiTest extends TestCase
         $fakeService = new class extends OpenAIService {
             public string $receivedMessage = '';
             public array $receivedHistory = [];
+            public ?string $receivedContext = null;
 
             public function __construct()
             {
                 // Skip parent construction because we do not need real HTTP config here.
             }
 
-            public function generateSupportResponse(string $userMessage, array $conversationHistory = []): ?string
+            public function generateSupportResponse(string $userMessage, array $conversationHistory = [], ?string $knowledgeContext = null): ?string
             {
                 $this->receivedMessage = $userMessage;
                 $this->receivedHistory = $conversationHistory;
+                $this->receivedContext = $knowledgeContext;
 
                 return 'Xin chào, tôi là AI hỗ trợ 🎓';
             }
@@ -76,6 +78,11 @@ class SupportChatAiTest extends TestCase
             'Mình cần được hỗ trợ về cách đăng tin',
             $fakeService->receivedMessage,
             'OpenAIService stub should receive the latest user message.'
+        );
+
+        $this->assertNotNull(
+            $fakeService->receivedContext,
+            'AI context should be generated for support conversation.'
         );
 
         $this->assertDatabaseHas('messages', [
@@ -110,12 +117,14 @@ class SupportChatAiTest extends TestCase
 
         $fakeService = new class extends OpenAIService {
             public array $messages = [];
+            public array $contexts = [];
 
             public function __construct() {}
 
-            public function generateSupportResponse(string $userMessage, array $conversationHistory = []): ?string
+            public function generateSupportResponse(string $userMessage, array $conversationHistory = [], ?string $knowledgeContext = null): ?string
             {
                 $this->messages[] = $userMessage;
+                $this->contexts[] = $knowledgeContext;
                 return 'Xin chào, tôi là AI hỗ trợ 🎓';
             }
         };
@@ -144,6 +153,7 @@ class SupportChatAiTest extends TestCase
         ]);
 
         $this->assertSame(['Xin chào AI?'], $fakeService->messages, 'AI should answer the sanitized payload after /hotro command.');
+        $this->assertNotEmpty($fakeService->contexts, 'Context snapshot should be passed when AI responds.');
 
         // 2) Disable AI
         $this->postJson("/api/chat/conversations/{$conversation->id}/messages", [

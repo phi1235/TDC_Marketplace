@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Events\MessageSent;
 use App\Repositories\ChatRepository;
 use App\Services\OpenAIService;
+use App\Services\SupportContextService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,8 @@ class ChatService
 {
     public function __construct(
         private ChatRepository $chatRepository,
-        private OpenAIService $openAIService
+        private OpenAIService $openAIService,
+        private SupportContextService $supportContextService,
     ) {}
 
     public function startConversation(int $otherUserId, bool $isSupport = false): Conversation
@@ -117,7 +119,13 @@ class ChatService
             }
 
             // Generate AI response
-            $aiResponse = $this->openAIService->generateSupportResponse($userMessage, $conversationHistory);
+            $contextSnippet = $this->supportContextService->buildContext($userMessage);
+
+            $aiResponse = $this->openAIService->generateSupportResponse(
+                $userMessage,
+                $conversationHistory,
+                $contextSnippet
+            );
             try { Log::info('AI generate - model response', ['has_response' => (bool)$aiResponse]); } catch (\Throwable $e) {}
 
             if ($aiResponse) {

@@ -40,10 +40,10 @@ class OpenAIService
      * @param array $conversationHistory Array of messages with 'role' and 'content'
      * @return string|null
      */
-    public function generateSupportResponse(string $userMessage, array $conversationHistory = []): ?string
+    public function generateSupportResponse(string $userMessage, array $conversationHistory = [], ?string $knowledgeContext = null): ?string
     {
         try {
-            $messages = $this->buildMessages($userMessage, $conversationHistory);
+            $messages = $this->buildMessages($userMessage, $conversationHistory, $knowledgeContext);
 
                 $headers = ['Content-Type' => 'application/json'];
                 if (!empty($this->apiKey)) {
@@ -122,7 +122,7 @@ class OpenAIService
      * @param array $conversationHistory
      * @return array
      */
-    private function buildMessages(string $userMessage, array $conversationHistory): array
+    private function buildMessages(string $userMessage, array $conversationHistory, ?string $knowledgeContext): array
     {
         $systemPrompt = $this->getSystemPrompt();
 
@@ -132,6 +132,13 @@ class OpenAIService
                 'content' => $systemPrompt,
             ],
         ];
+
+        if (!empty($knowledgeContext)) {
+            $messages[] = [
+                'role' => 'system',
+                'content' => "Thông tin sản phẩm/danh mục nội bộ:\n" . $knowledgeContext,
+            ];
+        }
 
         // Add conversation history (last 10 messages to stay within token limit)
         $history = array_slice($conversationHistory, -10);
@@ -211,4 +218,3 @@ Bạn là trợ lý AI hỗ trợ cho TDC Marketplace - nền tảng mua bán đ
 PROMPT;
     }
 }
-
