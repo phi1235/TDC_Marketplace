@@ -27,18 +27,21 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory contents
+# Copy Composer manifests first to leverage Docker layer cache
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies (without running scripts yet)
+RUN composer install --no-dev --prefer-dist --optimize-autoloader --no-scripts
+
+# Copy application source (excluding vendor via .dockerignore)
 COPY . /var/www
+RUN chown -R www-data:www-data /var/www
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www
-
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Run composer again to execute scripts now that artisan exists
+RUN composer install --no-dev --prefer-dist --optimize-autoloader
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage \
+RUN chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
 
 # Copy entrypoint script

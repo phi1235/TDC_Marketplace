@@ -9,6 +9,7 @@ use App\Http\Requests\StartConversationRequest;
 use App\Http\Requests\SendMessageRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
@@ -43,8 +44,14 @@ class ChatController extends Controller
 
     public function startSupport(): JsonResponse
     {
-        // Tìm admin bất kỳ (ưu tiên đầu tiên)
-        $admin = User::role('admin')->first();
+        $currentUserId = Auth::id();
+
+        // Tìm admin bất kỳ nhưng không trùng user hiện tại để tránh duplicate participant
+        $admin = User::role('admin')
+            ->when($currentUserId, fn ($query) => $query->where('id', '!=', $currentUserId))
+            ->orderBy('id')
+            ->first();
+
         abort_unless($admin, 404, 'No admin available');
         
         $convo = $this->chatService->startConversation($admin->id, true);
@@ -84,5 +91,4 @@ class ChatController extends Controller
         return response()->json(['success' => true]);
     }
 }
-
 

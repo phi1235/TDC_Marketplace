@@ -39,9 +39,12 @@ class ChatRepository
     /**
      * Tạo conversation mới
      */
-    public function createConversation(bool $isSupport = false): Conversation
+    public function createConversation(bool $isSupport = false, bool $aiEnabled = false): Conversation
     {
-        return $this->conversationModel->create(['is_support' => $isSupport]);
+        return $this->conversationModel->create([
+            'is_support' => $isSupport,
+            'ai_enabled' => $aiEnabled,
+        ]);
     }
 
     /**
@@ -49,7 +52,7 @@ class ChatRepository
      */
     public function addParticipant(int $conversationId, int $userId): ConversationParticipant
     {
-        return $this->participantModel->create([
+        return $this->participantModel->firstOrCreate([
             'conversation_id' => $conversationId,
             'user_id' => $userId,
         ]);
@@ -158,6 +161,13 @@ class ChatRepository
             ->update(['last_message_at' => now()]);
     }
 
+    public function setConversationAiStatus(int $conversationId, bool $enabled): bool
+    {
+        return $this->conversationModel
+            ->where('id', $conversationId)
+            ->update(['ai_enabled' => $enabled]);
+    }
+
     /**
      * Lấy conversation theo ID
      */
@@ -176,4 +186,3 @@ class ChatRepository
             ->find($conversationId);
     }
 }
-

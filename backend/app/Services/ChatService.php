@@ -32,7 +32,7 @@ class ChatService
 
         // Tạo conversation mới trong transaction
         return DB::transaction(function () use ($me, $otherUserId, $isSupport) {
-            $convo = $this->chatRepository->createConversation($isSupport);
+            $convo = $this->chatRepository->createConversation($isSupport, $isSupport);
             $this->chatRepository->addParticipant($convo->id, $me);
             $this->chatRepository->addParticipant($convo->id, $otherUserId);
             return $convo;
@@ -75,8 +75,15 @@ class ChatService
         }
 
         // If this is a support conversation and message is text, generate AI response
-        if ($conversation->is_support && ($data['type'] ?? 'text') === 'text' && !empty($data['content'])) {
-            try { Log::info('AI trigger - generating response', ['conversation_id' => $conversation->id]); } catch (\Throwable $e) {}
+        if ($message->sender_id !== null) {
+            $handled = $this->handleAiToggleCommands($conversation, $message, $data);
+            if ($handled) {
+                return $message;
+            }
+        }
+
+        if ($this->shouldTriggerAi($conversation, $data)) {
+            try { Log::info('AI trigger - generating response', ['conversation_id' => $conversation->id, 'ai_enabled' => $conversation->ai_enabled]); } catch (\Throwable $e) {}
             $this->generateAIResponse($conversation, $data['content']);
         }
 
@@ -184,6 +191,118 @@ class ChatService
         $exists = $this->chatRepository->isParticipant($conversationId, $userId);
         abort_unless($exists, 403, 'Not participant of this conversation');
     }
+
+    private function handleAiToggleCommands(Conversation $conversation, Message $message, array &$payload): bool
+    {
+        $content = trim((string) ($message->content ?? ''));
+        if ($content === '') {
+            return false;
+        }
+
+        $parsed = $this->parseAiCommand($content);
+        if (!$parsed) {
+            return false;
+        }
+
+        if ($parsed['action'] === 'enable') {
+            $wasEnabled = (bool) $conversation->ai_enabled;
+            if (!$wasEnabled) {
+                $this->chatRepository->setConversationAiStatus($conversation->id, true);
+                $conversation->ai_enabled = true;
+            }
+
+            $this->sendAiSystemMessage(
+                $conversation->id,
+                $wasEnabled
+                    ? '🤖 AI hỗ trợ đã bật sẵn, bạn có thể tiếp tục đặt câu hỏi.'
+                    : '🤖 AI hỗ trợ đã tham gia cuộc trò chuyện. Gõ /tathotro khi muốn quay lại chat với admin.'
+            );
+
+            if ($parsed['payload'] === '') {
+                return true; // command only
+            }
+
+            $message->content = $parsed['payload'];
+            $message->save();
+            $payload['content'] = $parsed['payload'];
+            return false;
+        }
+
+        if ($parsed['action'] === 'disable') {
+            $wasEnabled = (bool) $conversation->ai_enabled;
+            if ($wasEnabled) {
+                $this->chatRepository->setConversationAiStatus($conversation->id, false);
+                $conversation->ai_enabled = false;
+            }
+
+            $this->sendAiSystemMessage(
+                $conversation->id,
+                $wasEnabled
+                    ? '✅ Đã tắt AI hỗ trợ. Bạn sẽ tiếp tục trao đổi trực tiếp với admin.'
+                    : 'ℹ️ AI hỗ trợ đang ở trạng thái tắt. Không có thay đổi nào.'
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function parseAiCommand(string $content): ?array
+    {
+        $trimmed = trim($content);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (preg_match('/^(\/hotro|@hotro|hotro)\b/iu', $trimmed, $matches)) {
+            $payload = trim(mb_substr($trimmed, mb_strlen($matches[0])));
+            return ['action' => 'enable', 'payload' => $payload];
+        }
+
+        if (preg_match('/^(\/tathotro|\/tat|@tathotro|@tat|tathotro)\b/iu', $trimmed, $matches)) {
+            $payload = trim(mb_substr($trimmed, mb_strlen($matches[0])));
+            return ['action' => 'disable', 'payload' => $payload];
+        }
+
+        return null;
+    }
+
+    private function sendAiSystemMessage(int $conversationId, string $content): void
+    {
+        $systemMessage = $this->chatRepository->createMessage([
+            'conversation_id' => $conversationId,
+            'sender_id' => null,
+            'type' => 'text',
+            'content' => $content,
+            'meta' => null,
+            'is_ai' => true,
+        ]);
+
+        $this->chatRepository->updateConversationLastMessageAt($conversationId);
+
+        try {
+            event(new MessageSent($systemMessage));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to broadcast AI system message', [
+                'conversation_id' => $conversationId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function shouldTriggerAi(Conversation $conversation, array $payload): bool
+    {
+        if (($payload['type'] ?? 'text') !== 'text') {
+            return false;
+        }
+
+        $content = trim((string) ($payload['content'] ?? ''));
+        if ($content === '') {
+            return false;
+        }
+
+        return (bool) $conversation->ai_enabled;
+    }
 }
-
-

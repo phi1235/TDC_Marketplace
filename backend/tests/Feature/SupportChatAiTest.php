@@ -7,6 +7,7 @@ use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\OpenAIService;
+use App\Services\ChatService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -89,5 +90,76 @@ class SupportChatAiTest extends TestCase
             Message::where('conversation_id', $conversation->id)->count(),
             'Conversation should contain both user and AI messages.'
         );
+    }
+
+    public function test_ai_can_be_toggled_inside_regular_conversation(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $user = User::factory()->create([
+            'role' => 'user',
+            'is_active' => true,
+        ]);
+        $user->assignRole('user');
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+        $admin->assignRole('admin');
+
+        $fakeService = new class extends OpenAIService {
+            public array $messages = [];
+
+            public function __construct() {}
+
+            public function generateSupportResponse(string $userMessage, array $conversationHistory = []): ?string
+            {
+                $this->messages[] = $userMessage;
+                return 'Xin chào, tôi là AI hỗ trợ 🎓';
+            }
+        };
+
+        $this->app->instance(OpenAIService::class, $fakeService);
+
+        Sanctum::actingAs($user);
+
+        /** @var ChatService $chatService */
+        $chatService = $this->app->make(ChatService::class);
+        $conversation = $chatService->startConversation($admin->id, false);
+
+        // 1) Enable AI via command and include question in the same message
+        $this->postJson("/api/chat/conversations/{$conversation->id}/messages", [
+            'type' => 'text',
+            'content' => '/hotro Xin chào AI?',
+        ])->assertOk();
+
+        $conversation->refresh();
+        $this->assertTrue($conversation->ai_enabled, 'AI flag should be turned on after /hotro');
+
+        $this->assertDatabaseHas('messages', [
+            'conversation_id' => $conversation->id,
+            'is_ai' => true,
+            'content' => '🤖 AI hỗ trợ đã tham gia cuộc trò chuyện. Gõ /tathotro khi muốn quay lại chat với admin.',
+        ]);
+
+        $this->assertSame(['Xin chào AI?'], $fakeService->messages, 'AI should answer the sanitized payload after /hotro command.');
+
+        // 2) Disable AI
+        $this->postJson("/api/chat/conversations/{$conversation->id}/messages", [
+            'type' => 'text',
+            'content' => '/tathotro',
+        ])->assertOk();
+
+        $conversation->refresh();
+        $this->assertFalse($conversation->ai_enabled, 'AI flag should be off after /tathotro');
+
+        // 3) Send another message, AI should not respond because it is disabled
+        $this->postJson("/api/chat/conversations/{$conversation->id}/messages", [
+            'type' => 'text',
+            'content' => 'Có admin nào ở đó không?',
+        ])->assertOk();
+
+        $this->assertSame(1, count($fakeService->messages), 'AI should not respond once /tathotro was issued.');
     }
 }

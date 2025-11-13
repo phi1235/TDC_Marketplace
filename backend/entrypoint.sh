@@ -6,9 +6,13 @@ echo "🚀 Bắt đầu khởi động Laravel..."
 # ⏳ Chờ MySQL và Elasticsearch sẵn sàng (10–15 giây)
 sleep 10
 
-# 📦 Cài đặt dependencies
-echo "📦 Cài đặt Composer dependencies..."
-composer install --no-interaction --prefer-dist --optimize-autoloader || true
+# 📦 Đảm bảo vendor đã sẵn sàng (chỉ cài khi thiếu)
+if [ ! -f vendor/autoload.php ]; then
+  echo "📦 Vendor chưa có, đang cài đặt dependencies..."
+  composer install --no-interaction --prefer-dist --optimize-autoloader || true
+else
+  echo "📦 Vendor đã tồn tại trong container, bỏ qua bước cài đặt."
+fi
 
 # 🔧 Dọn cache cũ
 echo "🔧 Dọn dẹp cache..."
