@@ -4,31 +4,31 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Listing;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class SupportContextService
 {
     private array $stopWords = [
-        'anh','chị','em','toi','tôi','ban','mình','cần','giúp','help','hỗ','trợ','hotro','support',
-        'cho','xin','chào','hello','hi','này','nha','với','về','thế','nào','nữa','có','không','ko',
-        'là','và','hay','hoặc','được','gì','gối','các','những','một','muốn','nhờ','nhé','nhỉ','ơi',
+        'anh','chị','chi','em','toi','tôi','ban','bạn','mình','minh','cần','giúp','giup','help','hỗ','hotro','hỗtrợ','support',
+        'cho','xin','chào','hello','hi','này','nay','nha','với','ve','nữa','nua','có','không','ko',
+        'là','và','hay','hoặc','được','duoc','gì','gi','các','những','một','muốn','nhờ','nhé','nhỉ','oi','ơi','thanks','cảm','ơn'
     ];
 
-    public function buildContext(string $userMessage): ?string
+    /**
+     * @return array{context:?string,products:array<int,array<string,mixed>>}
+     */
+    public function buildContext(string $userMessage): array
     {
         $keywords = $this->extractKeywords($userMessage);
 
         $listings = $this->searchListings($keywords);
         $categories = $this->searchCategories($keywords);
 
-        if ($listings->isEmpty() && $categories->isEmpty()) {
-            return null;
-        }
-
         $sections = [];
-
         if ($listings->isNotEmpty()) {
-            $sections[] = "Sản phẩm phù hợp:\n" . $listings->map(function (Listing $listing) {
+            $sections[] = "Sản phẩm phù hợp trong kho:\n" . $listings->map(function (Listing $listing) {
                 $price = number_format((float) $listing->price, 0, ',', '.');
                 $category = $listing->category->name ?? 'Khác';
                 $condition = Str::of($listing->condition ?? 'N/A')->replace('_', ' ')->upper();
@@ -37,13 +37,16 @@ class SupportContextService
         }
 
         if ($categories->isNotEmpty()) {
-            $sections[] = "Danh mục gợi ý:\n" . $categories->map(function (Category $category) {
+            $sections[] = "Danh mục gợi ý nổi bật:\n" . $categories->map(function (Category $category) {
                 $count = $category->listings_count ?? 0;
                 return sprintf('- %s • %d tin đang bán', $category->name, $count);
             })->implode("\n");
         }
 
-        return implode("\n\n", $sections);
+        return [
+            'context' => $sections ? implode("\n\n", $sections) : null,
+            'products' => $this->formatProductCards($listings),
+        ];
     }
 
     private function extractKeywords(string $message): array
@@ -53,20 +56,21 @@ class SupportContextService
             return [];
         }
 
-        $filtered = collect($tokens)
-            ->reject(function ($token) {
-                return mb_strlen($token) <= 2 || in_array($token, $this->stopWords, true);
-            })
+        return collect($tokens)
+            ->reject(fn ($token) => mb_strlen($token) <= 2 || in_array($token, $this->stopWords, true))
             ->unique()
-            ->values();
-
-        return $filtered->take(6)->all();
+            ->values()
+            ->take(6)
+            ->all();
     }
 
-    private function searchListings(array $keywords)
+    private function searchListings(array $keywords): Collection
     {
         $query = Listing::query()
-            ->with('category')
+            ->with([
+                'category',
+                'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('id'),
+            ])
             ->where('status', 'approved')
             ->orderByDesc('approved_at')
             ->limit(5);
@@ -83,12 +87,10 @@ class SupportContextService
         return $query->get();
     }
 
-    private function searchCategories(array $keywords)
+    private function searchCategories(array $keywords): Collection
     {
         $query = Category::query()
-            ->withCount(['listings' => function ($q) {
-                $q->where('status', 'approved');
-            }])
+            ->withCount(['listings' => fn ($q) => $q->where('status', 'approved')])
             ->orderByDesc('listings_count')
             ->limit(5);
 
@@ -102,5 +104,26 @@ class SupportContextService
         }
 
         return $query->get();
+    }
+
+    private function formatProductCards(Collection $listings): array
+    {
+        if ($listings->isEmpty()) {
+            return [];
+        }
+
+        return $listings->map(function (Listing $listing) {
+            $image = $listing->images->sortByDesc('is_primary')->first();
+            $thumbnail = $image && $image->image_path ? URL::to('storage/' . ltrim($image->image_path, '/')) : null;
+
+            return [
+                'id' => $listing->id,
+                'title' => $listing->title,
+                'price' => (float) $listing->price,
+                'thumbnail' => $thumbnail,
+                'category' => $listing->category->name ?? null,
+                'url' => '/listings/' . $listing->id,
+            ];
+        })->all();
     }
 }

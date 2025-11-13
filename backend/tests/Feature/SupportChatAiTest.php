@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\User;
 use App\Services\OpenAIService;
 use App\Services\ChatService;
+use App\Services\SupportContextService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -63,7 +64,25 @@ class SupportChatAiTest extends TestCase
             }
         };
 
+        $fakeContextService = new class extends SupportContextService {
+            public function buildContext(string $userMessage): array
+            {
+                return [
+                    'context' => 'Gợi ý sản phẩm test',
+                    'products' => [[
+                        'id' => 999,
+                        'title' => 'Laptop thử nghiệm',
+                        'price' => 1230000,
+                        'thumbnail' => 'https://example.com/laptop.jpg',
+                        'category' => 'Laptop',
+                        'url' => 'https://example.com/listings/999',
+                    ]],
+                ];
+            }
+        };
+
         $this->app->instance(OpenAIService::class, $fakeService);
+        $this->app->instance(SupportContextService::class, $fakeContextService);
 
         Sanctum::actingAs($user);
 
@@ -91,6 +110,9 @@ class SupportChatAiTest extends TestCase
             'is_ai' => true,
             'content' => 'Xin chào, tôi là AI hỗ trợ 🎓',
         ]);
+
+        $aiMessage = Message::where('conversation_id', $conversation->id)->where('is_ai', true)->first();
+        $this->assertNotEmpty($aiMessage->meta['products'] ?? []);
 
         $this->assertEquals(
             2,
@@ -129,7 +151,25 @@ class SupportChatAiTest extends TestCase
             }
         };
 
+        $fakeContextService = new class extends SupportContextService {
+            public function buildContext(string $userMessage): array
+            {
+                return [
+                    'context' => 'Ngữ cảnh giả lập',
+                    'products' => [[
+                        'id' => 111,
+                        'title' => 'Sách luyện thi',
+                        'price' => 45000,
+                        'thumbnail' => null,
+                        'category' => 'Sách',
+                        'url' => 'https://example.com/listings/111',
+                    ]],
+                ];
+            }
+        };
+
         $this->app->instance(OpenAIService::class, $fakeService);
+        $this->app->instance(SupportContextService::class, $fakeContextService);
 
         Sanctum::actingAs($user);
 

@@ -30,6 +30,23 @@ export interface Conversation {
   updated_at?: string
 }
 
+export interface ProductSuggestion {
+  id: number
+  title: string
+  price?: number
+  thumbnail?: string | null
+  category?: string | null
+  url?: string | null
+}
+
+export interface MessageMeta {
+  image_url?: string
+  image_name?: string
+  image_size?: number
+  products?: ProductSuggestion[]
+  [key: string]: any
+}
+
 export interface Message {
   id: number
   conversation_id: number
@@ -37,12 +54,7 @@ export interface Message {
   type: 'text' | 'image'
   content?: string | null
   is_ai?: boolean
-  meta?: {
-    image_url?: string
-    image_name?: string
-    image_size?: number
-    [key: string]: any
-  } | null
+  meta?: MessageMeta | null
   read_at?: string | null
   created_at: string
   updated_at?: string
@@ -56,7 +68,7 @@ export interface ChatEvent {
   type: 'text' | 'image'
   content?: string | null
   is_ai?: boolean
-  meta?: Record<string, any> | null
+  meta?: MessageMeta | null
   created_at: string
 }
 
@@ -83,4 +95,3 @@ export interface MessagePaginationParams {
   before_id?: number
   after_id?: number
 }
-

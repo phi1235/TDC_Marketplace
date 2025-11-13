@@ -21,6 +21,15 @@
     <div v-if="message.content" class="text-sm whitespace-pre-wrap break-words break-all">
       {{ message.content }}
     </div>
+
+    <!-- Product suggestions -->
+    <div v-if="hasProductSuggestions" class="mt-2 grid gap-2">
+      <ProductSuggestionCard
+        v-for="product in productSuggestions"
+        :key="`${message.id}-product-${product.id}`"
+        :product="product"
+      />
+    </div>
     <div class="text-[11px] opacity-70 mt-1">
       {{ new Date(message.created_at).toLocaleString('vi-VN') }}
     </div>
@@ -28,20 +37,14 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  message: {
-    id: number
-    type: string
-    content?: string
-    created_at: string
-    is_ai?: boolean
-    meta?: {
-      image_url?: string
-      image_name?: string
-    }
-  }
-  isMine: boolean
-}>()
+import { computed } from 'vue'
+import ProductSuggestionCard from './ProductSuggestionCard.vue'
+import type { Message, ProductSuggestion } from '@/types/chat'
+
+const props = defineProps<{ message: Message; isMine: boolean }>()
+
+const productSuggestions = computed<ProductSuggestion[]>(() => props.message.meta?.products ?? [])
+const hasProductSuggestions = computed(() => productSuggestions.value.length > 0)
 
 function getMessageClasses(): string {
   if (props.message.is_ai) {
@@ -64,4 +67,3 @@ function getImageUrl(url: string): string {
   return url.startsWith('/') ? url : `/${url}`
 }
 </script>
-

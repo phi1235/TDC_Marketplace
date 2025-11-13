@@ -118,24 +118,29 @@ class ChatService
                 ];
             }
 
-            // Generate AI response
-            $contextSnippet = $this->supportContextService->buildContext($userMessage);
+            // Generate AI response using internal listings context
+            $contextPayload = $this->supportContextService->buildContext($userMessage);
+            $contextSnippet = $contextPayload['context'] ?? null;
+            $productCards = $contextPayload['products'] ?? [];
 
             $aiResponse = $this->openAIService->generateSupportResponse(
                 $userMessage,
                 $conversationHistory,
                 $contextSnippet
             );
+            $aiResponse = $this->sanitizeAiResponse($aiResponse);
             try { Log::info('AI generate - model response', ['has_response' => (bool)$aiResponse]); } catch (\Throwable $e) {}
 
             if ($aiResponse) {
+                $meta = !empty($productCards) ? ['products' => $productCards] : null;
+
                 // Create AI message
                 $aiMessage = $this->chatRepository->createMessage([
                     'conversation_id' => $conversation->id,
                     'sender_id' => null, // AI messages have no sender
                     'type' => 'text',
                     'content' => $aiResponse,
-                    'meta' => null,
+                    'meta' => $meta,
                     'is_ai' => true,
                 ]);
 
@@ -312,5 +317,14 @@ class ChatService
         }
 
         return (bool) $conversation->ai_enabled;
+    }
+
+    private function sanitizeAiResponse(?string $response): ?string
+    {
+        if ($response === null) {
+            return null;
+        }
+
+        return str_replace('**', '"', $response);
     }
 }
