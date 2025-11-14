@@ -86,7 +86,11 @@ class ChatService
 
         if ($this->shouldTriggerAi($conversation, $data)) {
             try { Log::info('AI trigger - generating response', ['conversation_id' => $conversation->id, 'ai_enabled' => $conversation->ai_enabled]); } catch (\Throwable $e) {}
-            $this->generateAIResponse($conversation, $data['content']);
+            $success = $this->generateAIResponse($conversation, $data['content']);
+
+            if (!$success) {
+                $this->sendAiFallbackMessage($conversation);
+            }
         }
 
         return $message;
@@ -95,7 +99,7 @@ class ChatService
     /**
      * Generate and send AI response for support conversation
      */
-    private function generateAIResponse(Conversation $conversation, string $userMessage): void
+    private function generateAIResponse(Conversation $conversation, string $userMessage): bool
     {
         try {
             try { Log::info('AI generate - started', ['conversation_id' => $conversation->id]); } catch (\Throwable $e) {}
@@ -155,6 +159,7 @@ class ChatService
                         'error' => $e->getMessage(),
                     ]);
                 }
+                return true;
             } else {
                 try { Log::warning('AI generate - empty response'); } catch (\Throwable $e) {}
             }
@@ -163,6 +168,33 @@ class ChatService
                 'conversation_id' => $conversation->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+        }
+
+        return false;
+    }
+
+    private function sendAiFallbackMessage(Conversation $conversation): void
+    {
+        $fallbackMessage = "Xin lỗi, hệ thống đang quá tải. Vui lòng thử lại sau vài giây.";
+
+        $aiMessage = $this->chatRepository->createMessage([
+            'conversation_id' => $conversation->id,
+            'sender_id' => null,
+            'type' => 'text',
+            'content' => $fallbackMessage,
+            'meta' => null,
+            'is_ai' => true,
+        ]);
+
+        $this->chatRepository->updateConversationLastMessageAt($conversation->id);
+
+        try {
+            event(new MessageSent($aiMessage));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to broadcast AI fallback message', [
+                'message_id' => $aiMessage->id,
+                'error' => $e->getMessage(),
             ]);
         }
     }

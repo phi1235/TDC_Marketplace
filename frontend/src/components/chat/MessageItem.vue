@@ -19,7 +19,21 @@
     </div>
     <!-- Text content -->
     <div v-if="message.content" class="text-sm whitespace-pre-wrap break-words break-all">
-      {{ message.content }}
+      <template v-for="(segment, index) in parsedContent" :key="index">
+        <template v-if="segment.type === 'link'">
+          <a
+            :href="segment.value"
+            class="text-blue-600 underline break-all"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ segment.value }}
+          </a>
+        </template>
+        <template v-else>
+          {{ segment.value }}
+        </template>
+      </template>
     </div>
 
     <!-- Product suggestions -->
@@ -43,8 +57,34 @@ import type { Message, ProductSuggestion } from '@/types/chat'
 
 const props = defineProps<{ message: Message; isMine: boolean }>()
 
+type ContentSegment = { type: 'text' | 'link'; value: string }
+
 const productSuggestions = computed<ProductSuggestion[]>(() => props.message.meta?.products ?? [])
 const hasProductSuggestions = computed(() => productSuggestions.value.length > 0)
+
+const parsedContent = computed<ContentSegment[]>(() => {
+  const content = props.message.content
+  if (!content) return []
+
+  const segments: ContentSegment[] = []
+  const urlRegex = /(https?:\/\/[^\s]+)/gi
+  let lastIndex = 0
+
+  content.replace(urlRegex, (match, offset: number) => {
+    if (offset > lastIndex) {
+      segments.push({ type: 'text', value: content.slice(lastIndex, offset) })
+    }
+    segments.push({ type: 'link', value: match })
+    lastIndex = offset + match.length
+    return match
+  })
+
+  if (lastIndex < content.length) {
+    segments.push({ type: 'text', value: content.slice(lastIndex) })
+  }
+
+  return segments.length ? segments : [{ type: 'text', value: content }]
+})
 
 function getMessageClasses(): string {
   if (props.message.is_ai) {

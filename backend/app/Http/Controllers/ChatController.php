@@ -71,6 +71,7 @@ class ChatController extends Controller
             $file = $request->file('image');
             $path = $file->store('chat/images', 'public');
             $meta['image_url'] = Storage::url($path);
+            
             $meta['image_name'] = $file->getClientOriginalName();
             $meta['image_size'] = $file->getSize();
         }
@@ -91,4 +92,3 @@ class ChatController extends Controller
         return response()->json(['success' => true]);
     }
 }
-

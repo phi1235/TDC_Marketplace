@@ -29,8 +29,9 @@ services:
     working_dir: /var/www
     volumes:
       - ./backend:/var/www
-      # Keep public storage bind for assets
-      - ./backend/storage/app/public:/var/www/storage/app/public
+      # Keep public storage bind for assets (commented to avoid host permission issues)
+      # - ./backend/storage/app/public:/var/www/storage/app/public
+      - laravel_storage_public:/var/www/storage/app/public
       # Use container-managed volumes for writable runtime paths to avoid host bind permission issues
       - laravel_logs:/var/www/storage/logs
       - laravel_framework:/var/www/storage/framework
@@ -48,10 +49,12 @@ services:
       DB_DATABASE: tdc_marketplace
       DB_USERNAME: laravel
       DB_PASSWORD: password
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}
+      # OPENAI_MODEL: ${OPENAI_MODEL:-openai/gpt-oss-20b:free}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}
-      OPENAI_MODEL: ${OPENAI_MODEL:-openai/gpt-oss-20b:free}
-     
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.chatanywhere.tech}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       # Optional: ensure logs don’t break if file channel fails (can be removed if not desired)
       LOG_CHANNEL: stack
     networks:
@@ -187,6 +190,7 @@ volumes:
   laravel_framework:
   laravel_cache:
   laravel_vendor:
+  laravel_storage_public:
 
 networks:
   tdc-network:
