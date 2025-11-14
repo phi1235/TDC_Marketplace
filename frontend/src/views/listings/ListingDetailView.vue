@@ -138,7 +138,29 @@
                   </svg>
                   <div>
                     <div class="text-xs text-gray-500">Địa điểm</div>
-                    <div class="font-medium text-gray-900">TDC Campus</div>
+                    <div class="font-medium text-gray-900">{{ listing.location || 'Chưa cung cấp' }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pickup Point (nếu có) -->
+              <div v-if="listing.pickup_point" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-start">
+                  <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900 mb-1">📍 Điểm giao dịch</h4>
+                    <p class="text-sm font-medium text-blue-700 mb-1">{{ listing.pickup_point.name }}</p>
+                    <p v-if="listing.pickup_point.address" class="text-sm text-gray-600">
+                      {{ listing.pickup_point.address }}
+                    </p>
+                    <p v-if="listing.pickup_point.campus_code" class="text-xs text-gray-500 mt-1">
+                      Mã: {{ listing.pickup_point.campus_code }}
+                    </p>
                   </div>
                 </div>
               </div>

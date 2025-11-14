@@ -41,70 +41,6 @@
           </transition>
         </div>
       </div>
-
-      <!-- 💌 Liên hệ hỗ trợ -->
-      <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center space-y-6 border-t border-gray-200 dark:border-gray-700"
-      >
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          📞 Cần hỗ trợ thêm?
-        </h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Nếu bạn không tìm thấy câu trả lời phù hợp, hãy gửi yêu cầu hỗ trợ cho chúng tôi.
-        </p>
-
-        <form
-          @submit.prevent="sendSupportRequest"
-          class="max-w-md mx-auto space-y-4 text-left"
-        >
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Họ và tên
-            </label>
-            <input
-              v-model="contactForm.name"
-              type="text"
-              required
-              class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              v-model="contactForm.email"
-              type="email"
-              required
-              class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nội dung cần hỗ trợ
-            </label>
-            <textarea
-              v-model="contactForm.message"
-              required
-              rows="4"
-              class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            📧 Gửi yêu cầu
-          </button>
-        </form>
-
-        <p v-if="formSent" class="text-green-600 dark:text-green-400 font-medium mt-4">
-          ✅ Yêu cầu của bạn đã được gửi! Chúng tôi sẽ phản hồi sớm nhất có thể.
-        </p>
-      </div>
     </div>
 
     <!-- 🦶 Footer -->
@@ -118,7 +54,6 @@
 import { ref } from "vue";
 
 const activeIndex = ref(null);
-const formSent = ref(false);
 
 const faqs = ref([
   {
@@ -144,24 +79,12 @@ const faqs = ref([
   {
     question: "Tôi muốn liên hệ với quản trị viên?",
     answer:
-      "Bạn có thể gửi email đến support@tdc-marketplace.vn hoặc liên hệ qua form hỗ trợ ở bên dưới.",
+      "Bạn có thể gửi email đến support@tdc-marketplace.vn hoặc liên hệ qua trang Liên hệ.",
   },
 ]);
 
-const contactForm = ref({
-  name: "",
-  email: "",
-  message: "",
-});
-
 const toggle = (index) => {
   activeIndex.value = activeIndex.value === index ? null : index;
-};
-
-const sendSupportRequest = () => {
-  formSent.value = true;
-  contactForm.value = { name: "", email: "", message: "" };
-  setTimeout(() => (formSent.value = false), 4000);
 };
 </script>
 

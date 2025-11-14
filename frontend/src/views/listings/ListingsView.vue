@@ -67,9 +67,9 @@
         </div>
       </div>
 
-      <!-- Loading -->
-      <div v-if="loading" class="text-center py-12 text-gray-500">
-        Đang tải dữ liệu...
+      <!-- Loading Skeleton -->
+      <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ListingCardSkeleton v-for="n in 9" :key="'skeleton-' + n" />
       </div>
 
       <!-- Empty -->
@@ -85,6 +85,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { imageUrl } from '@/utils/image' // nếu có
+import ListingCardSkeleton from '@/components/ListingCardSkeleton.vue'
 //listwish
 import { wishlistService } from '@/services/wishlist'
 import { useWishlistStore } from '@/stores/wishlist'

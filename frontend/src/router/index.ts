@@ -54,6 +54,12 @@ const router = createRouter({
       meta: { requiresGuest: true },
     },
     {
+      path: '/category/:id',
+      name: 'category-listings',
+      component: () => import('@/views/categories/CategoryListingsView.vue'),
+      props: true,
+    },
+    {
       path: '/listings',
       name: 'listings',
       component: () => import('@/views/listings/ListingsView.vue'),
@@ -112,6 +118,18 @@ const router = createRouter({
           meta: { requiresAuth: true, requiresAdmin: true },
         },
         {
+          path: 'categories',
+          name: 'dashboard-categories',
+          component: () => import('@/views/dashboard/CategoryManagementView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'pickup-points',
+          name: 'dashboard-pickup-points',
+          component: () => import('@/views/dashboard/PickupPointManagementView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
           path: 'reports',
           name: 'dashboard-reports',
           component: () => import('@/views/admin/AdminReportsView.vue'),
@@ -134,6 +152,12 @@ const router = createRouter({
           path: 'audit-logs',
           name: 'dashboard-audit-logs',
           component: () => import('@/views/admin/AdminAuditLogsView.vue'),
+          meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'majors',
+          name: 'dashboard-majors',
+          component: () => import('@/views/admin/AdminMajorsView.vue'),
           meta: { requiresAuth: true, requiresAdmin: true },
         },
         {
@@ -234,10 +258,20 @@ const router = createRouter({
       component: () => import('@/views/terms/TermsView.vue'),
     },
     {
+      path: '/privacy-policy',
+      name: 'privacy-policy',
+      component: () => import('@/views/terms/TermsView.vue'), // Tạm dùng TermsView, có thể tạo PrivacyView riêng
+    },
+    {
       path: '/faq',
       name: 'faq',
       component: () => import('@/views/faq/faqView.vue'),
       meta: { requiresAuth: true },
+    },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: () => import('@/views/contact/ContactView.vue'),
     },
     {
       path: '/notifications',

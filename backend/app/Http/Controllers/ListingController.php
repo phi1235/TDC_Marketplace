@@ -18,12 +18,17 @@ class ListingController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Listing::with(['seller', 'category', 'images'])
+        $query = Listing::with(['seller', 'category', 'major', 'images'])
             ->where('status', 'approved');
 
         // Filter by category
         if ($request->has('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by major
+        if ($request->has('major_id')) {
+            $query->where('major_id', $request->major_id);
         }
 
         // Filter by condition
@@ -67,6 +72,7 @@ class ListingController extends Controller
             'category',
             'images',
             'offers',
+            'pickupPoint:id,name,address,campus_code,lat,lng,opening_hours', // ✅ Load pickup point
         ]);
         //  Tăng lượt xem
         $listing->increment('views_count');
@@ -536,6 +542,44 @@ class ListingController extends Controller
         return response()->json([
             'success' => true,
             'data' => $listings,
+        ]);
+    }
+
+    /**
+     * Get recommended listings based on user's major
+     */
+    public function recommended(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // If user doesn't have major, return popular listings
+        if (!$user || !$user->major_id) {
+            $listings = Listing::with(['seller', 'category', 'major', 'images'])
+                ->where('status', 'approved')
+                ->orderBy('views_count', 'desc')
+                ->limit(12)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $listings,
+                'message' => 'Sản phẩm phổ biến'
+            ]);
+        }
+
+        // Get listings from same major
+        $listings = Listing::with(['seller', 'category', 'major', 'images'])
+            ->where('status', 'approved')
+            ->where('major_id', $user->major_id)
+            ->where('seller_id', '!=', $user->id) // Exclude own listings
+            ->latest()
+            ->limit(12)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $listings,
+            'message' => 'Dành cho ngành ' . $user->major->name
         ]);
     }
 }

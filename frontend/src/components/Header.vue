@@ -95,6 +95,16 @@
             Danh sách
           </router-link>
 
+          <router-link to="/faq"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
+            FAQ
+          </router-link>
+
+          <router-link to="/contact"
+            class="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium">
+            Liên hệ
+          </router-link>
+
           <!-- Test pages -->
           <div class="relative test-menu-container">
             <!-- <button @click="showTestMenu = !showTestMenu"

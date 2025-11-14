@@ -30,15 +30,92 @@
       </div>
     </section>
 
-    <!-- 🌟 Tin mới được duyệt -->
+    <!-- 🎓 Gợi ý theo ngành của bạn -->
+    <section v-if="isAuthenticated && userMajor && recommendedListings.length > 0" class="max-w-7xl mx-auto p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            🎓 Gợi ý cho ngành {{ userMajor.name }}
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+            {{ userMajor.icon }} Những tin rao phù hợp với ngành học của bạn
+          </p>
+        </div>
+        <router-link to="/listings?recommended=1" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+          Xem tất cả →
+        </router-link>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div v-if="loadingRecommended" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <ListingCardSkeleton v-for="n in 4" :key="'rec-skeleton-' + n" />
+      </div>
+
+      <!-- Recommended Listings -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div v-for="item in recommendedListings.slice(0, 4)" :key="'rec-' + item.id"
+          class="group bg-white dark:bg-gray-800 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <!-- Badge "Gợi ý" -->
+          <div class="bg-blue-600 text-white text-xs font-semibold px-3 py-1 text-center">
+            ⭐ Gợi ý cho bạn
+          </div>
+
+          <!-- Ảnh -->
+          <div class="relative overflow-hidden">
+            <button @click="toggleFavorite(item)" class="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md flex flex-col items-center">
+              <span class="text-2xl transition-all duration-200 select-none"
+                :class="item.is_favorite ? 'text-red-500' : 'text-gray-500'">
+                {{ item.is_favorite ? '♥️' : '🤍' }}
+              </span>
+            </button>
+            <img v-if="item.images?.length" :src="imageUrl(item.images[0].image_path)" :alt="item.title"
+              class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div v-else class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+              Không có ảnh
+            </div>
+          </div>
+
+          <!-- Nội dung -->
+          <div class="p-4">
+            <h3 class="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+              {{ item.title }}
+            </h3>
+
+            <p class="text-xl font-bold text-blue-600 mb-2">
+              {{ formatPrice(item.price) }} VNĐ
+            </p>
+
+            <div class="flex items-center mb-2">
+              <span class="text-sm text-gray-600 dark:text-gray-300">Tình trạng:</span>
+              <span :class="getConditionClass(item.condition)" class="ml-2 px-2 py-1 rounded-full text-xs font-medium">
+                {{ getConditionText(item.condition) }}
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
+              <div class="flex items-center gap-1">
+                👁 {{ item.views_count }} lượt xem
+              </div>
+            </div>
+
+            <router-link :to="`/listings/${item.id}`"
+              class="block text-center bg-blue-600 text-white rounded-md py-2 font-medium hover:bg-blue-700 active:scale-95 transition-transform">
+              Xem chi tiết
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- �🌟 Tin mới được duyệt -->
     <section class="max-w-7xl mx-auto p-6">
       <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
         🌟 Tin mới được duyệt
       </h2>
 
-      <!-- Loading -->
-      <div v-if="loading" class="text-center text-gray-500 italic py-10">
-        Đang tải danh sách tin...
+      <!-- Loading Skeleton -->
+      <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <ListingCardSkeleton v-for="n in 8" :key="'skeleton-' + n" />
       </div>
 
       <!-- Empty -->
@@ -125,18 +202,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { listingsService } from '@/services/listings'
 import { imageUrl } from '@/utils/image'
 import axios from 'axios'
+import ListingCardSkeleton from '@/components/ListingCardSkeleton.vue'
 //listwish
 import { wishlistService } from '@/services/wishlist'
 import { useWishlistStore } from '@/stores/wishlist'
+import { useAuthStore } from '@/stores/auth'
+import type { Major } from '@/types/major'
 
 
 const listings = ref([])
 const categories = ref([])
 const loading = ref(false)
+const recommendedListings = ref([])
+const loadingRecommended = ref(false)
+
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const userMajor = computed(() => authStore.user?.major as Major | undefined)
 
 const loadCategories = async () => {
   try {
@@ -150,12 +236,29 @@ const loadCategories = async () => {
 const loadPublicListings = async () => {
   loading.value = true
   try {
+    // Add delay to see skeleton loading (REMOVE IN PRODUCTION)
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
     const res = await listingsService.getPublicListings()
     listings.value = res.data.slice(0, 16)
   } catch (error) {
     console.error('Lỗi tải tin:', error)
   } finally {
     loading.value = false
+  }
+}
+
+const loadRecommendedListings = async () => {
+  if (!isAuthenticated.value || !userMajor.value) return
+  
+  loadingRecommended.value = true
+  try {
+    const res = await listingsService.getRecommendedListings()
+    recommendedListings.value = res.data || res
+  } catch (error) {
+    console.error('Lỗi tải gợi ý:', error)
+  } finally {
+    loadingRecommended.value = false
   }
 }
 
@@ -189,6 +292,7 @@ const goToCategory = (id: number) => {
 onMounted(async () => {
   await loadCategories()
   await loadPublicListings()
+  await loadRecommendedListings()
   await loadWishlistStatus()
 })
 

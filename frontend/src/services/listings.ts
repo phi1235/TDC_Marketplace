@@ -1,4 +1,5 @@
 import api from './api'
+import type { Major } from '@/types/major'
 
 export interface Listing {
   id: number
@@ -16,6 +17,8 @@ export interface Listing {
   favorite_count: number
   created_at: string
   updated_at: string
+  major_id?: number | null
+  major?: Major
   seller?: {
     id: number
     name: string
@@ -69,6 +72,9 @@ export interface CreateListingData {
   description: string
   condition: 'new' | 'like_new' | 'good' | 'fair'
   price: number
+  location?: string
+  pickup_point_id?: number
+  major_id?: number | null
   images: File[]
 }
 
@@ -78,11 +84,13 @@ export interface UpdateListingData {
   description?: string
   condition?: 'new' | 'like_new' | 'good' | 'fair'
   price?: number
+  major_id?: number | null
   images?: File[]
 }
 
 export interface ListingFilters {
   category_id?: number
+  major_id?: number
   condition?: string
   min_price?: number
   max_price?: number
@@ -123,6 +131,21 @@ export const listingsService = {
     formData.append('condition', data.condition)
     formData.append('price', data.price.toString())
     
+    // Add pickup point ID if provided
+    if (data.pickup_point_id !== undefined) {
+      formData.append('pickup_point_id', data.pickup_point_id.toString())
+    }
+    
+    // Add location if provided
+    if (data.location !== undefined) {
+      formData.append('location', data.location)
+    }
+    
+    // Add major_id if provided
+    if (data.major_id !== undefined && data.major_id !== null) {
+      formData.append('major_id', data.major_id.toString())
+    }
+    
     // Add images
     data.images.forEach((image, index) => {
       formData.append(`images[${index}]`, image)
@@ -145,6 +168,15 @@ export const listingsService = {
     if (data.description !== undefined) formData.append('description', data.description)
     if (data.condition !== undefined) formData.append('condition', data.condition)
     if (data.price !== undefined) formData.append('price', data.price.toString())
+    
+    // Add major_id if provided (can be null to unset)
+    if (data.major_id !== undefined) {
+      if (data.major_id === null) {
+        formData.append('major_id', '')
+      } else {
+        formData.append('major_id', data.major_id.toString())
+      }
+    }
     
     // Add images if provided
     if (data.images) {
@@ -181,6 +213,12 @@ export const listingsService = {
     return response.data
   },
 
+  // Get recommended listings based on user's major (requires auth)
+  async getRecommendedListings(): Promise<Listing[]> {
+    const response = await api.get('/listings/recommended')
+    return response.data
+  },
+
   // Get related listings (same category)
   async getRelatedListings(id: number, categoryId: number, limit: number = 4): Promise<Listing[]> {
     const response = await api.get('/listings', {
@@ -199,3 +237,16 @@ export const listingsService = {
   return response.data
 }
 }
+
+// Export individual functions for convenience
+export const getListings = (filters?: ListingFilters) => listingsService.getListings(filters)
+export const getListing = (id: number) => listingsService.getListing(id)
+export const createListing = (data: CreateListingData) => listingsService.createListing(data)
+export const updateListing = (id: number, data: UpdateListingData) => listingsService.updateListing(id, data)
+export const deleteListing = (id: number) => listingsService.deleteListing(id)
+export const getMyListings = () => listingsService.getMyListings()
+export const getPublicListings = () => listingsService.getPublicListings()
+export const getRecommendedListings = () => listingsService.getRecommendedListings()
+export const getRelatedListings = (id: number, categoryId: number, limit?: number) => listingsService.getRelatedListings(id, categoryId, limit)
+
+export default listingsService

@@ -16,12 +16,14 @@ class Listing extends Model
     protected $fillable = [
         'seller_id',
         'category_id',
+        'major_id',
         'title',
         'description',
         'condition',
         'price',
         'status',
         'location',
+        'pickup_point_id',
         'views_count',
         'admin_notes',
         'rejection_reason',
@@ -47,6 +49,11 @@ class Listing extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function major(): BelongsTo
+    {
+        return $this->belongsTo(Major::class);
     }
 
     public function images(): HasMany
@@ -117,6 +124,14 @@ class Listing extends Model
             'category_name' => $this->category->name ?? '',
         ];
     }
+    
+    // Single pickup point relationship (new approach)
+    public function pickupPoint()
+    {
+        return $this->belongsTo(\App\Models\PickupPoint::class, 'pickup_point_id');
+    }
+    
+    // Many-to-many relationship (legacy - kept for backward compatibility)
     public function pickupPoints()
     {
         return $this->belongsToMany(\App\Models\PickupPoint::class);

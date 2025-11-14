@@ -113,7 +113,7 @@ if (!API_BASE) {
     API_BASE = 'http://localhost:8001/api'
   } else if (host.includes('vue') || host.includes('tdc-vue')) {
     // Đang chạy trong Docker network
-    API_BASE = 'http://laravel:8000/api'
+    API_BASE = '/api'
   } else {
     // Production (deploy thực tế)
     API_BASE = '/api'

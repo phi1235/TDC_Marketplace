@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'major_id',
         'phone',
         'avatar',
         'email_verified_at',
@@ -39,7 +41,8 @@ class User extends Authenticatable
         'total_ratings',
         'total_sales',
         'total_revenue',
-
+        'terms_accepted',
+        'terms_accepted_at',
     ];
 
     /**
@@ -66,6 +69,11 @@ class User extends Authenticatable
     ];
 
     // Relationships
+    public function major(): BelongsTo
+    {
+        return $this->belongsTo(Major::class);
+    }
+
     public function sellerProfile(): HasOne
     {
         return $this->hasOne(SellerProfile::class);

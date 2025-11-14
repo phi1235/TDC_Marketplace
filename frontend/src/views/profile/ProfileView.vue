@@ -42,6 +42,14 @@
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ user.name }}</h2>
             <p class="text-gray-600 dark:text-gray-300">{{ user.email }}</p>
 
+            <!-- Major Display -->
+            <div v-if="user.major" class="mt-3">
+              <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                <span class="mr-1">{{ user.major.icon }}</span>
+                {{ user.major.name }}
+              </span>
+            </div>
+
             <div class="mt-4">
               <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                 Đã xác thực
@@ -81,14 +89,15 @@
                 />
               </div>
 
+              <!-- Major Selection -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mô tả</label>
-                <textarea
-                  v-model="form.bio"
-                  rows="4"
-                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Giới thiệu về bản thân..."
-                ></textarea>
+                <MajorSelect
+                  v-model="form.major_id"
+                  label="Ngành học"
+                  placeholder="Chọn ngành học của bạn"
+                  help-text="Chọn ngành học để nhận gợi ý tin rao phù hợp"
+                  :allow-empty="true"
+                />
               </div>
 
               <div class="flex gap-4">
@@ -123,22 +132,32 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/services/api'
+import MajorSelect from '@/components/MajorSelect.vue'
+import type { Major } from '@/types/major'
 
-const user = ref({
-  id: 1, // ID người dùng (có thể lấy từ store/auth)
+const user = ref<{
+  id: number
+  name: string
+  email: string
+  phone: string
+  avatar: string
+  major_id: number | null
+  major?: Major
+}>({
+  id: 1,
   name: '',
   email: '',
   phone: '',
-  bio: '',
-  avatar: ''
+  avatar: '',
+  major_id: null
 })
 
 const form = reactive({
   name: '',
   email: '',
   phone: '',
-  bio: ''
+  major_id: null as number | null
 })
 
 const previewImage = ref<string | null>(null)
@@ -150,17 +169,40 @@ const errorMessage = ref('')
 // Lấy thông tin user từ API Laravel
 const fetchUser = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/profile', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    const token = localStorage.getItem('auth_token') // Fix: Sử dụng đúng key
+    
+    // Kiểm tra nếu chưa đăng nhập
+    if (!token) {
+      errorMessage.value = 'Bạn cần đăng nhập để xem trang này.'
+      // Redirect về trang login sau 2 giây
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 2000)
+      return
+    }
+
+    const response = await api.get('/user', {
+      headers: { Authorization: `Bearer ${token}` }
     })
     user.value = response.data
     form.name = user.value.name
     form.email = user.value.email
     form.phone = user.value.phone
-    form.bio = user.value.bio
-  } catch (error) {
-    console.error(error)
-    errorMessage.value = 'Không thể tải thông tin người dùng.'
+    form.major_id = user.value.major_id ?? null
+  } catch (error: any) {
+    console.error('Fetch user error:', error)
+    
+    // Xử lý lỗi 401 Unauthorized
+    if (error.response?.status === 401) {
+      errorMessage.value = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+      localStorage.removeItem('auth_token') // Fix: Xóa đúng key
+      localStorage.removeItem('user')
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 2000)
+    } else {
+      errorMessage.value = 'Không thể tải thông tin người dùng. Vui lòng thử lại.'
+    }
   }
 }
 
@@ -194,17 +236,24 @@ const updateProfile = async () => {
     formData.append('name', form.name)
     formData.append('email', form.email)
     formData.append('phone', form.phone)
-    formData.append('bio', form.bio)
+    
+    // Add major_id (can be null to unset)
+    if (form.major_id !== null && form.major_id !== undefined) {
+      formData.append('major_id', form.major_id.toString())
+    } else {
+      formData.append('major_id', '')
+    }
+    
     if (fileImage.value) {
       formData.append('avatar', fileImage.value)
     }
 
-    const response = await axios.post(
-      'http://localhost:8000/api/profile/update',
+    const response = await api.post(
+      '/user',
       formData,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`, // Fix: Sử dụng đúng key
           'Content-Type': 'multipart/form-data'
         }
       }
@@ -230,7 +279,7 @@ const resetForm = () => {
   form.name = user.value.name
   form.email = user.value.email
   form.phone = user.value.phone
-  form.bio = user.value.bio
+  form.major_id = user.value.major_id ?? null
   previewImage.value = null
   errorMessage.value = ''
   successMessage.value = ''

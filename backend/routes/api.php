@@ -11,6 +11,8 @@ use App\Http\Controllers\CompareController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\Api\MajorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminReportController;
@@ -53,6 +55,7 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/legal/terms', [LegalController::class, 'terms']); // public
 Route::get('/pickup-points', [PickupPointController::class, 'index']);
+Route::post('/contact', [ContactController::class, 'store']); // Contact form
 
 // Search routes (public)
 Route::get('/search', [SearchController::class, 'search']);
@@ -70,9 +73,29 @@ Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/related', [ListingController::class, 'related']);
 Route::get('/public-listings', [ListingController::class, 'getPublicListings']);
+
+// Recommended listings based on user's major (requires auth)
+Route::middleware('auth:sanctum')->get('/listings/recommended', [ListingController::class, 'recommended']);
+
 // Categories routes (public)
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
+
+// Majors routes (public - list active majors)
+Route::get('/majors', [MajorController::class, 'index']);
+Route::get('/majors/{major}', [MajorController::class, 'show']);
+
+// Admin Category Management
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+    
+    // Admin Major Management
+    Route::post('/majors', [MajorController::class, 'store']);
+    Route::put('/majors/{major}', [MajorController::class, 'update']);
+    Route::delete('/majors/{major}', [MajorController::class, 'destroy']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']); // Buyer tạo đơn
@@ -126,6 +149,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // User routes
     Route::get('/user', function (Request $request) {
         return $request->user();
+    });
+    Route::post('/user', [UserController::class, 'updateProfile']); // Changed PUT to POST
+    Route::post('/test-auth', function (Request $request) {
+        \Log::info('🧪 TEST AUTH ENDPOINT HIT 🧪', ['user' => auth()->user()]);
+        return response()->json(['message' => 'Auth works!', 'user' => auth()->user()]);
     });
     Route::get('/my-activities', [UserController::class, 'myActivities']);
 

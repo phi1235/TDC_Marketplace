@@ -85,24 +85,89 @@
             <p v-if="errors.price" class="mt-1 text-sm text-red-600">{{ errors.price[0] }}</p>
           </div>
 
-          <!-- Location -->
+          <!-- Location (Địa điểm giao dịch) - Text input tự do -->
           <div>
             <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
-              Địa điểm giao dịch *
+              📍 Địa điểm giao dịch *
             </label>
-            <input id="location" v-model="form.location" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ví dụ: TDC Campus, Khu A" :class="{ 'border-red-500': errors.location }" />
+            <input 
+              id="location" 
+              v-model="form.location" 
+              type="text" 
+              required 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              placeholder="Ví dụ: TDC Campus, Khu A, Quận Thủ Đức" 
+              :class="{ 'border-red-500': errors.location }" 
+            />
             <p v-if="errors.location" class="mt-1 text-sm text-red-600">{{ errors.location[0] }}</p>
+            <p class="mt-1 text-xs text-gray-500">
+              💡 Nhập địa chỉ khu vực chung để giao dịch
+            </p>
           </div>
-          <!-- Pickup Points (đa chọn) -->
-          <div class="md:col-span-2">
+
+          <!-- Pickup Point (Điểm giao dịch cụ thể) - Dropdown autocomplete -->
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Điểm giao dịch (có thể chọn nhiều)
+              � Điểm giao dịch (có thể chọn nhiều) *
             </label>
+            
+            <!-- Search Input -->
+            <div class="relative">
+              <input 
+                v-model="pickupSearchQuery"
+                @focus="showPickupDropdown = true"
+                @input="filterPickupPoints"
+                type="text" 
+                placeholder="🔍 Tìm điểm giao dịch cụ thể... (Ví dụ: Cổng chính, Thư viện)"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :class="{ 'border-red-500': errors.pickup_point_id }"
+              />
+              
+              <!-- Dropdown Results -->
+              <div 
+                v-if="showPickupDropdown && filteredPickupPoints.length > 0"
+                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+              >
+                <button
+                  v-for="point in filteredPickupPoints"
+                  :key="point.id"
+                  type="button"
+                  @click="selectPickupPoint(point)"
+                  class="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors"
+                >
+                  <div class="font-medium text-gray-900">📍 {{ point.name }}</div>
+                  <div v-if="point.address" class="text-sm text-gray-500 mt-1">{{ point.address }}</div>
+                  <div v-if="point.campus_code" class="text-xs text-blue-600 mt-1">Mã: {{ point.campus_code }}</div>
+                </button>
+              </div>
 
-            <PickupPointSelector mode="multi" :defaultSelected="pickupIds" @done="onPickupSelected" />
+              <!-- No Results -->
+              <div 
+                v-if="showPickupDropdown && pickupSearchQuery && filteredPickupPoints.length === 0"
+                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500"
+              >
+                Không tìm thấy điểm giao dịch phù hợp
+              </div>
+            </div>
 
+            <!-- Selected Pickup Point Display -->
+            <div v-if="selectedPickupPoint" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start justify-between">
+              <div>
+                <div class="font-medium text-blue-900">✅ {{ selectedPickupPoint.name }}</div>
+                <div v-if="selectedPickupPoint.address" class="text-sm text-blue-700 mt-1">{{ selectedPickupPoint.address }}</div>
+              </div>
+              <button 
+                type="button"
+                @click="clearPickupPoint"
+                class="text-red-600 hover:text-red-800 ml-2"
+              >
+                ✖️
+              </button>
+            </div>
+
+            <p v-if="errors.pickup_point_id" class="mt-1 text-sm text-red-600">{{ errors.pickup_point_id[0] }}</p>
             <p class="mt-2 text-xs text-gray-500">
-              Mẹo: Gợi ý chọn các điểm công cộng trong khuôn viên TDC (cổng chính, thư viện, căn tin…)
+              💡 Chọn điểm công cộng an toàn trong TDC
             </p>
           </div>
         </div>
@@ -186,7 +251,6 @@ import { useAuthStore } from '@/stores/auth'
 import { listingsService } from '@/services/listings'
 import { categoriesService } from '@/services/categories'
 import { showToast } from '@/utils/toast'
-import PickupPointSelector from '@/components/pickup/PickupPointSelector.vue'
 import { pickupApi } from '@/services/pickup'
 const router = useRouter()
 const authStore = useAuthStore()
@@ -286,12 +350,27 @@ const submitForm = async () => {
   errors.value = {}
 
   try {
+    // Validate pickup point selection
+    if (!selectedPickupPoint.value) {
+      showToast('error', 'Vui lòng chọn điểm giao dịch')
+      isSubmitting.value = false
+      return
+    }
+
+    console.log('🔍 Selected pickup point:', selectedPickupPoint.value)
+    console.log('🆔 Pickup point ID:', selectedPickupPoint.value?.id)
+
     const payload = { ...form } as any
 
     // Enforce price based on pricing type
     if (pricingType.value === 'free') {
       payload.price = 0
     }
+
+    // Add pickup point ID to payload
+    payload.pickup_point_id = selectedPickupPoint.value.id
+
+    console.log('🎯 Pickup point ID in payload:', payload.pickup_point_id)
 
     const formData = {
       ...payload,
@@ -302,19 +381,7 @@ const submitForm = async () => {
     console.log('📤 Calling listingsService.createListing...')
 
     const response = await listingsService.createListing(formData)
-    // Lấy id listing mới. Tuỳ backend của bạn trả về:
-    // - response.id
-    // - response.data.id
-    // - response.listing.id
-    const newListingId =
-      (response?.id) ??
-      (response?.data?.id) ??
-      (response?.listing?.id)
-
-    // Nếu lấy được id thì sync pickup points
-    if (newListingId && pickupIds.value.length) {
-      await pickupApi.listingSync(newListingId, pickupIds.value)
-    }
+    
     //console.log('✅ Listing created successfully:', response)
     showToast('success', 'Đăng tin thành công! Tin rao đang chờ duyệt.')
     router.push('/my-listings')
@@ -344,10 +411,85 @@ const submitForm = async () => {
 }
 onMounted(() => {
   loadCategories()
+  loadPickupPoints()
 })
-// state lưu id các điểm seller chọn cho listing
-const pickupIds = ref<number[]>([])
-function onPickupSelected(val: number[] | number | null) {
-  pickupIds.value = Array.isArray(val) ? val : (val ? [val] : [])
+
+// Pickup Point Autocomplete State
+const allPickupPoints = ref([])
+const filteredPickupPoints = ref([])
+const selectedPickupPoint = ref(null)
+const pickupSearchQuery = ref('')
+const showPickupDropdown = ref(false)
+
+// Load pickup points from API
+const loadPickupPoints = async () => {
+  try {
+    const response = await pickupApi.list()
+    console.log('📍 Pickup points response:', response)
+    
+    // Handle different response structures
+    let data = response.data?.data || response.data || []
+    
+    // Ensure data is an array
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ Pickup points data is not an array:', data)
+      data = []
+    }
+    
+    allPickupPoints.value = data
+    filteredPickupPoints.value = data
+    console.log('✅ Loaded pickup points:', allPickupPoints.value.length)
+  } catch (error) {
+    console.error('❌ Error loading pickup points:', error)
+    showToast('error', 'Không thể tải danh sách điểm giao dịch')
+    allPickupPoints.value = []
+    filteredPickupPoints.value = []
+  }
 }
+
+// Filter pickup points based on search query
+const filterPickupPoints = () => {
+  const query = pickupSearchQuery.value.toLowerCase().trim()
+  
+  // Ensure allPickupPoints is an array
+  if (!Array.isArray(allPickupPoints.value)) {
+    console.warn('⚠️ allPickupPoints is not an array:', allPickupPoints.value)
+    allPickupPoints.value = []
+    filteredPickupPoints.value = []
+    return
+  }
+  
+  if (!query) {
+    filteredPickupPoints.value = allPickupPoints.value
+  } else {
+    filteredPickupPoints.value = allPickupPoints.value.filter(point =>
+      point.name?.toLowerCase().includes(query) ||
+      (point.address && point.address.toLowerCase().includes(query)) ||
+      (point.campus_code && point.campus_code.toLowerCase().includes(query))
+    )
+  }
+}
+
+// Select a pickup point
+const selectPickupPoint = (point) => {
+  selectedPickupPoint.value = point
+  pickupSearchQuery.value = point.name
+  showPickupDropdown.value = false
+}
+
+// Clear selected pickup point
+const clearPickupPoint = () => {
+  selectedPickupPoint.value = null
+  pickupSearchQuery.value = ''
+  filteredPickupPoints.value = allPickupPoints.value
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.relative')) {
+    showPickupDropdown.value = false
+  }
+})
+
 </script>

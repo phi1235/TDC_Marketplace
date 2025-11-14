@@ -10,6 +10,12 @@
         <router-link to="/dashboard/users" class="block px-3 py-2 rounded hover:bg-gray-700">🙍‍♂️ Users</router-link>
         <router-link to="/dashboard/listings" class="block px-3 py-2 rounded hover:bg-gray-700">📖
           Listings</router-link>
+        <router-link to="/dashboard/categories" class="block px-3 py-2 rounded hover:bg-gray-700">📂
+          Categories</router-link>
+        <router-link to="/dashboard/majors" class="block px-3 py-2 rounded hover:bg-gray-700">🎓
+          Majors</router-link>
+        <router-link to="/dashboard/pickup-points" class="block px-3 py-2 rounded hover:bg-gray-700">📍
+          Pickup Points</router-link>
         <router-link to="/dashboard/pending" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
           Pending</router-link>
         <router-link to="/dashboard/analytics" class="block px-3 py-2 rounded hover:bg-gray-700">🕔
