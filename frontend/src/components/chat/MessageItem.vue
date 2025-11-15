@@ -18,7 +18,7 @@
       />
     </div>
     <!-- Text content -->
-    <div v-if="message.content" class="text-sm whitespace-pre-wrap break-words break-all">
+    <div v-if="message.content" class="text-sm whitespace-pre-wrap">
       <template v-for="(segment, index) in parsedContent" :key="index">
         <template v-if="segment.type === 'link'">
           <a

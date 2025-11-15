@@ -122,10 +122,23 @@ class ChatService
                 ];
             }
 
+            // Lấy danh sách các sản phẩm đã show trong conversation để tránh trùng lặp
+            $excludeListingIds = $this->getShownListingIds($conversation->id);
+            
             // Generate AI response using internal listings context
-            $contextPayload = $this->supportContextService->buildContext($userMessage);
+            $contextPayload = $this->supportContextService->buildContext($userMessage, $excludeListingIds);
             $contextSnippet = $contextPayload['context'] ?? null;
             $productCards = $contextPayload['products'] ?? [];
+            
+            // Log để debug
+            try {
+                Log::info('ChatService generateAIResponse - context', [
+                    'has_context' => !empty($contextSnippet),
+                    'context_length' => strlen($contextSnippet ?? ''),
+                    'products_count' => count($productCards),
+                    'exclude_count' => count($excludeListingIds),
+                ]);
+            } catch (\Throwable $e) {}
 
             $aiResponse = $this->openAIService->generateSupportResponse(
                 $userMessage,
@@ -358,5 +371,36 @@ class ChatService
         }
 
         return str_replace('**', '"', $response);
+    }
+
+    /**
+     * Lấy danh sách ID các sản phẩm đã được hiển thị trong conversation
+     */
+    private function getShownListingIds(int $conversationId): array
+    {
+        try {
+            $messages = $this->chatRepository->getConversationMessages($conversationId, 50);
+            $shownIds = [];
+            
+            foreach ($messages->items() as $message) {
+                if ($message->is_ai && $message->meta && is_array($message->meta)) {
+                    if (isset($message->meta['products']) && is_array($message->meta['products'])) {
+                        foreach ($message->meta['products'] as $product) {
+                            if (isset($product['id'])) {
+                                $shownIds[] = (int) $product['id'];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return array_unique($shownIds);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to get shown listing IDs', [
+                'conversation_id' => $conversationId,
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
     }
 }

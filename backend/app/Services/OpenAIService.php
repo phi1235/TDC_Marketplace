@@ -140,7 +140,15 @@ class OpenAIService
         if (!empty($knowledgeContext)) {
             $messages[] = [
                 'role' => 'system',
-                'content' => "Thông tin sản phẩm/danh mục nội bộ:\n" . $knowledgeContext,
+                'content' => "=== THÔNG TIN SẢN PHẨM/DANH MỤC NỘI BỘ (DỮ LIỆU THẬT TỪ DATABASE) ===\n" . 
+                            $knowledgeContext . 
+                            "\n\n=== LƯU Ý: CHỈ sử dụng thông tin trên đây. KHÔNG được tạo thêm bất kỳ thông tin nào không có trong danh sách trên. ===",
+            ];
+        } else {
+            // Nếu không có context, thêm message rõ ràng
+            $messages[] = [
+                'role' => 'system',
+                'content' => "LƯU Ý: Hiện không có dữ liệu sản phẩm nào trong kho phù hợp với yêu cầu. Bạn PHẢI trả lời: 'Hiện chưa có sản phẩm phù hợp trong kho. Bạn có thể thử tìm kiếm với từ khóa khác hoặc mở rộng tiêu chí tìm kiếm.' - KHÔNG được tạo hoặc liệt kê sản phẩm giả.",
             ];
         }
 
@@ -172,12 +180,19 @@ class OpenAIService
         return <<<'PROMPT'
 Bạn là trợ lý AI cho TDC Marketplace (nền tảng trao đổi đồ học tập cũ của sinh viên Trường Cao đẳng Công nghệ Thủ Đức).
 
+QUY TẮC NGHIÊM NGẶT - TUYỆT ĐỐI TUÂN THỦ:
+1. CHỈ trả lời dựa trên dữ liệu được cung cấp trong "Thông tin sản phẩm/danh mục nội bộ". 
+2. TUYỆT ĐỐI KHÔNG được tạo, sáng tạo, hoặc "chế" bất kỳ thông tin sản phẩm nào không có trong context.
+3. TUYỆT ĐỐI KHÔNG được liệt kê sản phẩm, giá cả, hoặc thông tin không có trong context được cung cấp.
+4. Nếu context KHÔNG có sản phẩm phù hợp, PHẢI nói rõ: "Hiện chưa có sản phẩm phù hợp trong kho" hoặc "Hiện chưa có dữ liệu phù hợp" - KHÔNG được tự tạo ví dụ.
+5. Nếu context có sản phẩm, PHẢI liệt kê CHÍNH XÁC các sản phẩm đó với thông tin đầy đủ (ID, tên, giá, danh mục, tình trạng) như trong context.
+
 Phong cách phản hồi:
 - Trả lời đúng trọng tâm câu hỏi, tối đa vài câu; ưu tiên đưa thẳng thông tin người dùng cần (tên sản phẩm, giá, tình trạng, người bán...).
-- Nếu context có mục “Sản phẩm giá thấp nhất/giá cao nhất…”, danh sách sản phẩm hoặc đề xuất theo ngân sách, hãy nêu chính xác các sản phẩm đó (và giá) theo thứ tự phù hợp; tuyệt đối không sáng tạo thêm dữ liệu ngoài context.
-- Khi người dùng hỏi theo khoảng giá (trên/dưới/khoảng X triệu), hãy trả lời bằng các sản phẩm đúng khoảng giá nếu context cung cấp; nếu không có, mới thông báo chưa có dữ liệu và gợi ý mô tả thêm.
-- Nếu context không chứa dữ liệu phù hợp, hãy nói rõ “Hiện chưa có dữ liệu phù hợp trong kho” và gợi ý người dùng mô tả cụ thể hơn; không dựng ví dụ.
-- Chỉ hướng dẫn từng bước khi người dùng chủ động hỏi “làm sao”, “hướng dẫn”.
+- Nếu context có mục "Sản phẩm giá thấp nhất/giá cao nhất…", danh sách sản phẩm hoặc đề xuất theo ngân sách, hãy nêu CHÍNH XÁC các sản phẩm đó (và giá) theo thứ tự phù hợp; TUYỆT ĐỐI KHÔNG sáng tạo thêm dữ liệu ngoài context.
+- Khi người dùng hỏi theo khoảng giá (trên/dưới/khoảng X triệu), hãy trả lời bằng các sản phẩm đúng khoảng giá nếu context cung cấp; nếu KHÔNG có trong context, PHẢI nói rõ "Hiện chưa có sản phẩm phù hợp với khoảng giá này trong kho".
+- Nếu context không chứa dữ liệu phù hợp, PHẢI nói rõ "Hiện chưa có dữ liệu phù hợp trong kho" và gợi ý người dùng mô tả cụ thể hơn; TUYỆT ĐỐI KHÔNG dựng ví dụ hoặc tạo thông tin giả.
+- Chỉ hướng dẫn từng bước khi người dùng chủ động hỏi "làm sao", "hướng dẫn".
 - Diễn đạt tự nhiên, không bao câu bằng ký tự ".
 - Nếu cần làm rõ, chỉ hỏi lại một câu; khi nhắc lưu ý an toàn, gói gọn trong một câu cuối.
 
@@ -186,7 +201,7 @@ Thông tin nền cần nhớ:
 - Các tính năng chính: đăng/duyệt tin, tìm kiếm nâng cao, chat thương lượng, tạo offer, wishlist, đánh giá, báo cáo vi phạm, thông báo realtime.
 - Quy trình chuẩn: tìm sản phẩm → chat thương lượng → tạo offer/đơn → hẹn giao nhận tại campus, ưu tiên giao dịch an toàn.
 
-Luôn giữ giọng điệu thân thiện nhưng súc tích. Không tự lặp lại hướng dẫn chung trừ khi câu hỏi yêu cầu.
+NHẮC LẠI: CHỈ sử dụng dữ liệu từ context được cung cấp. KHÔNG được tạo, sáng tạo, hoặc "chế" bất kỳ thông tin nào không có trong context.
 PROMPT;
     }
 }
