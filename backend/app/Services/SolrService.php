@@ -39,63 +39,68 @@ class SolrService
      */
     public function smartSearch(string $q): array
     {
-        $url = "{$this->baseUrl}/{$this->core}/select";
+         $url = "{$this->baseUrl}/{$this->core}/select";
 
-        /**
-         * Tương đương Elasticsearch:
-         * - bool_prefix → title:q*
-         * - fuzziness AUTO → ~2~3
-         * - match_phrase_prefix → pf + pf2
-         * - qf boost: title^3, description
-         * - mm = 1 giống minimum_should_match = 1
-         */
-        $params = [
-            'defType' => 'edismax',
+    $isShort = strlen($q) <= 2;
 
-            // bool_prefix + fuzzy + phrase_prefix
-            'q' => "(
-                title:{$q}*^3
-                OR title:{$q}~3^3
-                OR description:{$q}*^2
-                OR description:{$q}~3
-            )",
+    if ($isShort) {
 
-            // Boost fields
-            'qf' => 'title^3 description',
-            'pf' => 'title^3',
-            'pf2' => 'description',
+        // Search cả title + description khi keyword ngắn!
+        $query = "(
+            title:{$q}*^10
+            OR title:{$q}~1^4
+            OR description:{$q}*^3
+        )";
 
-            // Minimum match giống ES minimum_should_match = 1
-            'mm' => '1',
+        $qf  = "title^10 description^3";
+        $pf  = "title^8 description^3";
+        $pf2 = "title description";
 
-            // Số lượng giống ES
-            'rows' => 30,
+    } else {
+        // Keyword dài → fuzzy mạnh
+        $query = "(
+            title:{$q}*^10
+            OR title:{$q}~2^4
+            OR description:{$q}*^5
+            OR description:{$q}~2^2
+        )";
 
-            // Sort theo score như ES
-            'sort' => 'score desc',
+        $qf  = "title^10 description^5";
+        $pf  = "title^8 description^4";
+        $pf2 = "title^2 description";
+    }
 
-            'wt' => 'json',
+    $params = [
+        'defType' => 'edismax',
+        'q'       => $query,
+        'qf'      => $qf,
+        'pf'      => $pf,
+        'pf2'     => $pf2,
+        'mm'      => '1',
+        'rows'    => 30,
+        'sort'    => 'score desc',
+        'wt'      => 'json',
 
-            // Highlight giống ES
-            'hl' => 'true',
-            'hl.fl' => 'title,description',
-            'hl.simple.pre' => '<mark>',
-            'hl.simple.post' => '</mark>',
-        ];
+        // highlight
+        'hl' => 'true',
+        'hl.fl' => 'title,description',
+        'hl.simple.pre' => '<mark>',
+        'hl.simple.post' => '</mark>',
+        'fl' => '*,score',
+    ];
 
-        try {
-            $res = Http::get($url, $params);
-
-            if ($res->failed()) {
-                Log::error("Solr smartSearch failed", ['body' => $res->body()]);
-                return [];
-            }
-
-            return $res->json();
-        } catch (\Throwable $e) {
-            Log::error("Solr smartSearch exception: {$e->getMessage()}");
+    try {
+        $res = Http::get($url, $params);
+        if ($res->failed()) {
+            Log::error("Solr smartSearch failed", ['body' => $res->body()]);
             return [];
         }
+        return $res->json();
+
+    } catch (\Throwable $e) {
+        Log::error("Solr smartSearch exception: {$e->getMessage()}");
+        return [];
+    }
     }
 
     /**

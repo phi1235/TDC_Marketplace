@@ -176,6 +176,7 @@
       <filter name="porterStem"/>
     </analyzer>
   </fieldType>
+
   <fieldType name="text_en_splitting_tight" class="solr.TextField" autoGeneratePhraseQueries="true" positionIncrementGap="100">
     <analyzer type="index">
       <tokenizer name="whitespace"/>
@@ -459,18 +460,33 @@
     <filter class="solr.ASCIIFoldingFilterFactory"/>
   </analyzer>
 </fieldType>
+<fieldType name="text_vi_title" class="solr.TextField" positionIncrementGap="100">
+  <analyzer type="index">
+    <tokenizer class="solr.StandardTokenizerFactory"/>
+    <filter class="solr.LowerCaseFilterFactory"/>
+    <filter class="solr.ASCIIFoldingFilterFactory"/>
+    <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="20"/>
+  </analyzer>
+  <analyzer type="query">
+    <tokenizer class="solr.StandardTokenizerFactory"/>
+    <filter class="solr.LowerCaseFilterFactory"/>
+    <filter class="solr.ASCIIFoldingFilterFactory"/>
+  </analyzer>
+</fieldType>
+
+
   <field name="_nest_path_" type="_nest_path_"/>
   <field name="_root_" type="string" docValues="false" indexed="true" stored="false"/>
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
   <field name="category_id" type="plongs"/>
   <field name="created_at" type="pdates"/>
-  <field name="description" type="text_vi"/>
+  <field name="description" type="text_vi_title" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="image" type="text_general"/>
   <field name="price" type="plongs"/>
   <field name="status" type="text_general"/>
-  <field name="title" type="text_vi"/>
+  <field name="title" type="text_vi_title" indexed="true" stored="true"/>
   <dynamicField name="*_txt_en_split_tight" type="text_en_splitting_tight" indexed="true" stored="true"/>
   <dynamicField name="*_descendent_path" type="descendent_path" indexed="true" stored="true"/>
   <dynamicField name="*_ancestor_path" type="ancestor_path" indexed="true" stored="true"/>

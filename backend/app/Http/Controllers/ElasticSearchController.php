@@ -30,45 +30,77 @@ class ElasticSearchController extends Controller
             ]);
         }
 
-        /**
-         * ⚡ Smart query kết hợp: bool_prefix + fuzzy + match_phrase_prefix
-         * Giúp tìm được cả: "lap" → laptop, "ba" → balo, "laptp" → laptop
-         */
         $query = [
             'query' => [
                 'bool' => [
                     'should' => [
-                        [
-                            'multi_match' => [
-                                'query' => $keyword,
-                                'fields' => ['title^3'],
-                                'type' => 'bool_prefix',
-                            ],
-                        ],
-                        [
-                            'multi_match' => [
-                                'query' => $keyword,
-                                'fields' => ['title^3'],
-                                'fuzziness' => 'AUTO',
-                                'prefix_length' => 1,
-                                'minimum_should_match' => '70%',
-                            ],
-                        ],
+
+                        // 1. PREFIX MATCH (lap → laptop)
                         [
                             'match_phrase_prefix' => [
                                 'title' => [
                                     'query' => $keyword,
-                                    'max_expansions' => 20,
-                                ],
-                            ],
+                                    'boost' => 6,
+                                ]
+                            ]
+                        ],
+
+                     
+                        [
+                            'match' => [
+                                'title' => [
+                                    'query' => $keyword,
+                                    'boost' => 6,
+                                    'fuzziness' => 2,
+                                    'prefix_length' => 1
+                                ]
+                            ]
+                        ],
+
+                        // 3. DESCRIPTION PREFIX (ưu tiên ít hơn title)
+                        [
+                            'wildcard' => [
+                                'description' => [
+                                    'value' => "{$keyword}*",
+                                    'boost' => 2
+                                ]
+                            ]
+                        ],
+
+                        // 4. LIGHT FUZZY description
+                        [
+                            'match' => [
+                                'description' => [
+                                    'query' => $keyword,
+                                    'fuzziness' => 1,
+                                    'boost' => 1
+                                ]
+                            ]
                         ],
                     ],
-                    'minimum_should_match' => 1,
-                ],
+
+                    // BẮT BUỘC phải có ít nhất 1 match thực sự
+                    'minimum_should_match' => 1
+                ]
             ],
+
+            // ❗ Quan trọng: loại sách bằng score
+            'min_score' => 1,
+
             'size' => 30,
-            '_source' => ['title', 'description', 'price', 'category_id', 'image'], // 👈 Thêm dòng này
+
+            '_source' => ['title', 'description', 'price', 'category_id', 'image'],
+
+            'highlight' => [
+                'fields' => [
+                    'title' => new \stdClass(),
+                    'description' => new \stdClass(),
+                ],
+                'pre_tags' => ['<mark>'],
+                'post_tags' => ['</mark>'],
+            ]
         ];
+
 
         $result = $this->search->customSearch('listings', $query);
         $hits   = $result['hits']['hits'] ?? [];

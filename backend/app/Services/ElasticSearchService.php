@@ -45,7 +45,10 @@ class ElasticSearchService
                     'multi_match' => [
                         'query' => $query,
                         'fields' => ['title^3', 'description'],
-                    ],
+                        'type' => 'best_fields',
+                        'fuzziness' => 'AUTO',
+                        'minimum_should_match' => '70%',
+                    ]
                 ],
             ]);
 
@@ -62,6 +65,28 @@ class ElasticSearchService
     public function customSearch(string $index, array $query): array
     {
         try {
+            if (!isset($query['query']['bool'])) {
+                $query['query']['bool'] = [];
+            }
+
+            if (!isset($query['query']['bool']['must'])) {
+                $query['query']['bool']['must'] = [];
+            }
+
+            if (isset($query['query']['bool']['should'])) {
+                $keyword = $query['query']['bool']['should'][0]['match']['title']['query'] ?? null;
+
+                if ($keyword) {
+                    $query['query']['bool']['must'][] = [
+                        'multi_match' => [
+                            'query' => $keyword,
+                            'fields' => ['title^3', 'description'],
+                            'minimum_should_match' => '30%',
+                        ]
+                    ];
+                }
+            }
+
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json'
             ])->post("{$this->baseUrl}/{$index}/_search", $query);
@@ -141,7 +166,7 @@ class ElasticSearchService
                     ],
                     'price' => ['type' => 'float'],
                     'category_id' => ['type' => 'integer'],
-                    'image' => ['type' => 'keyword'], 
+                    'image' => ['type' => 'keyword'],
                     'created_at' => ['type' => 'date'],
                 ],
             ]

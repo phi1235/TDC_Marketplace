@@ -28,6 +28,13 @@ class SolrController extends Controller
 
         $result = $this->solr->smartSearch($keyword);
         $docs = $result['response']['docs'] ?? [];
+
+        $minScore = 1;
+         $docs = array_filter($docs, function ($item) use ($minScore) {
+            return ($item['score'] ?? 0) >= $minScore;
+        });
+        // Reset index array
+        $docs = array_values($docs);
         $count = (int) ($result['response']['numFound'] ?? count($docs));
 
         try {
