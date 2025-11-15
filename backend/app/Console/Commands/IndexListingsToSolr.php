@@ -27,6 +27,8 @@ class IndexListingsToSolr extends Command
                 'price' => (float) $listing->price,
                 'category_id' => (int) $listing->category_id,
                 'image' => $imageUrl,
+                'status' => $listing->status,
+                'created_at' => optional($listing->created_at)->toAtomString(),
             ]);
 
             if ($success) $count++;

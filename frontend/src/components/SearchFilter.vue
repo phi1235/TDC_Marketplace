@@ -32,7 +32,7 @@
         <div v-for="item in results[0]?.data?.results" :key="item._id"
           class="border rounded-lg shadow-sm hover:shadow-md transition p-4 mb-4 cursor-pointer"
           @click="goToListingDetail(item)">
-          >
+          
           <img :src="getImage(item)" class="w-full h-40 object-cover rounded-lg mb-3" />
           <h3 class="font-semibold text-lg mb-1">{{ getTitle(item) }}</h3>
           <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ getDescription(item) }}</p>
@@ -152,7 +152,7 @@ const url = `${API_BASE}/${endpoint}?q=${encodeURIComponent(q)}`
         { label: 'Solr', data: data.solr },
       ]
     } else if (engine.value === 'solr') {
-      results.value = data.results || []
+      results.value = data.data || data.results || []
     } else {
       results.value = data.data || []
     }

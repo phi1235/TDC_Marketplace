@@ -44,7 +44,7 @@ class ElasticSearchService
                 'query' => [
                     'multi_match' => [
                         'query' => $query,
-                        'fields' => ['title^3'],
+                        'fields' => ['title^3', 'description'],
                     ],
                 ],
             ]);
@@ -142,6 +142,7 @@ class ElasticSearchService
                     'price' => ['type' => 'float'],
                     'category_id' => ['type' => 'integer'],
                     'image' => ['type' => 'keyword'], 
+                    'created_at' => ['type' => 'date'],
                 ],
             ]
         ];

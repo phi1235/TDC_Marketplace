@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen">
     <!-- Sidebar -->
-    <aside class="fixed h-screen w-64 bg-gray-800 text-white flex flex-col p-4">
+<aside class="fixed top-0 left-0 h-screen w-64 bg-gray-800 text-white p-4 overflow-y-auto sidebar-scroll">
       <div class="text-xl font-bold mb-6">TDC Admin</div>
       <nav class="space-y-2">
         <p class="text-gray-500">Menu</p>
@@ -136,7 +136,15 @@
     </div>
   </div>
 </template>
-
+<style scoped>
+.sidebar-scroll::-webkit-scrollbar {
+  width: 0px;
+}
+.sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+</style>
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'

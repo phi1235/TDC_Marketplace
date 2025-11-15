@@ -20,9 +20,6 @@ class CompareController extends Controller
             ], 400);
         }
 
-        $startTime = microtime(true);
-
-        //  Dùng query thông minh giống /search-es
         $smartQuery = [
             'query' => [
                 'bool' => [
@@ -30,14 +27,14 @@ class CompareController extends Controller
                         [
                             'multi_match' => [
                                 'query' => $query,
-                                'fields' => ['title^3'],
+                                'fields' => ['title^3', 'description'], // 👈 thêm description cho công bằng
                                 'type' => 'bool_prefix',
                             ],
                         ],
                         [
                             'multi_match' => [
                                 'query' => $query,
-                                'fields' => ['title^3'],
+                                'fields' => ['title^3', 'description'], // 👈 thêm description
                                 'fuzziness' => 'AUTO',
                                 'prefix_length' => 1,
                                 'minimum_should_match' => '70%',
@@ -55,29 +52,24 @@ class CompareController extends Controller
                     'minimum_should_match' => 1,
                 ],
             ],
-            'size' => 30,
             '_source' => ['title', 'description', 'price', 'category_id', 'image'],
+            'size' => 30,
         ];
 
-        //  Gọi customSearch() thay vì search()
-        $esData = $this->measure(fn() => $es->customSearch('listings', $smartQuery));
-        $solrData = $this->measure(fn() => $solr->search($query));
-
-        $totalTime = round((microtime(true) - $startTime) * 1000, 2);
-
+        $esData   = $this->measure(fn() => $es->customSearch('listings', $smartQuery));
+        $solrData = $this->measure(fn() => $solr->smartSearch($query)); // 
         return response()->json([
             'query' => $query,
             'elasticsearch' => [
-                'results' => $esData['results'] ?? ($esData['hits']['hits'] ?? []),
-                'total' => $esData['total'] ?? ($esData['hits']['total']['value'] ?? 0),
+                'results' => $esData['hits']['hits'] ?? [],
+                'total'   => $esData['hits']['total']['value'] ?? 0,
                 'time_ms' => $esData['time_ms'] ?? 0,
             ],
             'solr' => [
-                'results' => $solrData['results'] ?? ($solrData['response']['docs'] ?? []),
-                'total' => $solrData['total'] ?? ($solrData['response']['numFound'] ?? 0),
+                'results' => $solrData['response']['docs'] ?? [],
+                'total'   => $solrData['response']['numFound'] ?? 0,
                 'time_ms' => $solrData['time_ms'] ?? 0,
             ],
-            'total_time_ms' => $totalTime,
         ]);
     }
 
@@ -85,8 +77,7 @@ class CompareController extends Controller
     {
         $start = microtime(true);
         $result = $fn();
-        $time = round((microtime(true) - $start) * 1000, 2);
-        $result['time_ms'] = $time;
+        $result['time_ms'] = round((microtime(true) - $start) * 1000, 2);
         return $result;
     }
 }

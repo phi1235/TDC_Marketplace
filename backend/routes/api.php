@@ -65,6 +65,9 @@ Route::get('/search-es/suggest', [ElasticSearchController::class, 'suggestions']
 Route::delete('/search-es/history/clear', [ElasticSearchController::class, 'clearHistory']);
 Route::get('/search-es/history', [ElasticSearchController::class, 'history']);
 Route::get('/search-solr', [SolrController::class, 'index']);
+Route::get('/search-solr/suggest', [SolrController::class, 'suggestions']);
+Route::get('/search-solr/history', [SolrController::class, 'history']);
+Route::delete('/search-solr/history/clear', [SolrController::class, 'clearHistory']);
 Route::get('/search-compare', [CompareController::class, 'index']);
 
 // Listings routes (public)

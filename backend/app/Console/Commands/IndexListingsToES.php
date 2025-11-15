@@ -38,6 +38,8 @@ class IndexListingsToES extends Command
                 'price' => (float) $listing->price,
                 'category_id' => (int) $listing->category_id,
                 'image' => $imageUrl, // 👈 thêm field ảnh
+                'status' => $listing->status,
+                'created_at' => optional($listing->created_at)->toISOString(),
             ]);
 
             if ($success) $count++;
@@ -47,3 +49,5 @@ class IndexListingsToES extends Command
         $this->info("✅ Done indexing $count listings into Elasticsearch!");
     }
 }
+
+

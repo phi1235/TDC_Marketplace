@@ -10,6 +10,7 @@ use App\Services\ReportService;
 use App\Services\AuditLogService;
 use App\Services\AnalyticsService;
 use App\Services\MonitoringService;
+use App\Services\SolrService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 class AdminController extends Controller
 {
     protected $elasticSearchService;
+    protected SolrService $solrService;
     protected ReportService $reportService;
     protected AuditLogService $auditLogService;
     protected AnalyticsService $analyticsService;
@@ -24,6 +26,7 @@ class AdminController extends Controller
 
     public function __construct(
         ElasticSearchService $elasticSearchService,
+        SolrService $solrService,
         ReportService $reportService,
         AuditLogService $auditLogService,
         AnalyticsService $analyticsService,
@@ -33,6 +36,7 @@ class AdminController extends Controller
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin');
         $this->elasticSearchService = $elasticSearchService;
+        $this->solrService = $solrService;
         $this->reportService = $reportService;
         $this->auditLogService = $auditLogService;
         $this->analyticsService = $analyticsService;
@@ -199,6 +203,17 @@ class AdminController extends Controller
                             'category_id' => (int) $listing->category_id,
                             'image' => $imageUrl, // 
                             'status' => 'approved',
+                            'created_at' => optional($listing->created_at)->toISOString(),
+                        ]);
+                        $this->solrService->indexDocument([
+                            'id' => $listing->id,
+                            'title' => $listing->title,
+                            'description' => $listing->description,
+                            'price' => (float) $listing->price,
+                            'category_id' => (int) $listing->category_id,
+                            'image' => $imageUrl,
+                            'status' => 'approved',
+                            'created_at' => optional($listing->created_at)->toAtomString(),
                         ]);
                     }
                     break;
@@ -212,10 +227,11 @@ class AdminController extends Controller
                         'rejected_by' => Auth::id(),
                     ]);
 
-                    // Remove rejected listings from Elasticsearch
+                    // Remove rejected listings from search indexes
                     $rejectedListings = $listings->get();
                     foreach ($rejectedListings as $listing) {
                         $this->elasticSearchService->deleteDocument('listings', $listing->id);
+                        $this->solrService->deleteDocument($listing->id);
                     }
                     break;
 
@@ -248,6 +264,9 @@ class AdminController extends Controller
                             }
                             $item->delete();
                         });
+
+                        $this->elasticSearchService->deleteDocument('listings', $item->id);
+                        $this->solrService->deleteDocument($item->id);
                     }
                     break;
             }
@@ -329,7 +348,19 @@ class AdminController extends Controller
                 'category_id' => (int) $listing->category_id,
                 'image' => $imageUrl, // 
                 'status' => 'approved', // Ensure status is included
+                'created_at' => optional($listing->created_at)->toISOString(),
             ]);
+            $this->solrService->indexDocument([
+                'id' => $listing->id,
+                'title' => $listing->title,
+                'description' => $listing->description,
+                'price' => (float) $listing->price,
+                'category_id' => (int) $listing->category_id,
+                'image' => $imageUrl,
+                'status' => 'approved',
+                'created_at' => optional($listing->created_at)->toAtomString(),
+            ]);
+
 
             // Log admin activity
             $listing->auditLogs()->create([
@@ -508,3 +539,8 @@ class AdminController extends Controller
         ]);
     }
 }
+
+
+
+
+
