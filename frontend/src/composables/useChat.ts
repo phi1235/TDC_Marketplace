@@ -53,6 +53,22 @@ export function useChat() {
             updates.unread_count = ((conv?.unread_count || 0) + 1)
           }
           updateConversationInList(c.id, updates)
+          
+          // Nếu đang ở active conversation, thêm message vào messages array ngay
+          if (activeConversation.value?.id === c.id) {
+            const existingIds = new Set(messages.value.map((m: any) => m.id))
+            if (!existingIds.has(e.id)) {
+              messages.value.push(e)
+              // Mark as read nếu là AI message hoặc message từ người khác
+              if (e.is_ai || e.sender_id !== myId) {
+                chatService.markAsRead(c.id).catch(() => {})
+              }
+              // Scroll to bottom sau khi thêm message mới
+              nextTick(() => {
+                // Scroll sẽ được trigger từ ChatView
+              })
+            }
+          }
         })
       subscribedChannels.add(c.id)
     })
@@ -245,6 +261,19 @@ export function useChat() {
             updates.unread_count = ((conv?.unread_count || 0) + 1)
           }
           updateConversationInList(e.conversation_id, updates)
+          
+          // Nếu đang ở active conversation, thêm message vào messages array ngay
+          if (activeConversation.value?.id === e.conversation_id) {
+            const existingIds = new Set(messages.value.map((m: any) => m.id))
+            if (!existingIds.has(e.id)) {
+              messages.value.push(e)
+              // Mark as read nếu là AI message hoặc message từ người khác
+              if (e.is_ai || e.sender_id !== myId) {
+                chatService.markAsRead(e.conversation_id).catch(() => {})
+              }
+            }
+          }
+          
           loadConversations()
         })
       userChannelSubscribed = true

@@ -126,7 +126,8 @@ class ChatService
             $excludeListingIds = $this->getShownListingIds($conversation->id);
             
             // Generate AI response using internal listings context
-            $contextPayload = $this->supportContextService->buildContext($userMessage, $excludeListingIds);
+            // Truyền conversation history để có thể lấy keyword từ message trước nếu user trả lời ngắn
+            $contextPayload = $this->supportContextService->buildContext($userMessage, $excludeListingIds, $conversationHistory);
             $contextSnippet = $contextPayload['context'] ?? null;
             $productCards = $contextPayload['products'] ?? [];
             

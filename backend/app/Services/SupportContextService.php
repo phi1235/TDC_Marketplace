@@ -34,13 +34,84 @@ class SupportContextService
     /**
      * @return array{context:?string,products:array<int,array<string,mixed>>}
      */
-    public function buildContext(string $userMessage, ?array $excludeListingIds = null): array
+    public function buildContext(string $userMessage, ?array $excludeListingIds = null, ?array $conversationHistory = null): array
     {
-        $keywords = $this->extractKeywords($userMessage);
+        // Kiểm tra xem câu hỏi có liên quan đến sản phẩm không
+        // Nếu chỉ là chào hỏi, tương tác thông thường → không query DB
+        $isProductRelated = $this->isProductRelatedQuery($userMessage);
+        $keywords = [];
+        
+        // Nếu không phải product-related, nhưng có thể là câu trả lời ngắn (có, muốn, cho tôi xem)
+        // hoặc yêu cầu xem sản phẩm, thì thử lấy keyword từ conversation history
+        if (!$isProductRelated && $conversationHistory) {
+            $normalized = Str::lower(Str::ascii(trim($userMessage)));
+            
+            // Pattern cho câu trả lời ngắn
+            $shortResponsePatterns = ['^co$', '^có$', '^muon$', '^muốn$', '^cho toi$', '^cho tôi$', '^xem$', '^yes$', '^ok$'];
+            // Pattern cho yêu cầu xem sản phẩm
+            $viewProductPatterns = [
+                'cho toi xem', 'cho tôi xem', 'cho xem', 'xem san pham', 'xem sản phẩm',
+                'hien thi', 'hiển thị', 'show', 'liet ke', 'liệt kê',
+                'danh sach', 'danh sách', 'list'
+            ];
+            
+            $isShortResponse = false;
+            foreach ($shortResponsePatterns as $pattern) {
+                if (preg_match('/' . $pattern . '/iu', $normalized)) {
+                    $isShortResponse = true;
+                    break;
+                }
+            }
+            
+            $isViewRequest = false;
+            foreach ($viewProductPatterns as $pattern) {
+                if (Str::contains($normalized, $pattern)) {
+                    $isViewRequest = true;
+                    break;
+                }
+            }
+            
+            // Nếu là câu trả lời ngắn hoặc yêu cầu xem, thử lấy keyword từ message trước
+            if ($isShortResponse || $isViewRequest) {
+                // Tìm message user gần nhất có keyword, hoặc message AI gần nhất có mention danh mục
+                foreach (array_reverse($conversationHistory) as $msg) {
+                    if (isset($msg['role']) && $msg['role'] === 'user' && !empty($msg['content'])) {
+                        $prevKeywords = $this->extractKeywords($msg['content']);
+                        if (!empty($prevKeywords)) {
+                            // Sử dụng keyword từ message trước
+                            $keywords = $prevKeywords;
+                            $isProductRelated = true;
+                            break;
+                        }
+                    } elseif (isset($msg['role']) && $msg['role'] === 'assistant' && !empty($msg['content'])) {
+                        // Nếu không tìm thấy từ user message, thử extract từ AI message (có thể mention danh mục)
+                        $prevKeywords = $this->extractKeywords($msg['content']);
+                        if (!empty($prevKeywords)) {
+                            $keywords = $prevKeywords;
+                            $isProductRelated = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!$isProductRelated) {
+            return [
+                'context' => null,
+                'products' => [],
+            ];
+        }
+        
+        // Nếu chưa có keywords (từ conversation history), extract từ message hiện tại
+        if (empty($keywords)) {
+            $keywords = $this->extractKeywords($userMessage);
+        }
         $priceIntent = $this->detectPriceIntent($userMessage);
         $budgetIntent = $this->detectBudgetIntent($userMessage);
         $moreProductsIntent = $this->detectMoreProductsIntent($userMessage);
-        $cardIntent = $this->determineCardIntent($userMessage, $priceIntent, $budgetIntent, $moreProductsIntent);
+        $listAllProductsIntent = $this->detectListAllProductsIntent($userMessage);
+        $cardIntent = $this->determineCardIntent($userMessage, $priceIntent, $budgetIntent, $moreProductsIntent, $listAllProductsIntent);
         
         // Log để debug
         try {
@@ -50,10 +121,42 @@ class SupportContextService
                 'price_intent' => $priceIntent,
                 'budget_intent' => $budgetIntent,
                 'more_products_intent' => $moreProductsIntent,
+                'list_all_products_intent' => $listAllProductsIntent,
                 'card_intent' => $cardIntent,
             ]);
         } catch (\Throwable $e) {}
 
+        // Khi user hỏi "có những sản phẩm gì" (listAllProductsIntent), KHÔNG query listings ngay
+        // Thay vào đó, chỉ query categories và để AI hỏi lại user về danh mục họ quan tâm
+        if ($listAllProductsIntent) {
+            // Lấy tất cả danh mục có sản phẩm (không cần keywords)
+            $categories = $this->getAllCategoriesWithProducts();
+            
+            // Không query listings, chỉ trả về categories để AI hỏi lại user
+            $sections = [];
+            if ($categories->isNotEmpty()) {
+                $categoriesList = $categories->map(function (Category $category) {
+                    $count = $category->listings_count ?? 0;
+                    return sprintf('- %s (%d sản phẩm)', $category->name, $count);
+                })->implode("\n");
+                
+                $sections[] = "Danh sách các danh mục hiện có trên trang web:\n" . $categoriesList . 
+                    "\n\nLƯU Ý QUAN TRỌNG: Người dùng đang hỏi về sản phẩm nói chung. Bạn PHẢI:" .
+                    "\n1. Hỏi lại người dùng: 'Bạn đang quan tâm đến danh mục nào?'" .
+                    "\n2. Liệt kê các danh mục trên đây để người dùng lựa chọn" .
+                    "\n3. Đợi người dùng chọn danh mục trước khi giới thiệu sản phẩm" .
+                    "\n4. KHÔNG được tự động liệt kê sản phẩm ngay bây giờ";
+            } else {
+                $sections[] = "Hiện chưa có danh mục nào trong hệ thống.";
+            }
+            
+            return [
+                'context' => implode("\n\n", $sections),
+                'products' => [],
+            ];
+        }
+        
+        // Logic bình thường cho các trường hợp khác
         // Tăng limit khi có budget intent, moreProductsIntent, hoặc price intent để tìm nhiều sản phẩm hơn
         // Đặc biệt với price intent "expensive", cần lấy nhiều hơn để đảm bảo có sản phẩm giá cao nhất
         $limit = ($moreProductsIntent || $budgetIntent) ? 20 : ($priceIntent === 'expensive' ? 50 : 10);
@@ -64,7 +167,7 @@ class SupportContextService
         // Nếu không có keywords, budget, price intent, và moreProductsIntent → lấy sản phẩm mới nhất
         $shouldGetLatest = empty($keywords) && !$budgetIntent && !$priceIntent && !$moreProductsIntent;
         
-        $listings = $this->searchListings($searchKeywords, $priceIntent, $budgetIntent, $limit, $excludeListingIds, $moreProductsIntent, $shouldGetLatest);
+        $listings = $this->searchListings($searchKeywords, $priceIntent, $budgetIntent, $limit, $excludeListingIds, $moreProductsIntent, $shouldGetLatest, false);
         
         // Log kết quả tìm được
         try {
@@ -81,27 +184,37 @@ class SupportContextService
         if ($listings->isNotEmpty()) {
             $sectionTitle = $moreProductsIntent 
                 ? "Các sản phẩm khác trong kho (chưa được hiển thị trước đó):\n"
-                : ($budgetIntent 
-                    ? sprintf("Sản phẩm phù hợp với ngân sách %s:\n", $this->formatBudgetLabel($budgetIntent))
-                    : "Sản phẩm phù hợp trong kho:\n");
+                : ($listAllProductsIntent
+                    ? "Danh sách sản phẩm hiện có trong kho:\n"
+                    : ($budgetIntent 
+                        ? sprintf("Sản phẩm phù hợp với ngân sách %s:\n", $this->formatBudgetLabel($budgetIntent))
+                        : "Sản phẩm phù hợp trong kho:\n"));
             
-            // Format danh sách sản phẩm với thông tin đầy đủ (KHÔNG hiển thị ID cho user)
+            // Format danh sách sản phẩm với thông tin đầy đủ (bao gồm URL để AI có thể gửi link khi user yêu cầu)
             $productsList = $listings->map(function (Listing $listing) {
                 $price = number_format((float) $listing->price, 0, ',', '.');
                 $category = $listing->category->name ?? 'Khác';
                 $condition = Str::of($listing->condition ?? 'N/A')->replace('_', ' ')->upper();
                 $description = Str::limit($listing->description ?? '', 100);
+                $url = '/listings/' . $listing->id;
                 return sprintf(
-                    "- Tên: %s | Danh mục: %s | Giá: %s đ | Tình trạng: %s%s",
+                    "- Tên: %s | Danh mục: %s | Giá: %s đ | Tình trạng: %s | Link: %s%s",
                     $listing->title,
                     $category,
                     $price,
                     $condition,
+                    $url,
                     $description ? " | Mô tả: " . $description : ""
                 );
             })->implode("\n");
             
-            $sections[] = $sectionTitle . $productsList . "\n\nLƯU Ý: CHỈ liệt kê các sản phẩm trên đây. KHÔNG được thêm bất kỳ sản phẩm nào khác.";
+            $sections[] = $sectionTitle . $productsList . 
+                "\n\nLƯU Ý QUAN TRỌNG:" .
+                "\n- Bạn PHẢI liệt kê TẤT CẢ các sản phẩm trên đây ngay lập tức, không chỉ nói số lượng." .
+                "\n- CHỈ được liệt kê các sản phẩm trên đây. KHÔNG được thêm bất kỳ sản phẩm nào khác." .
+                "\n- Khi gợi ý sản phẩm, hệ thống sẽ tự động hiển thị card sản phẩm để người dùng dễ nhấn vào xem chi tiết." .
+                "\n- Khi người dùng yêu cầu link sản phẩm: Hệ thống sẽ tự động hiển thị card sản phẩm. Bạn KHÔNG cần gửi text link trong tin nhắn, chỉ cần nói rằng card sản phẩm đã được hiển thị và người dùng có thể nhấn vào để xem chi tiết." .
+                "\n- Khi người dùng hỏi 'cho tôi xem', 'xem sản phẩm', 'liệt kê': PHẢI liệt kê tất cả sản phẩm trên đây, không chỉ nói số lượng.";
         } elseif ($moreProductsIntent) {
             // Nếu user hỏi "còn sản phẩm nào khác" nhưng không tìm thấy, thông báo rõ ràng
             $sections[] = "Hiện chưa có sản phẩm khác phù hợp trong kho. Bạn có thể thử tìm kiếm với từ khóa khác hoặc mở rộng tiêu chí tìm kiếm.";
@@ -126,12 +239,14 @@ class SupportContextService
 
             if ($selected) {
                 $priceLabel = $priceIntent === 'cheapest' ? 'giá thấp nhất' : 'giá cao nhất';
+                $url = '/listings/' . $selected->id;
                 $sections[] = sprintf(
-                    'Sản phẩm %s trong kho: %s • %s đ • %s',
+                    'Sản phẩm %s trong kho: %s • %s đ • %s • Link: %s',
                     $priceLabel,
                     $selected->title,
                     number_format((float) $selected->price, 0, ',', '.'),
-                    $selected->category->name ?? 'Khác'
+                    $selected->category->name ?? 'Khác',
+                    $url
                 );
             }
         }
@@ -142,7 +257,8 @@ class SupportContextService
                 $this->formatBudgetLabel($budgetIntent)
             ) . "\n" . $listings->map(function (Listing $listing) {
                 $price = number_format((float) $listing->price, 0, ',', '.');
-                return sprintf('- %s • %s đ', $listing->title, $price);
+                $url = '/listings/' . $listing->id;
+                return sprintf('- %s • %s đ • Link: %s', $listing->title, $price, $url);
             })->implode("\n");
         }
 
@@ -160,10 +276,17 @@ class SupportContextService
                     ? $listings->sortBy('price')->first()
                     : $listings->sortByDesc('price')->first();
                 $productsForCards = $target ? collect([$target]) : collect();
-            } elseif ($cardIntent['mode'] === 'list' || $budgetIntent || $moreProductsIntent) {
-                // Khi có budget intent hoặc moreProductsIntent, hiển thị tất cả sản phẩm tìm được
+            } elseif ($cardIntent['mode'] === 'list' || $budgetIntent || $moreProductsIntent || $listAllProductsIntent) {
+                // Khi có budget intent, moreProductsIntent, hoặc listAllProductsIntent, hiển thị tất cả sản phẩm tìm được
                 $productsForCards = $listings;
+            } elseif ($cardIntent['mode'] === 'single') {
+                // Khi user yêu cầu single product hoặc link
+                $productsForCards = $listings->take(1);
+            } elseif ($cardIntent['mode'] === 'auto') {
+                // Mặc định: hiển thị tối đa 5 sản phẩm để không quá dài
+                $productsForCards = $listings->take(5);
             } else {
+                // Fallback: hiển thị 1 sản phẩm
                 $productsForCards = $listings->take(1);
             }
         }
@@ -172,6 +295,97 @@ class SupportContextService
             'context' => $sections ? implode("\n\n", $sections) : null,
             'products' => $this->formatProductCards($productsForCards),
         ];
+    }
+
+    /**
+     * Kiểm tra xem câu hỏi có liên quan đến sản phẩm không
+     * Nếu chỉ là chào hỏi, tương tác thông thường → return false
+     */
+    private function isProductRelatedQuery(string $message): bool
+    {
+        $normalized = Str::lower(Str::ascii($message));
+        $trimmed = trim($normalized);
+        
+        // Các câu chào hỏi, tương tác thông thường - KHÔNG liên quan đến sản phẩm
+        // Lưu ý: "có", "muốn", "cho tôi xem" có thể là câu trả lời về sản phẩm, không loại bỏ ở đây
+        $greetingPatterns = [
+            '^alo$', '^hello$', '^hi$', '^chao$', '^chào$', '^xin chao$', '^xin chào$',
+            '^alo e$', '^alo ban$', '^alo bạn$', '^chao ban$', '^chào bạn$',
+            '^hi ban$', '^hi bạn$', '^hello ban$', '^hello bạn$',
+            '^cam on$', '^cảm ơn$', '^thanks$', '^thank you$',
+            '^bye$', '^tam biet$', '^tạm biệt$', '^chao tam biet$', '^chào tạm biệt$',
+        ];
+        
+        foreach ($greetingPatterns as $pattern) {
+            if (preg_match('/' . $pattern . '/iu', $trimmed)) {
+                return false;
+            }
+        }
+        
+        // Nếu câu quá ngắn (< 3 ký tự) và không có từ khóa sản phẩm → không liên quan
+        if (mb_strlen($trimmed) < 3) {
+            return false;
+        }
+        
+        // Các từ khóa chỉ ra câu hỏi về sản phẩm
+        $productKeywords = [
+            'san pham', 'sản phẩm', 'product', 'hang', 'hàng', 'item',
+            'gia', 'giá', 'price', 'mua', 'ban', 'bán', 'sell', 'buy',
+            'laptop', 'sach', 'sách', 'book', 'may tinh', 'máy tính',
+            'tim', 'tìm', 'search', 'co', 'có', 'have', 'list', 'danh sach', 'danh sách',
+            're', 'rẻ', 'dat', 'đắt', 'mắc', 'cheap', 'expensive',
+            'trieu', 'triệu', 'million', 'ngan', 'ngàn', 'thousand',
+            'danh muc', 'danh mục', 'category', 'loai', 'loại', 'type',
+            'tin rao', 'listing', 'offer', 'de nghi', 'đề nghị',
+        ];
+        
+        foreach ($productKeywords as $keyword) {
+            if (Str::contains($normalized, $keyword)) {
+                return true;
+            }
+        }
+        
+        // Nếu có số (có thể là giá) → có thể liên quan đến sản phẩm
+        if (preg_match('/\d+/', $normalized)) {
+            // Kiểm tra xem số có đi kèm với từ khóa giá không
+            if (preg_match('/(?:gia|giá|price|trieu|triệu|tr|ngan|ngàn|nghin|nghìn|d|dong|đồng|vnd)/iu', $normalized)) {
+                return true;
+            }
+            // Nếu chỉ có số đơn thuần, có thể không liên quan đến sản phẩm
+        }
+        
+        // Kiểm tra các intent nhanh (không cần gọi full method)
+        $normalizedForIntent = $normalized;
+        
+        // Quick check cho price intent
+        $priceSignals = ['re nhat', 'dat nhat', 'mac nhat', 'cao nhat', 'thap nhat', 'mắc nhất', 'đắt nhất', 'rẻ nhất', 'thấp nhất'];
+        foreach ($priceSignals as $signal) {
+            if (Str::contains($normalizedForIntent, $signal)) {
+                return true;
+            }
+        }
+        
+        // Quick check cho budget intent (có số + từ khóa giá)
+        if (preg_match('/\d+\s*(tr|trieu|ngan|nghin|d|dong|vnd)/iu', $normalizedForIntent)) {
+            return true;
+        }
+        
+        // Quick check cho more products intent
+        $moreSignals = ['con san pham', 'còn sản phẩm', 'con gi khac', 'còn gì khác', 'them san pham', 'thêm sản phẩm'];
+        foreach ($moreSignals as $signal) {
+            if (Str::contains($normalizedForIntent, $signal)) {
+                return true;
+            }
+        }
+        
+        // Nếu có keywords được extract (sau khi loại bỏ stop words) → có thể liên quan
+        $keywords = $this->extractKeywords($message);
+        if (!empty($keywords)) {
+            return true;
+        }
+        
+        // Mặc định: nếu không chắc, coi như không liên quan (để AI trả lời tự nhiên)
+        return false;
     }
 
     private function extractKeywords(string $message): array
@@ -197,7 +411,7 @@ class SupportContextService
             ->all();
     }
 
-    private function searchListings(array $keywords, ?string $priceIntent, ?array $budgetIntent, int $limit = 5, ?array $excludeListingIds = null, bool $moreProductsIntent = false, bool $shouldGetLatest = false): Collection
+    private function searchListings(array $keywords, ?string $priceIntent, ?array $budgetIntent, int $limit = 5, ?array $excludeListingIds = null, bool $moreProductsIntent = false, bool $shouldGetLatest = false, bool $listAllProductsIntent = false): Collection
     {
         // Nếu là moreProductsIntent, bỏ qua keywords và lấy sản phẩm mới nhất
         if ($moreProductsIntent) {
@@ -275,15 +489,37 @@ class SupportContextService
                 'exclude_count' => $excludeListingIds ? count($excludeListingIds) : 0,
             ]);
             
-            // Nếu shouldGetLatest, lấy sản phẩm mới nhất ngay lập tức
-            if ($shouldGetLatest) {
-                $results = $this->baseListingQuery(null, $limit)
-                    ->when($excludeListingIds && !empty($excludeListingIds), fn($q) => $q->whereNotIn('id', $excludeListingIds))
-                    ->get();
+            // Nếu shouldGetLatest hoặc listAllProductsIntent, lấy sản phẩm mới nhất ngay lập tức
+            if ($shouldGetLatest || $listAllProductsIntent) {
+                $query = $this->baseListingQuery(null, $limit);
                 
-                Log::info('ShouldGetLatest - direct query result', [
+                // Với listAllProductsIntent, nếu có quá nhiều sản phẩm đã show (> 70%), bỏ qua exclude để đảm bảo có kết quả
+                if ($listAllProductsIntent && $excludeListingIds && !empty($excludeListingIds)) {
+                    $totalApproved = Listing::where('status', 'approved')->count();
+                    $excludeCount = count($excludeListingIds);
+                    $shouldExclude = $totalApproved > 0 && ($excludeCount / $totalApproved) < 0.7;
+                    
+                    if ($shouldExclude) {
+                        $query->whereNotIn('id', $excludeListingIds);
+                    }
+                } elseif ($excludeListingIds && !empty($excludeListingIds)) {
+                    $query->whereNotIn('id', $excludeListingIds);
+                }
+                
+                $results = $query->get();
+                
+                Log::info('ShouldGetLatest/ListAllProductsIntent - direct query result', [
                     'found_count' => $results->count(),
+                    'list_all_products_intent' => $listAllProductsIntent,
                 ]);
+                
+                // Nếu listAllProductsIntent và không có kết quả, thử lại không exclude
+                if ($listAllProductsIntent && $results->isEmpty() && $excludeListingIds && !empty($excludeListingIds)) {
+                    $results = $this->baseListingQuery(null, $limit)->get();
+                    Log::info('ListAllProductsIntent - fallback without exclude', [
+                        'found_count' => $results->count(),
+                    ]);
+                }
                 
                 return $results;
             }
@@ -437,10 +673,26 @@ class SupportContextService
 
     private function applyKeywordFilter($query, array $keywords): void
     {
-        $query->where(function ($q) use ($keywords) {
+        // Tìm các category có tên match với keywords
+        $matchingCategoryIds = Category::query()
+            ->where(function ($q) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $q->orWhere('name', 'like', "%{$word}%");
+                }
+            })
+            ->pluck('id')
+            ->toArray();
+
+        $query->where(function ($q) use ($keywords, $matchingCategoryIds) {
+            // Tìm trong title và description
             foreach ($keywords as $word) {
                 $q->orWhere('title', 'like', "%{$word}%")
                   ->orWhere('description', 'like', "%{$word}%");
+            }
+            
+            // Nếu có category match, cũng tìm theo category_id
+            if (!empty($matchingCategoryIds)) {
+                $q->orWhereIn('category_id', $matchingCategoryIds);
             }
         });
     }
@@ -501,19 +753,61 @@ class SupportContextService
         return false;
     }
 
-    private function determineCardIntent(string $message, ?string $priceIntent, ?array $budgetIntent, bool $moreProductsIntent = false): array
+    /**
+     * Detect khi user hỏi "có những sản phẩm gì", "danh sách sản phẩm", "trang web có gì"
+     * Khác với moreProductsIntent (hỏi "còn gì khác"), đây là hỏi lần đầu về tất cả sản phẩm
+     */
+    private function detectListAllProductsIntent(string $message): bool
     {
+        $normalized = Str::lower(Str::ascii($message));
+        
+        // Các patterns để detect "có những sản phẩm gì", "danh sách sản phẩm"
+        $listAllSignals = [
+            'co nhung san pham', 'có những sản phẩm', 'co nhung san pham gi', 'có những sản phẩm gì',
+            'trang web co nhung san pham', 'trang web có những sản phẩm', 'trang web co gi', 'trang web có gì',
+            'website co nhung san pham', 'website có những sản phẩm', 'website co gi', 'website có gì',
+            'co nhung san pham nao', 'có những sản phẩm nào', 'co san pham nao', 'có sản phẩm nào',
+            'danh sach san pham', 'danh sách sản phẩm', 'list san pham', 'list sản phẩm',
+            'hien thi san pham', 'hiển thị sản phẩm', 'show products', 'show san pham',
+            'co gi ban', 'có gì bán', 'ban gi', 'bán gì', 'co gi de ban', 'có gì để bán',
+            'what products', 'what items', 'list products', 'show products', 'what do you have',
+            'what are the products', 'what products are available', 'what items are available',
+        ];
+        
+        foreach ($listAllSignals as $signal) {
+            if (Str::contains($normalized, $signal)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private function determineCardIntent(string $message, ?string $priceIntent, ?array $budgetIntent, bool $moreProductsIntent = false, bool $listAllProductsIntent = false): array
+    {
+        $normalized = Str::lower(Str::ascii($message));
+        
+        // Detect khi user yêu cầu link sản phẩm
+        $linkSignals = [
+            'gui link', 'gửi link', 'link san pham', 'link sản phẩm', 'cho link', 'cho tôi link',
+            'link cua san pham', 'link của sản phẩm', 'duong link', 'đường link', 'url',
+            'send link', 'product link', 'give me link', 'share link'
+        ];
+        foreach ($linkSignals as $signal) {
+            if (Str::contains($normalized, $signal)) {
+                return ['include' => true, 'mode' => 'single', 'request_link' => true];
+            }
+        }
+
         // Khi có budget intent, luôn hiển thị danh sách sản phẩm
         if ($priceIntent || $budgetIntent) {
             return ['include' => true, 'mode' => $budgetIntent ? 'list' : 'single'];
         }
 
-        // Nếu user hỏi "còn sản phẩm nào khác", luôn hiển thị danh sách
-        if ($moreProductsIntent) {
+        // Nếu user hỏi "còn sản phẩm nào khác" hoặc "có những sản phẩm gì", luôn hiển thị danh sách
+        if ($moreProductsIntent || $listAllProductsIntent) {
             return ['include' => true, 'mode' => 'list'];
         }
-
-        $normalized = Str::lower(Str::ascii($message));
 
         $listSignals = ['liet ke', 'danh sach', 'cho toi vai', 'goi y', 'de xuat', 'mot vai', 'several', 'list cho', 'cho minh vai san pham', 'nhieu san pham', 'nhiều sản phẩm'];
         foreach ($listSignals as $signal) {
@@ -522,14 +816,16 @@ class SupportContextService
             }
         }
 
-        $singleSignals = ['san pham cu the', 'gui link', 'link san pham', 'card san pham', 'nhan vao san pham', 'xem chi tiet', 'cho toi san pham', 'the hien card'];
+        $singleSignals = ['san pham cu the', 'card san pham', 'nhan vao san pham', 'xem chi tiet', 'cho toi san pham', 'the hien card'];
         foreach ($singleSignals as $signal) {
             if (Str::contains($normalized, $signal)) {
                 return ['include' => true, 'mode' => 'single'];
             }
         }
 
-        return ['include' => false, 'mode' => null];
+        // Mặc định: Khi có sản phẩm, luôn hiển thị card để user dễ thao tác
+        // Trả về null để logic bên ngoài quyết định dựa trên số lượng listings
+        return ['include' => true, 'mode' => 'auto'];
     }
 
     private function detectBudgetIntent(string $message): ?array
@@ -642,6 +938,19 @@ class SupportContextService
         }
 
         return 'được yêu cầu';
+    }
+
+    /**
+     * Lấy tất cả danh mục có sản phẩm (dùng khi user hỏi "có những sản phẩm gì")
+     */
+    private function getAllCategoriesWithProducts(): Collection
+    {
+        return Category::query()
+            ->withCount(['listings' => fn ($q) => $q->where('status', 'approved')])
+            ->having('listings_count', '>', 0)
+            ->orderByDesc('listings_count')
+            ->limit(10) // Lấy tối đa 10 danh mục để không quá dài
+            ->get();
     }
 
     private function searchCategories(array $keywords): Collection
