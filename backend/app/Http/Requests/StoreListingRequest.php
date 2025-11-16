@@ -15,11 +15,13 @@ class StoreListingRequest extends FormRequest
     {
         return [
             'category_id' => ['required', 'exists:categories,id'],
+            'major_id' => ['nullable', 'exists:majors,id'],
             'title' => ['required', 'string', 'max:200'],
             'description' => ['required', 'string', 'max:2000'],
             'condition' => ['required', 'string', 'in:new,like_new,good,fair'],
             'price' => ['required', 'numeric', 'min:0'],
             'location' => ['nullable', 'string', 'max:255'],
+            'pickup_point_id' => ['required', 'exists:pickup_points,id'],
             'images' => ['sometimes', 'array', 'max:5'],
             'images.*' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // 5MB
         ];

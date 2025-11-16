@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Major;
 use App\Models\SellerProfile;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Get all majors for random assignment
+        $majorIds = Major::pluck('id')->toArray();
+
         // Create admin user
         $admin = User::firstOrCreate(
             ['email' => 'admin@tdc.edu.vn'],
@@ -20,6 +24,7 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
                 'is_active' => true,
                 'email_verified_at' => now(),
+                'major_id' => null, // Admin không cần ngành
             ]
         );
         if (!$admin->hasRole('admin')) {
@@ -61,6 +66,7 @@ class UserSeeder extends Seeder
                     'role' => 'user',
                     'is_active' => true,
                     'email_verified_at' => now(),
+                    'major_id' => $majorIds[array_rand($majorIds)] ?? null, // Random major
                 ]
             );
 

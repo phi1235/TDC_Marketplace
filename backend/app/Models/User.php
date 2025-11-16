@@ -5,11 +5,14 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Wishlist;
 
 class User extends Authenticatable
 {
@@ -25,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'major_id',
         'phone',
         'avatar',
         'email_verified_at',
@@ -33,6 +37,12 @@ class User extends Authenticatable
         'last_login_at',
         'login_count',
         'remember_token',
+        'rating',
+        'total_ratings',
+        'total_sales',
+        'total_revenue',
+        'terms_accepted',
+        'terms_accepted_at',
     ];
 
     /**
@@ -59,6 +69,11 @@ class User extends Authenticatable
     ];
 
     // Relationships
+    public function major(): BelongsTo
+    {
+        return $this->belongsTo(Major::class);
+    }
+
     public function sellerProfile(): HasOne
     {
         return $this->hasOne(SellerProfile::class);
@@ -124,17 +139,19 @@ class User extends Authenticatable
         return $this->hasMany(UserConsent::class);
     }
 
-    public function auditLogs(): HasMany
+    public function auditLogs(): MorphMany
     {
-        return $this->hasMany(AuditLog::class);
+        return $this->morphMany(AuditLog::class, 'auditable');
     }
 
     //rolers for rbac
-    public function roles() {
+    public function roles()
+    {
         return $this->belongsToMany(Role::class);
     }
 
-    public function hasRole($role) {
+    public function hasRole($role)
+    {
         return $this->roles()->where('name', $role)->exists();
     }
 

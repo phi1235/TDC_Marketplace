@@ -1,19 +1,7 @@
 <template>
   <div :class="darkMode ? 'dark bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'" class="min-h-screen transition-colors duration-300">
-    <!-- Header -->
-    <header class="bg-blue-600 dark:bg-gray-800 text-white py-4 shadow">
-      <div class="container mx-auto px-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">TDC Marketplace</h1>
 
-        <!-- Dark mode toggle -->
-        <button
-          @click="toggleDarkMode"
-          class="px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 transition"
-        >
-          {{ darkMode ? "☀️" : "🌙" }}
-        </button>
-      </div>
-    </header>
+    
 
     <!-- Main -->
     <main class="container mx-auto px-4 py-8">
@@ -76,6 +64,28 @@
               <p v-if="fieldErrors.password_confirmation" class="text-xs text-red-500 mt-1">{{ fieldErrors.password_confirmation }}</p>
             </div>
 
+            <!-- Điều khoản sử dụng -->
+            <div class="flex items-start space-x-2">
+              <input
+                v-model="termsAccepted"
+                type="checkbox"
+                required
+                id="terms"
+                class="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label for="terms" class="text-sm text-gray-700 dark:text-gray-300">
+                Tôi đồng ý với
+                <router-link to="/terms" target="_blank" class="text-blue-600 hover:underline">
+                  Điều khoản sử dụng
+                </router-link>
+                và
+                <router-link to="/privacy-policy" target="_blank" class="text-blue-600 hover:underline">
+                  Chính sách bảo mật
+                </router-link>
+              </label>
+            </div>
+            <p v-if="fieldErrors.terms_accepted" class="text-xs text-red-500 -mt-2">{{ fieldErrors.terms_accepted }}</p>
+
             <!-- Thông báo lỗi -->
             <div v-if="errorMessage" class="text-red-500 text-sm text-center">
               {{ errorMessage }}
@@ -123,6 +133,7 @@ const name = ref("");
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
+const termsAccepted = ref(false);
 const errorMessage = ref("");
 const loading = ref(false);
 const darkMode = ref(false);
@@ -151,6 +162,10 @@ const handleSubmit = async () => {
     fieldErrors.value.password_confirmation = "Mật khẩu xác nhận không khớp";
     return;
   }
+  if (!termsAccepted.value) {
+    fieldErrors.value.terms_accepted = "Bạn phải đồng ý với điều khoản sử dụng";
+    return;
+  }
 
   try {
     loading.value = true;
@@ -161,6 +176,7 @@ const handleSubmit = async () => {
       email: email.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
+      terms_accepted: termsAccepted.value,
     })
     if (res.success) {
       showToast("Đăng ký thành công! Vui lòng đăng nhập.", "success");

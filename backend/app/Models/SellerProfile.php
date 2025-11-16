@@ -36,8 +36,8 @@ class SellerProfile extends Model
         'featured_until' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

@@ -13,7 +13,16 @@ return new class extends Migration
     {
         Schema::create('user_consents', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('legal_doc_id')->constrained()->cascadeOnDelete();
+            $table->string('version', 20);
+            $table->timestamp('consented_at');
+            $table->string('ip_address', 45)->nullable();
+            $table->string('user_agent', 255)->nullable();
             $table->timestamps();
+            
+            // Unique constraint: 1 user chỉ consent 1 lần cho mỗi version
+            $table->unique(['user_id', 'legal_doc_id', 'version']);
         });
     }
 

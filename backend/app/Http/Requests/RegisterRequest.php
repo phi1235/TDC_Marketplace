@@ -18,11 +18,19 @@ class RegisterRequest extends FormRequest
             // Name: 2-100 ký tự, chỉ cho phép chữ (Unicode), khoảng trắng, dấu ', ., -
             // Regex chuẩn (escape đầy đủ cho PHP single-quoted string)
             'name' => ['required', 'string', 'min:2', 'max:100', 'regex:/^[\pL\s\'\.\-]+$/u'],
-            // Stricter email validation: RFC + DNS
-            'email' => ['required', 'email:rfc,dns', 'max:150', 'unique:users,email'],
+            // Stricter email validation: RFC + DNS + TDC domain
+            'email' => [
+                'required', 
+                'email:rfc,dns', 
+                'max:150', 
+                'unique:users,email',
+                'regex:/^[a-zA-Z0-9._%+-]+@tdc\.edu\.vn$/i'
+            ],
             // Require confirmation using Laravel's confirmed rule (expects password_confirmation)
             'password' => ['required', 'string', 'min:6', 'max:100', 'confirmed'],
             'password_confirmation' => ['required'],
+            // Terms acceptance
+            'terms_accepted' => ['required', 'accepted'],
         ];
     }
 
@@ -37,11 +45,14 @@ class RegisterRequest extends FormRequest
             'email.email' => 'Email không hợp lệ.',
             'email.unique' => 'Email đã được sử dụng.',
             'email.max' => 'Email không được vượt quá 150 ký tự.',
+            'email.regex' => 'Email phải có định dạng @tdc.edu.vn (email sinh viên TDC).',
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.min' => 'Mật khẩu quá ngắn, tối thiểu 6 ký tự.',
             'password.max' => 'Mật khẩu quá dài.',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
             'password_confirmation.required' => 'Vui lòng nhập lại mật khẩu để xác nhận.',
+            'terms_accepted.required' => 'Bạn phải đồng ý với điều khoản sử dụng.',
+            'terms_accepted.accepted' => 'Bạn phải đồng ý với điều khoản sử dụng để đăng ký.',
         ];
     }
 }

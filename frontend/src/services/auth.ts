@@ -1,4 +1,5 @@
 import api from './api'
+import type { Major } from '@/types/major'
 
 export interface LoginData {
   email: string
@@ -28,6 +29,8 @@ export interface User {
   login_count: number
   created_at: string
   updated_at: string
+  major_id?: number | null
+  major?: Major
   seller_profile?: {
     student_id?: string
     verified_student: boolean
