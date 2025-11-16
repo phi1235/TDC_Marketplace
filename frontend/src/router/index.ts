@@ -8,6 +8,15 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
+      beforeEnter: (to, from, next) => {
+        const auth = useAuthStore()
+      if (auth.isAdmin) {
+        // Nếu là admin thì không cho vào trang sản phẩm
+        next('/dashboard')
+      } else {
+        next()
+      }
+      }
     },
     {
       path: '/my-disputes',
